@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { coach, dropFrom } from '@/lib/coach'
+import { coach } from '@/lib/coach'
 import { fmtDate, isEmptySet, topSet, uid } from '@/lib/format'
 import { beatsLast, PR_LABEL, prsFor, volumePr, type Bests } from '@/lib/gamify'
 import { isFullSet, restFor } from '@/lib/rest'
@@ -80,8 +80,6 @@ export default function ExerciseBlock({
   const fromLast = filled.length === 0 && !!basis
 
   const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal, effort)
-  const lastRow = exercise.sets[exercise.sets.length - 1]
-  const lastRowWeight = lastRow && lastRow.w != null ? lastRow.w : null
 
   function patchSet(id: string, patch: Partial<SetEntry>) {
     const before = exercise.sets.find((s) => s.id === id)
@@ -193,19 +191,6 @@ export default function ExerciseBlock({
         >
           Add set
         </button>
-        {exercise.type === 'W' && lastRowWeight != null ? (
-          <button
-            onClick={() =>
-              onChange({
-                ...exercise,
-                sets: [...exercise.sets, { id: uid(), drop: true, w: dropFrom(lastRowWeight) }],
-              })
-            }
-            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
-          >
-            Drop
-          </button>
-        ) : null}
         {onSwap ? (
           <button
             onClick={onSwap}

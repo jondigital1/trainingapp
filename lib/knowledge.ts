@@ -36,8 +36,8 @@ const APP: KnowledgeEntry[] = [
     id: 'app-dropset-how',
     q: 'How do I log a drop set?',
     group: 'Using the app',
-    aliases: ['log drop set', 'record drop set', 'strip set entry'],
-    a: 'Tap Drop under the exercise after your working set: it adds a row marked drop, prefilled about 20 percent lighter, and you type the reps. Chain another tap for a double drop. Drop rows are excluded from records and from the ghost comparison, because near failure at a lighter load is a technique, not a best. The importer also reads a notes line like 130x12 110x15 as a set and its drop.',
+    aliases: ['log drop set', 'record drop set', 'strip set entry', 'drop button'],
+    a: 'Add a set and put the lighter weight in it. That is the whole thing: a drop set is running less weight straight after your working set, and it does not need its own button or a label. There used to be one and it was ceremony around something you can already do. Sessions logged when that button existed still carry their drop rows, and the importer still reads a notes line like 130x12 110x15 as a set and its drop.',
   },
   {
     id: 'app-ghost',
@@ -166,7 +166,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'What is a drop set?',
     group: 'The basics',
     aliases: ['drop set meaning', 'strip set', 'running the rack'],
-    a: 'Take a set close to failure, immediately cut the weight by 10 to 30 percent, and keep going for more reps. So 130 x 12 straight into 110 x 15 is one drop set. It buys extra hard work in very little time and grows muscle about as well as the same work done as straight sets. Log the drop as its own set row at the lighter weight.',
+    a: 'Take a set close to failure, immediately cut the weight by 10 to 30 percent, and keep going for more reps. So 130 x 12 straight into 110 x 15 is one drop set. It buys extra hard work in very little time and grows muscle about as well as the same work done as straight sets. Log it as another set row at the lighter weight; nothing else is needed.',
   },
   {
     id: 'basic-rpe',

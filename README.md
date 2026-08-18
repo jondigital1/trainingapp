@@ -268,7 +268,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 75 assertions over everything that is pure logic: the movement
+`npm run check` is 91 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
@@ -447,15 +447,20 @@ and a tagged movement on its own is just a movement.
 
 ## Drop sets
 
-A Drop button sits next to Add set on any weighted exercise once the last row
-has a load on it. It adds a row tagged DROP, seeded at 80 percent of that load
-rounded to real plates. It carries no set number of its own, because it is a
-continuation of the set above it rather than a set in its own right.
+Add a set and put the lighter weight in it. That is the whole thing.
 
-Drops count toward volume and they are excluded from everything comparative:
-records, the ghost line, the top set in history, and the coach line, which reads
-your last working set. The importer understands the shorthand from the artifact
-days too, so a pasted `130x15 110x15` becomes a working set with a drop attached.
+There used to be a Drop button that added a row tagged DROP, seeded at 80
+percent of the last load. It has gone, because a drop set is running less
+weight straight after your working set, and building a button for that is
+ceremony around something anybody can already do. The one place it still
+appears is history: sessions logged while the button existed keep their drop
+rows and the label that goes with them, and the importer still reads the
+shorthand from the artifact days, so a pasted `130x15 110x15` becomes a working
+set with a drop attached.
+
+Where a set carries that flag, it stays out of everything comparative: records,
+the previous column, the top set in history, and the coach line, which reads
+your last working set. Nothing new is ever tagged.
 
 ## Rest timer
 

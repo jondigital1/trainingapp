@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
-import { coach, dropFrom, roundLoad } from '../lib/coach'
+import { coach, roundLoad } from '../lib/coach'
 import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
@@ -939,13 +939,6 @@ check('the ghost line writes drops the way he does', () => {
   assert.equal(line, '130 x 12 @8 drop 110 x 15, 130 x 10')
 })
 
-check('the drop seed cuts about a fifth and lands on real plates', () => {
-  assert.equal(dropFrom(130), 105)
-  assert.equal(dropFrom(12.5), 10)
-  assert.equal(dropFrom(255), 205)
-  assert.equal(dropFrom(50), 40)
-})
-
 check('pounds in, kilos out, and back again unchanged', () => {
   assert.equal(Math.round(toDisplay(220.462, 'kg')), 100)
   assert.equal(Math.round(toPounds(100, 'kg')), 220)
@@ -1306,6 +1299,28 @@ check('each set row says what you did on that set last time', () => {
   assert.equal(fmtPrevious({ id: '1' }, 'R'), null)
   // Half a set still says what it knows.
   assert.equal(fmtPrevious({ id: '1', w: 80 }, 'W'), '80\u00d7?')
+})
+
+check('history keeps its drop rows even though nothing new is tagged', () => {
+  // The button has gone: a drop set is just a lighter set now. But sessions
+  // logged while it existed, and anything imported from the artifact days,
+  // still carry the flag and still stay out of everything comparative.
+  const flagged: Exercise = {
+    id: 'e', name: 'Lat Pulldown', type: 'W',
+    sets: [{ id: 'a', w: 130, r: 12 }, { id: 'b', w: 110, r: 25, drop: true }],
+  }
+  assert.equal(topSet(flagged)?.id, 'a', 'a drop is not the top set')
+  const bests = bestsFor([{ id: 'w', date: '2026-08-18', title: 'x', exercises: [flagged] }],
+    'Lat Pulldown', 'nothing', '2026-08-19')
+  // 110 x 25 estimates higher than 130 x 12, so without the flag it would have
+  // taken the record.
+  assert.ok(e1rm({ id: 'b', w: 110, r: 25 })! > e1rm({ id: 'a', w: 130, r: 12 })!)
+  assert.equal(bests.e1rm, Math.round(e1rm({ id: 'a', w: 130, r: 12 })! * 10) / 10)
+  // And the importer still reads the shorthand it always did.
+  assert.deepEqual(
+    parseSetStrings('130x12 110x15', 'W').map((x) => ({ w: x.w, r: x.r, drop: x.drop ?? false })),
+    [{ w: 130, r: 12, drop: false }, { w: 110, r: 15, drop: true }],
+  )
 })
 
 console.log(`\n${checks} checks passed`)
