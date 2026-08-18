@@ -6,7 +6,7 @@ import { fmtDate, fmtSets, isEmptySet, topSet, uid } from '@/lib/format'
 import { beatsLast, PR_LABEL, prsFor, volumePr, type Bests } from '@/lib/gamify'
 import { isFullSet, restFor } from '@/lib/rest'
 import { fmtTime } from '@/lib/format'
-import SetRow from './SetRow'
+import SetRow, { SetHeader } from './SetRow'
 import type { Exercise, Goal, SetEntry } from '@/lib/types'
 
 export interface LastSession {
@@ -105,41 +105,45 @@ export default function ExerciseBlock({
   return (
     <div className={`rounded-2xl p-3 ring-1 ring-edge ${nested ? 'bg-ink' : 'bg-card'}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold">
-            {label ? <span className="mr-2 text-xs num text-accent">{label}</span> : null}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold leading-snug">
+            {label ? <span className="num mr-2 text-xs text-accent">{label}</span> : null}
             {exercise.name}
             {volumePr(exercise, bests) ? (
-              <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-on-accent align-middle">
+              <span className="ml-2 align-middle rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-on-accent">
                 Best session
               </span>
             ) : null}
           </h3>
+          {/* What you did last time is the most useful line on this screen, so
+              it wraps rather than trailing off in an ellipsis. */}
           {last ? (
-            <p className="mt-0.5 truncate text-xs text-muted num">
+            <p className="num mt-0.5 text-xs leading-snug text-muted">
               {fmtDate(last.date)} &middot; {fmtSets(last.exercise)}
             </p>
           ) : (
             <p className="mt-0.5 text-xs text-muted">First time logging this</p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <button onClick={() => onMove(-1)} aria-label="Move up" className="rounded-lg px-2 py-1 text-xs text-muted">
+        <div className="flex shrink-0 items-center">
+          <button onClick={() => onMove(-1)} aria-label="Move up" className="px-1.5 py-1 text-sm text-muted">
             &uarr;
           </button>
-          <button onClick={() => onMove(1)} aria-label="Move down" className="rounded-lg px-2 py-1 text-xs text-muted">
+          <button onClick={() => onMove(1)} aria-label="Move down" className="px-1.5 py-1 text-sm text-muted">
             &darr;
           </button>
           <button
             onClick={() => (confirm ? onRemove() : setConfirm(true))}
-            className={`rounded-lg px-2 py-1 text-xs ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
+            aria-label={confirm ? 'Confirm remove exercise' : 'Remove exercise'}
+            className={`ml-0.5 rounded-lg px-1.5 py-1 text-sm ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
           >
-            {confirm ? 'Sure?' : 'Remove'}
+            {confirm ? 'Sure?' : '\u00d7'}
           </button>
         </div>
       </div>
 
-      <div className="mt-3 flex flex-col gap-2">
+      <div className="mt-2.5 flex flex-col gap-1.5">
+        <SetHeader type={exercise.type} showRpe={showRpe} />
         {(() => {
           // set numbers and the ghost comparison count working rows only, so a
           // drop between sets two and three does not shift everything after it
@@ -151,7 +155,7 @@ export default function ExerciseBlock({
           const records = prsFor(set, exercise.type, bests, goal)
           const beat = !set.drop && records.length === 0 && beatsLast(set, lastWorking[i], exercise.type)
           return (
-            <div key={set.id} className="flex flex-col gap-1">
+            <div key={set.id} className="flex flex-col gap-0.5">
               <SetRow
                 index={i}
                 set={set}
@@ -161,11 +165,11 @@ export default function ExerciseBlock({
                 onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((s) => s.id !== set.id) })}
               />
               {records.length ? (
-                <p className="pl-6 text-xs font-medium text-accent">
+                <p className="pl-6 text-[11px] font-medium leading-tight text-accent">
                   PR &middot; {records.map((k) => PR_LABEL[k]).join(', ')}
                 </p>
               ) : beat ? (
-                <p className="pl-6 text-xs text-muted">Up on last time</p>
+                <p className="pl-6 text-[11px] leading-tight text-muted">Up on last time</p>
               ) : null}
             </div>
           )
@@ -174,16 +178,16 @@ export default function ExerciseBlock({
       </div>
 
       {advice ? (
-        <p className="mt-2 text-xs text-accent">
+        <p className="mt-2 text-xs leading-snug text-accent">
           {fromLast ? 'Next set, ' : ''}
           {advice}
         </p>
       ) : null}
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2.5 flex gap-2">
         <button
           onClick={() => onChange({ ...exercise, sets: [...exercise.sets, seedSet(exercise, last)] })}
-          className="flex-1 rounded-xl bg-ink py-2 text-sm text-muted ring-1 ring-edge"
+          className="flex-1 rounded-lg bg-ink py-1.5 text-xs text-muted ring-1 ring-edge"
         >
           Add set
         </button>
@@ -195,7 +199,7 @@ export default function ExerciseBlock({
                 sets: [...exercise.sets, { id: uid(), drop: true, w: dropFrom(lastRowWeight) }],
               })
             }
-            className="rounded-xl bg-ink px-3 py-2 text-sm text-muted ring-1 ring-edge"
+            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
           >
             Drop
           </button>
@@ -203,7 +207,7 @@ export default function ExerciseBlock({
         {live && rest > 0 && restOnComplete ? (
           <button
             onClick={() => onRest(exercise.id, exercise.name, rest)}
-            className="rounded-xl bg-ink px-3 py-2 text-sm num text-muted ring-1 ring-edge"
+            className="num rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
           >
             Rest {fmtTime(rest)}
           </button>

@@ -21,6 +21,7 @@ import {
 import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
+import { columnsFor } from '../lib/columns'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
 import {
@@ -926,6 +927,18 @@ check('the heaviest set on a movement ignores the drops under it', () => {
   assert.equal(lifts[0].sessions, 2)
   assert.equal(lifts.length, 2)
   assert.equal(bestLifts([]).length, 0)
+})
+
+check('a set row says what each of its numbers is', () => {
+  // Filled in, 80 x 9 @8 is three anonymous boxes. The header is the only
+  // thing that tells reps from RPE once the placeholders are gone.
+  assert.deepEqual(columnsFor('W', true), ['lb', 'reps', 'rpe'])
+  assert.deepEqual(columnsFor('W', false), ['lb', 'reps'])
+  assert.deepEqual(columnsFor('R', true), ['reps', 'rpe'])
+  assert.deepEqual(columnsFor('T', true), ['time'], 'a hold has no reps in reserve')
+  assert.deepEqual(columnsFor('C', true), ['time', 'miles'])
+  assert.deepEqual(columnsFor('WD', true), ['lb', 'feet'])
+  assert.deepEqual(columnsFor('X', true), [])
 })
 
 console.log(`\n${checks} checks passed`)

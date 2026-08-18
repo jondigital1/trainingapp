@@ -170,8 +170,14 @@ export default function WorkoutEditor({
 
         return (
           <div key={run.exercises[0].id} className="rounded-2xl bg-card p-2 ring-1 ring-accent">
-            <div className="flex items-center justify-between px-2 pb-1 pt-1">
-              <span className="text-xs uppercase tracking-wide text-accent">Superset {letter}</span>
+            <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
+              <span className="text-[11px] uppercase tracking-wide text-accent">
+                Superset {letter}
+                <span className="ml-2 normal-case tracking-normal text-muted">
+                  rest after {letter}
+                  {run.exercises.length}
+                </span>
+              </span>
               <button
                 onClick={() =>
                   onChange({
@@ -181,12 +187,12 @@ export default function WorkoutEditor({
                     ),
                   })
                 }
-                className="text-xs text-muted"
+                className="text-[11px] text-muted"
               >
                 Unlink
               </button>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {run.exercises.map((exercise, i) =>
                 block(exercise, `${letter}${i + 1}`, {
                   nested: true,
@@ -195,22 +201,19 @@ export default function WorkoutEditor({
                 }),
               )}
             </div>
-            <p className="px-2 pb-1 pt-2 text-xs text-muted">
-              Straight through, then rest. The clock starts after {letter}
-              {run.exercises.length}.
-            </p>
           </div>
         )
         }).flatMap((node, runIndex) => {
           if (runIndex === runs.length - 1) return [node]
           return [
             node,
-            <div key={`link-${runs[runIndex].exercises[0].id}`} className="-my-1.5 flex justify-center">
+            <div key={`link-${runs[runIndex].exercises[0].id}`} className="-my-2 flex justify-center">
               <button
                 onClick={() => link(runs[runIndex], runs[runIndex + 1])}
-                className="rounded-full bg-card px-3 py-0.5 text-xs text-muted ring-1 ring-edge"
+                aria-label="Superset these two together"
+                className="px-3 py-1 text-[11px] text-muted"
               >
-                Link
+                &#43; link
               </button>
             </div>,
           ]

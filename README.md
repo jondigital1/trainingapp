@@ -123,6 +123,7 @@ Postgres wants uuids and the artifact did not use them.
     lib/superset.ts       which consecutive exercises run together
     lib/progress.ts       one point per movement per day, and what to measure
     lib/order.ts          hardest first, and moving things by hand
+    lib/columns.ts        what each column of a set row is, per movement type
     lib/templates.ts      6 splits, 24 days
     lib/redirect.ts       an auth redirect can only land on this site
     lib/coach.ts          goal ranges and the RPE response
@@ -132,6 +133,12 @@ Postgres wants uuids and the artifact did not use them.
     supabase/migrations/  schema and row level security
 
 ## Set types
+
+Each exercise names its columns above the rows rather than leaning on
+placeholder text, because a placeholder disappears the moment you type and
+`80 9 8` is three anonymous numbers. The RPE column holds its width across a
+drop set so the columns above it do not shift sideways, and it is not reserved
+at all when RPE is off.
 
     W   weight and reps, optional RPE
     R   reps only, optional RPE
@@ -154,12 +161,13 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 73 assertions over everything that is pure logic: the movement
+`npm run check` is 74 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, the wave, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
-lifetime record, the redirect guard and the knowledge base gate. Every program
+lifetime record, the redirect guard, the set row columns and the knowledge base
+gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
 point at a template day that does not exist. `npm run build` type checks the app.
 

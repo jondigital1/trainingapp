@@ -88,7 +88,7 @@ input::placeholder {
 /* Room for the nav bar, and a shelf just above it for anything that floats:
    the start button and the rest timer. One number, defined once, so they
    cannot drift apart. */
-.pb-nav { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+.pb-nav { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
 .above-nav { bottom: calc(3.9rem + env(safe-area-inset-bottom)); }
 
 /* Content that lives in two frames needs a card colour that depends on what is
