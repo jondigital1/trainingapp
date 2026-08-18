@@ -10,16 +10,32 @@ Artifact storage does not follow the code between threads, so the history was on
 lost thread away from gone. Postgres holds it now, the phone is just a client, and
 everything can leave as CSV.
 
-## Help
+## Ask Lifty
 
-A built-in knowledge base behind the ? in the header and a row in Settings: 45
+A built-in knowledge base on the nav bar: 45
 answers across the basics (supersets, drop sets, RPE, soreness, failure), getting
 stronger (double progression, increment sizes, plateaus, deloads), the app
-itself, and what its numbers mean. Search is local scoring over authored text
-and nothing else: a question the base cannot answer says so plainly instead of
-guessing, and nothing ever searches the internet. Nutrition, supplements and
+itself, and what its numbers mean. Before you have asked anything it shows
+four questions and four topic chips, not a wall of forty five: a suggestion
+list long enough to scroll is the thing a search box exists to avoid. Search is
+local scoring over authored text and nothing else: a question Lifty cannot
+answer says so plainly instead of guessing, and nothing ever searches the
+internet. Nutrition, supplements and
 pain are answered with an honest gate rather than silence. lib/knowledge.ts is
 the content, sourced from the beginner questions people actually ask.
+
+## Getting around
+
+Five destinations on a bar across the bottom: Workout, History, Progress, Ask
+Lifty and Profile. Each one is a place you can be rather than a sheet that
+opens over where you were, because a nav bar whose items open modals is a menu
+in a nav bar's clothes. Ask Lifty and Profile carry the same content in either
+frame, and the card colour resolves from the frame rather than each card
+guessing what is behind it.
+
+The floating start button and the rest timer sit on a shelf just above the bar,
+off one measurement defined once so they cannot drift apart, and the bar itself
+carries the home indicator inset.
 
 ## Appearance
 
@@ -158,6 +174,10 @@ First sign in lands straight in the first question. There is no splash to tap
 through: the account is new, there is no history to look at, and the plan is
 the reason they are here. Skipping is still one line away at the bottom of the
 first screen.
+
+Each section fits a phone screen without scrolling, give or take the last one,
+so browsing it is tapping rather than hunting. Options sit two to a row where
+the labels allow it.
 
 Five sections rather than a dozen full screen taps, because answers that belong
 together should be asked together: who you are, what you have done, what your

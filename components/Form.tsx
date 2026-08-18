@@ -4,14 +4,14 @@
 // edits the same answers afterwards. A question should not look like one thing
 // on the way in and something else on the way back.
 
-const PILL = 'rounded-xl px-3 py-2.5 text-sm ring-1 text-left'
+const PILL = 'rounded-xl px-3 py-2.5 text-sm ring-1 text-left leading-snug'
 const ON = 'bg-accent text-on-accent ring-accent'
-const OFF = 'bg-ink text-bright ring-edge'
+const OFF = 'surface text-bright ring-edge'
 
 // 16px, always. Anything smaller and iOS zooms the page on focus, which on a
 // form this long is genuinely disorienting.
 const INPUT =
-  'w-full rounded-xl bg-ink px-3 py-3 text-base text-bright ring-1 ring-edge outline-none focus:ring-accent'
+  'w-full rounded-xl surface px-3 py-3 text-base text-bright ring-1 ring-edge outline-none focus:ring-accent'
 
 export function Field({
   label,
@@ -25,7 +25,7 @@ export function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="mt-5 first:mt-0">
+    <div className="mt-4 first:mt-0">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-medium">{label}</h3>
         {optional ? <span className="text-xs text-muted">optional</span> : null}
@@ -86,7 +86,7 @@ export function Chips({
           type="button"
           aria-pressed={selected.includes(o)}
           onClick={() => onToggle(o)}
-          className={`rounded-full px-3 py-2 text-sm ring-1 ${selected.includes(o) ? ON : 'bg-ink text-muted ring-edge'}`}
+          className={`rounded-full px-3 py-2 text-sm ring-1 ${selected.includes(o) ? ON : 'surface text-muted ring-edge'}`}
         >
           {o}
         </button>

@@ -51,16 +51,20 @@ export default function ProfileSheet({
   focus,
   weights,
   workouts,
+  inline,
   onSave,
   onLogWeight,
+  onOpenSettings,
   onClose,
 }: {
   profile: Profile
   focus: Focus
   weights: BodyWeight[]
   workouts: Workout[]
+  inline?: boolean
   onSave: (next: Profile) => void
   onLogWeight: (pounds: number) => void
+  onOpenSettings?: () => void
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Profile>(profile)
@@ -134,8 +138,22 @@ export default function ProfileSheet({
   const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
   return (
-    <Sheet title="Your profile" onClose={onClose}>
-      <div className="rounded-2xl bg-ink p-3 ring-1 ring-edge">
+    <Sheet
+      title="Your profile"
+      onClose={onClose}
+      inline={inline}
+      action={
+        onOpenSettings ? (
+          <button
+            onClick={onOpenSettings}
+            className="rounded-full bg-card px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+          >
+            Settings
+          </button>
+        ) : null
+      }
+    >
+      <div className="rounded-2xl surface p-3 ring-1 ring-edge">
         <p className="text-xs uppercase tracking-wide text-accent">{plan.program}</p>
         <p className="mt-1 text-sm">
           {name.trim() ? `${name.trim()}, on ` : ''}
@@ -144,14 +162,14 @@ export default function ProfileSheet({
         <p className="mt-1 text-xs leading-relaxed text-muted">{blurb}</p>
       </div>
 
-      <div className="mt-4 -mx-1 flex gap-1 overflow-x-auto pb-1">
+      <div className="mt-4 flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
           <button
             key={s.id}
             onClick={() => setSection(s.id)}
             aria-current={section === s.id ? 'page' : undefined}
-            className={`shrink-0 rounded-full px-3 py-2 text-sm ring-1 ${
-              section === s.id ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
+            className={`rounded-full px-3 py-2 text-sm ring-1 ${
+              section === s.id ? 'bg-accent text-on-accent ring-accent' : 'surface text-muted ring-edge'
             }`}
           >
             {s.label}
@@ -181,13 +199,14 @@ export default function ProfileSheet({
             </Field>
             <Field label="What is this for?">
               <Options
+                columns={2}
                 value={draft.goalChoice}
                 onPick={(v) => set({ goalChoice: v })}
                 options={[
                   { v: 'muscle' as const, label: 'Build muscle' },
                   { v: 'strength' as const, label: 'Get stronger' },
                   { v: 'lean' as const, label: 'Lean out' },
-                  { v: 'health' as const, label: 'Stay healthy and capable' },
+                  { v: 'health' as const, label: 'Stay capable' },
                 ]}
               />
             </Field>
@@ -333,7 +352,7 @@ export default function ProfileSheet({
 
         {section === 'body' ? (
           <>
-            <div className="rounded-2xl bg-ink p-3 ring-1 ring-edge">
+            <div className="rounded-2xl surface p-3 ring-1 ring-edge">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs uppercase tracking-wide text-muted">Current</span>
                 <span className="num text-lg">{fmtWeight(body.current, unit)}</span>
@@ -417,7 +436,7 @@ function Record({ workouts, days }: { workouts: Workout[]; days: number }) {
 
   if (!totals.sessions) {
     return (
-      <p className="rounded-2xl bg-ink p-4 text-sm leading-relaxed text-muted ring-1 ring-edge">
+      <p className="rounded-2xl surface p-4 text-sm leading-relaxed text-muted ring-1 ring-edge">
         Nothing here yet. Log a session and this fills itself in: what you have lifted, how long you have
         kept it up, and the heaviest you have put on each movement.
       </p>
@@ -449,7 +468,7 @@ function Record({ workouts, days }: { workouts: Workout[]; days: number }) {
             {lifts.map((l) => (
               <div
                 key={l.name}
-                className="flex items-baseline justify-between gap-3 rounded-xl bg-ink px-3 py-2.5 ring-1 ring-edge"
+                className="flex items-baseline justify-between gap-3 rounded-xl surface px-3 py-2.5 ring-1 ring-edge"
               >
                 <span className="min-w-0 flex-1 truncate text-sm">{l.name}</span>
                 <span className="num shrink-0 text-sm">
@@ -467,7 +486,7 @@ function Record({ workouts, days }: { workouts: Workout[]; days: number }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-ink px-3 py-2.5 ring-1 ring-edge">
+    <div className="rounded-xl surface px-3 py-2.5 ring-1 ring-edge">
       <p className="text-xs text-muted">{label}</p>
       <p className="num mt-0.5 text-lg leading-none">{value}</p>
     </div>
@@ -490,7 +509,7 @@ function SoreFields({
       </Field>
       {(draft.sore ?? []).length ? (
         <>
-          <div className="mt-3 rounded-2xl bg-ink p-3 ring-1 ring-edge">
+          <div className="mt-3 rounded-2xl surface p-3 ring-1 ring-edge">
             <p className="text-sm">
               Working around it is normal. Keep it at <span className="num text-accent">5 out of 10</span> or
               under while you lift, and it should be back to its usual self the next morning. Worse the next

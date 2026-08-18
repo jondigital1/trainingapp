@@ -116,7 +116,7 @@ export default function RestBar({
   const pct = Math.max(0, Math.min(100, (remaining / rest.total) * 100))
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg px-4 pb-safe">
+    <div className="above-nav fixed inset-x-0 z-40 mx-auto max-w-lg px-4">
       <div
         className={`overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ${done ? 'ring-accent' : 'ring-edge'}`}
       >

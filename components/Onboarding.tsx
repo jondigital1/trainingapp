@@ -133,37 +133,43 @@ export default function Onboarding({
           {current.id === 'you' ? (
             <>
               {!again ? (
-                <p className="mb-5 text-sm leading-relaxed text-muted">
-                  Log every set. See what you did last time on the line above the inputs. Know what to do
-                  next. Five short sections and you have a plan and a session to start.
+                <p className="mb-4 text-sm leading-relaxed text-muted">
+                  Five short sections and you have a plan and a session to start.
                 </p>
               ) : null}
               <Field label="What should we call you?" optional>
                 <TextInput value={name} onChange={setName} placeholder="Name" autoComplete="given-name" />
               </Field>
-              <Field label="Age" hint="Sets the sets. Over 60 starts with fewer of them and adds from there." optional>
-                <NumberInput value={age} onChange={setAge} suffix="years" placeholder="35" />
-              </Field>
-              <Field label="Weights in">
+              <div className="mt-4 flex gap-2">
+                <div className="flex-1">
+                  <Field label="Age">
+                    <NumberInput value={age} onChange={setAge} suffix="yrs" placeholder="35" />
+                  </Field>
+                </div>
+                <div className="flex-1">
+                  <Field label="Weights in">
+                    <Options
+                      columns={2}
+                      value={unit}
+                      onPick={(v) => set({ units: v })}
+                      options={[
+                        { v: 'lb' as const, label: 'lb' },
+                        { v: 'kg' as const, label: 'kg' },
+                      ]}
+                    />
+                  </Field>
+                </div>
+              </div>
+              <Field label="What is this for?" hint="Sets the rep ranges and what the coach asks of you.">
                 <Options
                   columns={2}
-                  value={unit}
-                  onPick={(v) => set({ units: v })}
-                  options={[
-                    { v: 'lb' as const, label: 'Pounds' },
-                    { v: 'kg' as const, label: 'Kilos' },
-                  ]}
-                />
-              </Field>
-              <Field label="What is this for?" hint="Sets the rep ranges and what the coach line asks of you.">
-                <Options
                   value={profile.goalChoice}
                   onPick={(v) => set({ goalChoice: v })}
                   options={[
                     { v: 'muscle' as const, label: 'Build muscle' },
                     { v: 'strength' as const, label: 'Get stronger' },
                     { v: 'lean' as const, label: 'Lean out' },
-                    { v: 'health' as const, label: 'Stay healthy and capable' },
+                    { v: 'health' as const, label: 'Stay capable' },
                   ]}
                 />
               </Field>
@@ -174,6 +180,7 @@ export default function Onboarding({
             <>
               <Field label="How long have you been lifting?" hint="Without a break longer than a month.">
                 <Options
+                  columns={2}
                   value={profile.years}
                   onPick={(v) => set({ years: v })}
                   options={[
@@ -188,6 +195,7 @@ export default function Onboarding({
               {profile.years === 'never' || profile.years === 'under6' ? (
                 <Field label="Have you trained seriously in the past?">
                   <Options
+                    columns={2}
                     value={profile.before}
                     onPick={(v) => set({ before: v })}
                     options={[
@@ -199,11 +207,9 @@ export default function Onboarding({
                 </Field>
               ) : null}
 
-              <Field
-                label="Could you name the weight you last used on your main lifts?"
-                hint="The most honest experience question there is. No wrong answer."
-              >
+              <Field label="Could you name the weight you last used on your main lifts?">
                 <Options
+                  columns={2}
                   value={profile.knows}
                   onPick={(v) => set({ knows: v })}
                   options={[
@@ -232,7 +238,7 @@ export default function Onboarding({
 
           {current.id === 'week' ? (
             <>
-              <Field label="Days a week" hint="Realistically. The plan is built around the number you actually hit.">
+              <Field label="Days a week" hint="Realistically. The plan is built around the number you hit.">
                 <Options
                   columns={2}
                   value={profile.days}
@@ -262,12 +268,13 @@ export default function Onboarding({
               </Field>
               <Field label="Where are you training?">
                 <Options
+                  columns={2}
                   value={profile.access}
                   onPick={(v) => set({ access: v })}
                   options={[
                     { v: 'full' as const, label: 'Full gym' },
-                    { v: 'basic' as const, label: 'Basic gym', note: 'Dumbbells, benches, a few machines' },
-                    { v: 'home' as const, label: 'Home with some kit' },
+                    { v: 'basic' as const, label: 'Basic gym' },
+                    { v: 'home' as const, label: 'Home with kit' },
                     { v: 'body' as const, label: 'Bodyweight only' },
                   ]}
                 />
@@ -294,21 +301,27 @@ export default function Onboarding({
                   placeholder={unit === 'kg' ? '82' : '180'}
                 />
               </Field>
-              <Field label="Where are you heading?" optional>
-                <NumberInput
-                  decimal
-                  value={goalWeight}
-                  onChange={setGoalWeight}
-                  suffix={unitLabel(unit)}
-                  placeholder={unit === 'kg' ? '77' : '170'}
-                />
-              </Field>
-              <Field label="Height" optional>
-                <div className="flex gap-2">
-                  <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
-                  <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
+              <div className="mt-4 flex gap-2">
+                <div className="flex-1">
+                  <Field label="Heading for">
+                    <NumberInput
+                      decimal
+                      value={goalWeight}
+                      onChange={setGoalWeight}
+                      suffix={unitLabel(unit)}
+                      placeholder={unit === 'kg' ? '77' : '170'}
+                    />
+                  </Field>
                 </div>
-              </Field>
+                <div className="flex-1">
+                  <Field label="Height">
+                    <div className="flex gap-2">
+                      <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
+                      <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
+                    </div>
+                  </Field>
+                </div>
+              </div>
 
               <Field label="Anything giving you trouble?" optional>
                 <Chips options={SORE_JOINTS} selected={profile.sore ?? []} onToggle={toggleSore} />
@@ -320,8 +333,8 @@ export default function Onboarding({
               </Field>
 
               <Field
-                label="Has a doctor told you to limit exercise, or do you have a heart, lung, kidney or blood sugar condition?"
-                hint="Two questions we have to ask. They make the plan lighter, they do not lock anything."
+                label="Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?"
+                hint="Two questions we have to ask. They make the plan lighter, they lock nothing."
               >
                 <Options
                   columns={2}
@@ -334,7 +347,7 @@ export default function Onboarding({
                   ]}
                 />
               </Field>
-              <Field label="When you push yourself, do you get chest pain, dizziness, blackouts or breathlessness out of proportion to the effort?">
+              <Field label="Chest pain, dizziness, blackouts or odd breathlessness when you push?">
                 <Options
                   columns={2}
                   value={profile.symptoms}
@@ -493,7 +506,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-5 pb-safe pt-8">{children}</main>
+    <main className="frame-page mx-auto flex min-h-screen w-full max-w-lg flex-col px-5 pb-safe pt-8">{children}</main>
   )
 }
 

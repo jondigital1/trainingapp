@@ -6,6 +6,7 @@ import { fmtDate, fmtSets, today, uid, workoutVolume } from '@/lib/format'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import CustomBuilder from './CustomBuilder'
 import Onboarding from './Onboarding'
+import BottomNav, { type Tab } from './BottomNav'
 import HelpSheet from './HelpSheet'
 import ProfileSheet from './ProfileSheet'
 import ProgressTab from './ProgressTab'
@@ -85,7 +86,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [data, setData] = useState<TrainingData>(EMPTY_DATA)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [tab, setTab] = useState<'log' | 'history' | 'progress'>('log')
+  const [tab, setTab] = useState<Tab>('log')
   const [sheet, setSheet] = useState<SheetName>(null)
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
@@ -515,37 +516,20 @@ export default function App({ userId, email }: { userId: string; email: string }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-28">
-      <header className="flex items-center justify-between pb-3 pt-5">
-        <h1 className="text-xl font-semibold tracking-tight">Training Log</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSheet('help')}
-            aria-label="Help"
-            className="rounded-full bg-card px-3 py-1 text-xs text-muted ring-1 ring-edge"
-          >
-            ?
-          </button>
+    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-nav">
+      <header className="flex items-center justify-between pb-4 pt-5">
+        <h1 className="text-xl font-semibold tracking-tight">
+          {tab === 'log' ? 'Training Log' : tab === 'history' ? 'History' : tab === 'progress' ? 'Progress' : ''}
+        </h1>
+        {tab === 'log' ? (
           <button
             onClick={() => setSheet('settings')}
             className="rounded-full bg-card px-3 py-1 text-xs text-muted ring-1 ring-edge"
           >
             {data.settings.goal}
           </button>
-        </div>
+        ) : null}
       </header>
-
-      <div className="mb-4 flex gap-1 rounded-xl bg-card p-1 ring-1 ring-edge">
-        {(['log', 'history', 'progress'] as const).map((name) => (
-          <button
-            key={name}
-            onClick={() => setTab(name)}
-            className={`flex-1 rounded-lg py-2 text-sm capitalize ${tab === name ? 'bg-accent text-on-accent' : 'text-muted'}`}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
 
       {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
@@ -650,6 +634,22 @@ export default function App({ userId, email }: { userId: string; email: string }
         />
       ) : null}
 
+      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('log')} /> : null}
+
+      {!loading && tab === 'profile' ? (
+        <ProfileSheet
+          inline
+          profile={profile}
+          focus="all"
+          weights={data.bodyWeights}
+          workouts={data.workouts}
+          onOpenSettings={() => setSheet('settings')}
+          onLogWeight={(lb) => void logWeight(lb)}
+          onSave={(next) => void saveProfile(next)}
+          onClose={() => setTab('log')}
+        />
+      ) : null}
+
       {!loading && tab === 'history' ? (
         <div className="flex flex-col gap-3">
           <StatsPanel workouts={data.workouts} today={now} target={profile.days ?? plan?.days ?? 3} />
@@ -718,8 +718,8 @@ export default function App({ userId, email }: { userId: string; email: string }
 
       {/* Sticky only when there is nothing to cover. Mid session the big orange
           bar would sit on top of the set you are typing into. */}
-      {(tab !== 'log' || todays.length === 0) && !rest.rest ? (
-        <div className="fixed inset-x-0 bottom-0 mx-auto max-w-lg px-4 pb-safe">
+      {(tab === 'log' || tab === 'history') && (tab !== 'log' || todays.length === 0) && !rest.rest ? (
+        <div className="above-nav fixed inset-x-0 mx-auto max-w-lg px-4">
           <button
             onClick={() => setSheet('start')}
             className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent shadow-lg"
@@ -727,14 +727,16 @@ export default function App({ userId, email }: { userId: string; email: string }
             Start a workout
           </button>
         </div>
-      ) : (
+      ) : tab === 'log' ? (
         <button
           onClick={() => setSheet('start')}
           className="mt-8 w-full rounded-2xl bg-card py-4 text-base text-muted ring-1 ring-edge"
         >
           Start another workout
         </button>
-      )}
+      ) : null}
+
+      <BottomNav tab={tab} onPick={setTab} />
 
       {rest.rest ? (
         <RestBar

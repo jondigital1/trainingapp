@@ -80,3 +80,20 @@ input::placeholder {
   padding-left: max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));
 }
+
+/* The nav bar sits on the home indicator, so its own padding carries the
+   inset rather than the page below it. */
+.pb-safe-nav { padding-bottom: calc(0.25rem + env(safe-area-inset-bottom)); }
+
+/* Room for the nav bar, and a shelf just above it for anything that floats:
+   the start button and the rest timer. One number, defined once, so they
+   cannot drift apart. */
+.pb-nav { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+.above-nav { bottom: calc(3.9rem + env(safe-area-inset-bottom)); }
+
+/* Content that lives in two frames needs a card colour that depends on what is
+   behind it. On a sheet the surround is card, so a card inside it must be ink;
+   on a page the surround is ink, so it must be card. One class, resolved by
+   the frame, rather than every card guessing. */
+.frame-page .surface { background: var(--color-card); }
+.frame-sheet .surface { background: var(--color-ink); }

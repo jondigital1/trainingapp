@@ -10,6 +10,11 @@ export interface KnowledgeEntry {
   aliases: string[]
 }
 
+// The handful worth putting in front of somebody who has not asked anything
+// yet. Four, because a list of forty five suggestions is not a suggestion, it
+// is the same wall of text the search box was meant to save you from.
+export const COMMON_IDS = ['basic-start-weight', 'strong-progression', 'basic-sets-reps', 'basic-soreness']
+
 export const KNOWLEDGE_GROUPS = [
   'The basics',
   'Getting stronger',
@@ -400,4 +405,10 @@ export function searchKnowledge(query: string, limit = 6): KnowledgeEntry[] {
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((s) => s.entry)
+}
+
+export function commonQuestions(): KnowledgeEntry[] {
+  return COMMON_IDS.map((id) => KNOWLEDGE.find((e) => e.id === id)).filter(
+    (e): e is KnowledgeEntry => e !== undefined,
+  )
 }
