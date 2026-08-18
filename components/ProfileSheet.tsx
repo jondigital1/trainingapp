@@ -273,7 +273,7 @@ export default function ProfileSheet({
                 columns={2}
                 value={draft.days}
                 onPick={(v) => set({ days: v })}
-                options={[2, 3, 4, 5, 6, 7].map((n) => ({ v: n, label: `${n} days` }))}
+                options={[3, 4, 5, 6].map((n) => ({ v: n, label: `${n} days` }))}
               />
             </Field>
             <Field label="Time in the gym" hint="Sets how many movements we put in a session.">

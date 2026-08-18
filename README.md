@@ -228,12 +228,16 @@ somebody who has trained for years go hunting for structure in Settings.
 
 The program then picks a split from the 24 template days, decides how many
 movements fit the time available, swaps movements around sore joints, and
-filters to the equipment on hand. Two days a week through seven, and the number
+filters to the equipment on hand. Three days a week through six, and the number
 you give is the number you get: six used to be quietly served back as five,
 which is the app telling somebody what their week is. Six is push pull legs
-twice through, seven is that plus a lighter day, and the plan says once that
-seven leaves no rest day rather than arguing about it every time you open the
-app. Somebody rebuilding after a layoff gets a
+twice through, and the plan says once that six weeks in a row is a lot rather
+than arguing about it every time you open the app.
+
+Two and seven are not offered. Two is not enough to hold a split together, and
+seven leaves no rest day at all. A profile that still says two or seven from
+before is clamped into the range rather than pointing at a week that no longer
+exists. Somebody rebuilding after a layoff gets a
 note and a gentler first month, not a beginner course.
 
 Two health questions sit at the end of the body section, and a flagged answer

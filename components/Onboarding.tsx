@@ -247,12 +247,10 @@ export default function Onboarding({
                   value={profile.days}
                   onPick={(v) => set({ days: v })}
                   options={[
-                    { v: 2, label: '2 days', note: 'Enough to progress' },
                     { v: 3, label: '3 days', note: 'The sweet spot' },
                     { v: 4, label: '4 days' },
                     { v: 5, label: '5 days' },
                     { v: 6, label: '6 days' },
-                    { v: 7, label: '7 days', note: 'No rest day' },
                   ]}
                 />
               </Field>

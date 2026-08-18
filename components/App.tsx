@@ -18,7 +18,7 @@ import SettingsSheet from './SettingsSheet'
 import StartSheet from './StartSheet'
 import WorkoutEditor from './WorkoutEditor'
 import type { LastSession } from './ExerciseBlock'
-import { buildDay, dayById, needsCheckin, planFor, unitOf, type Profile } from '@/lib/onboarding'
+import { buildDay, dayById, MIN_DAYS, needsCheckin, planFor, unitOf, type Profile } from '@/lib/onboarding'
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
@@ -579,18 +579,22 @@ export default function App({ userId, email }: { userId: string; email: string }
           <p className="text-xs uppercase tracking-wide text-muted">The last four weeks</p>
           <p className="mt-1 text-2xl num">{trainedLast28} / 28 days</p>
           <p className="mt-1 text-sm text-muted">
-            You planned {profile.days ?? plan?.days} a week. Two days done properly beats{' '}
+            You planned {profile.days ?? plan?.days} a week. Three days done properly beats{' '}
             {profile.days ?? plan?.days} missed. Want the shorter plan? Either answer sticks, and
             days a week can always change in Settings.
           </p>
           <div className="mt-3 flex gap-2">
             <button
               onClick={() =>
-                void saveProfile({ ...profile, days: 2, checkinDismissedAt: new Date().toISOString() })
+                void saveProfile({
+                  ...profile,
+                  days: MIN_DAYS,
+                  checkinDismissedAt: new Date().toISOString(),
+                })
               }
               className="flex-1 rounded-xl bg-accent py-2 text-sm font-medium text-on-accent"
             >
-              Move to 2 days
+              Move to {MIN_DAYS} days
             </button>
             <button
               onClick={() =>

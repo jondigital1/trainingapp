@@ -112,43 +112,37 @@ export function returning(p: Profile): boolean {
   return green && (p.before === 'thisYear' || p.before === 'longAgo')
 }
 
-// Program by days, over the template days that already exist. Two through
-// seven, because the week somebody actually trains is theirs to state: four
-// and five as the only real answers left the person who lifts three days a
-// week, or six, being told what their week is.
+// Program by days, over the template days that already exist. Three through
+// six: the week somebody actually trains is theirs to state, but two is not
+// enough to hold a split together and seven leaves no rest day at all, so
+// neither is offered.
 //
 // A day id can appear twice. Push pull legs run through twice is the standard
 // six day week, not a mistake, so anything rendering these keys by index
 // rather than by id.
 const TABLE: Record<Program, Record<number, string[]>> = {
   Foundation: {
-    2: ['fb-a', 'fb-b'],
     3: ['fb-a', 'fb-b', 'fb-c'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-c'],
     6: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-a', 'fb-b'],
-    7: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-a', 'fb-b', 'fb-c'],
   },
   Build: {
-    2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
     6: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'ppl-legs'],
-    7: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'ppl-legs', 'five-pump'],
   },
   Performance: {
-    2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
     5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
     6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper'],
-    7: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper', 'five-pump'],
   },
 }
 
-export const MIN_DAYS = 2
-export const MAX_DAYS = 7
+export const MIN_DAYS = 3
+export const MAX_DAYS = 6
 
 // A returner on Foundation gets full body four days rather than an upper lower
 // split, because the first month back is about frequency on the patterns, not
@@ -159,28 +153,22 @@ const RETURNER_DAYS: Record<number, string[]> = {
 
 const SPLIT_NAME: Record<Program, Record<number, string>> = {
   Foundation: {
-    2: 'Full Body',
     3: 'Full Body',
     4: 'Upper Lower',
     5: 'Upper Lower',
     6: 'Upper Lower plus Full Body',
-    7: 'Upper Lower plus Full Body',
   },
   Build: {
-    2: 'Upper Lower',
     3: 'Push Pull Legs',
     4: 'Upper Lower',
     5: '5 Day Split',
     6: 'Push Pull Legs, twice through',
-    7: 'Push Pull Legs twice, plus a pump day',
   },
   Performance: {
-    2: 'Upper Lower',
     3: 'Push Pull Legs',
     4: '4 Day Split',
     5: '5 Day Split',
     6: 'A muscle a day, plus an upper mix',
-    7: 'A muscle a day, an upper mix and a pump day',
   },
 }
 
@@ -438,11 +426,9 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     block: !cleared && prog === 'Performance',
     cleared,
     restNote:
-      days >= 7
-        ? 'Seven days a week leaves no rest day. The seventh here is the lightest of them, and skipping it costs you nothing.'
-        : days === 6
-          ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done.'
-          : null,
+      days === 6
+        ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done, and the seventh is a rest day on purpose.'
+        : null,
     goalNote: choice ? GOAL_NOTE[choice] : null,
   }
 }
@@ -459,7 +445,8 @@ export function needsCheckin(
   today: string,
 ): boolean {
   if (!onboardedAt || profile.checkinDismissedAt) return false
-  if ((profile.days ?? 3) < 3) return false
+  // Nothing to offer somebody already on the shortest week there is.
+  if ((profile.days ?? 3) <= MIN_DAYS) return false
   const elapsed = new Date(today + 'T00:00:00').getTime() - new Date(onboardedAt).getTime()
   if (elapsed < 28 * 86400000) return false
   return trainedLast28 < 8

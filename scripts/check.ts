@@ -283,18 +283,26 @@ check('every program has a real week for every day count it offers', () => {
 
 check('the days you say are the days you get', () => {
   // Six used to be quietly served back as five. Whether somebody trains three
-  // days or seven is theirs to state.
+  // days or six is theirs to state.
+  assert.equal(MIN_DAYS, 3)
+  assert.equal(MAX_DAYS, 6)
   assert.equal(planFor({ days: 3 }, 'muscle').days, 3)
   assert.equal(planFor({ days: 6 }, 'muscle').days, 6)
   assert.equal(planFor({ days: 6 }, 'muscle').capped, false)
-  assert.equal(planFor({ days: 7 }, 'muscle').days, 7)
-  assert.equal(planFor({ days: 7 }, 'muscle').capped, false)
-  assert.ok(planFor({ days: 7 }, 'muscle').restNote, 'seven days says so once')
+  assert.ok(planFor({ days: 6 }, 'muscle').restNote, 'six days says so once')
   assert.equal(planFor({ days: 4 }, 'muscle').restNote, null)
-  // Only something outside the table is clamped, and it says so.
-  assert.equal(planFor({ days: 9 }, 'muscle').days, MAX_DAYS)
-  assert.equal(planFor({ days: 9 }, 'muscle').capped, true)
+  // Anything outside the offered range is clamped rather than crashing, which
+  // is what a profile saved when two and seven were on offer will hit.
+  assert.equal(planFor({ days: 7 }, 'muscle').days, MAX_DAYS)
+  assert.equal(planFor({ days: 7 }, 'muscle').capped, true)
+  assert.equal(planFor({ days: 2 }, 'muscle').days, MIN_DAYS)
   assert.equal(planFor({ days: 1 }, 'muscle').days, MIN_DAYS)
+  // And a clamped week still points at real template days.
+  for (const days of [1, 2, 7, 9]) {
+    const plan = planFor({ days }, 'muscle')
+    assert.equal(plan.dayIds.length, plan.days, `${days} clamped to ${plan.days}`)
+    for (const id of plan.dayIds) assert.ok(dayById(id), `missing template day ${id}`)
+  }
 })
 
 check('a six day week may run the same day twice, and stays distinguishable', () => {
@@ -369,7 +377,8 @@ check('the check-in fires once, on a rolling window, and an answer sticks', () =
     needsCheckin({ days: 4, checkinDismissedAt: '2026-08-01T00:00:00Z' }, '2026-07-01T00:00:00Z', 2, today),
     false,
   )
-  // a two day plan is never nagged toward two days
+  // nobody already on the shortest week is nagged toward it
+  assert.equal(needsCheckin({ days: MIN_DAYS }, '2026-07-01T00:00:00Z', 2, today), false)
   assert.equal(needsCheckin({ days: 2 }, '2026-07-01T00:00:00Z', 2, today), false)
   // never onboarded, never nagged
   assert.equal(needsCheckin({ days: 4 }, null, 0, today), false)
