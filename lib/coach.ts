@@ -4,13 +4,12 @@ export interface GoalSpec {
   id: Goal
   label: string
   reps: [number, number]
-  rpe: [number, number]
 }
 
 export const GOALS: GoalSpec[] = [
-  { id: 'strength', label: 'Strength', reps: [3, 6], rpe: [7, 9] },
-  { id: 'muscle', label: 'Muscle', reps: [6, 12], rpe: [7, 9] },
-  { id: 'endurance', label: 'Endurance', reps: [12, 20], rpe: [6, 8] },
+  { id: 'strength', label: 'Strength', reps: [3, 6] },
+  { id: 'muscle', label: 'Muscle', reps: [6, 12] },
+  { id: 'endurance', label: 'Endurance', reps: [12, 20] },
 ]
 
 export function goalSpec(goal: Goal): GoalSpec {
@@ -32,45 +31,36 @@ export function dropFrom(w: number): number {
   return roundLoad(w * 0.8)
 }
 
-// Reads the last set of an exercise and says what to do next time. Returns null
-// when the set is inside target and there is nothing worth saying.
-export function coach(
-  set: SetEntry | undefined,
-  type: SetType,
-  goal: Goal,
-  rpeBand?: [number, number],
-): string | null {
+// Reads the last set of an exercise and says what to do next time. Double
+// progression: climb the rep range at a fixed load, and when the top of the
+// range comes up, add weight and start again at the bottom. Returns null when
+// the set is inside target and there is nothing worth saying.
+//
+// This used to read RPE. It no longer does, because a number guessed between
+// sets while out of breath was never the honest input it looked like, and the
+// reps you actually did are.
+export function coach(set: SetEntry | undefined, type: SetType, goal: Goal): string | null {
   if (!set) return null
   if (type !== 'W' && type !== 'R') return null
 
-  const spec = goalSpec(goal)
-  const [repLo, repHi] = spec.reps
-  const [rpeLo, rpeHi] = rpeBand ?? spec.rpe
+  const [repLo, repHi] = goalSpec(goal).reps
   const reps = set.r ?? null
-  const rpe = set.rpe ?? null
   const weight = set.w ?? null
-
-  if (rpe != null) {
-    if (rpe > rpeHi) {
-      if (reps != null && reps > repLo) return `RPE ${fmt(rpe)}, over target. Hold the load, drop to ${reps - 1}`
-      if (type === 'W' && weight) return `RPE ${fmt(rpe)}, over target. Try ${fmt(roundLoad(weight * DOWN))}`
-      return `RPE ${fmt(rpe)}, over target. Take the reps down`
-    }
-    if (rpe < rpeLo) {
-      if (reps != null && reps < repHi) return `RPE ${fmt(rpe)}, under target. Same load for ${reps + 1}`
-      if (type === 'W' && weight) return `RPE ${fmt(rpe)}, under target. Try ${fmt(roundLoad(weight * UP))}`
-      return `RPE ${fmt(rpe)}, under target. Add reps`
-    }
-    if (reps != null && reps >= repHi && type === 'W' && weight) {
-      return `Top of the range at RPE ${fmt(rpe)}. Try ${fmt(roundLoad(weight * UP))} for ${repLo}`
-    }
-    return null
-  }
-
   if (reps == null) return null
-  if (reps > repHi && type === 'W' && weight) return `${reps} reps is past ${repHi}. Try ${fmt(roundLoad(weight * UP))}`
-  if (reps < repLo && type === 'W' && weight) return `${reps} reps is under ${repLo}. Try ${fmt(roundLoad(weight * DOWN))}`
-  return null
+
+  if (reps >= repHi) {
+    if (type === 'W' && weight) {
+      return `${reps} reps is the top of the range. Try ${fmt(roundLoad(weight * UP))} for ${repLo}`
+    }
+    return `${reps} reps is the top of the range. Make it harder`
+  }
+  if (reps < repLo) {
+    if (type === 'W' && weight) return `${reps} reps is under ${repLo}. Try ${fmt(roundLoad(weight * DOWN))}`
+    return `${reps} reps is under ${repLo}`
+  }
+  // Inside the range: the next step is one more rep at the same load.
+  if (type === 'W' && weight) return `Same load, go for ${reps + 1}`
+  return `Go for ${reps + 1}`
 }
 
 function fmt(n: number): string {

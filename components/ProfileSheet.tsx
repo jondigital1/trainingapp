@@ -15,7 +15,7 @@ import {
 import { summarise } from '@/lib/body'
 import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtDate, today } from '@/lib/format'
-import { mondayOf, waveWeek } from '@/lib/wave'
+import { blockWeek, mondayOf } from '@/lib/block'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import Sheet from './Sheet'
@@ -263,21 +263,6 @@ export default function ProfileSheet({
                 ]}
               />
             </Field>
-            <Field label="Effort scale" hint="RPE boxes on every weighted set, and the coach line that reads them.">
-              <Options
-                columns={2}
-                value={plan.showRpe ? 'on' : 'off'}
-                onPick={() => undefined}
-                options={[{ v: plan.showRpe ? 'on' : 'off', label: plan.showRpe ? 'On' : 'Hidden for now' }]}
-              />
-              <Note>
-                {plan.cleared
-                  ? 'Off while a health answer is flagged. Chasing an effort number is the wrong thing to be doing.'
-                  : plan.showRpe
-                    ? 'On, because your answers say the number will mean something.'
-                    : 'Turns on by itself once your answers here say the number will mean something.'}
-              </Note>
-            </Field>
           </>
         ) : null}
 
@@ -322,19 +307,31 @@ export default function ProfileSheet({
                 <Note>Lift first when both land on the same day.</Note>
               ) : null}
             </Field>
-            <Field label="Effort wave" hint="Build at two in reserve, push at one, then a week that goes to the end.">
+            <Field
+              label="Training blocks"
+              hint="Six weeks: five of climbing effort, then a deload. The deload is the week the other five turn into progress."
+            >
               <Options
                 columns={2}
-                value={draft.wave ? 'on' : 'off'}
+                value={draft.block ? 'on' : 'off'}
                 onPick={(v) =>
-                  set(v === 'on' ? { wave: true, waveStart: draft.waveStart ?? mondayOf(today()) } : { wave: false })
+                  set(
+                    v === 'on'
+                      ? { block: true, blockStart: draft.blockStart ?? mondayOf(today()) }
+                      : { block: false },
+                  )
                 }
                 options={[
                   { v: 'off' as const, label: 'Off' },
-                  { v: 'on' as const, label: 'Three week wave' },
+                  { v: 'on' as const, label: 'Six week blocks' },
                 ]}
               />
-              {draft.wave ? <Note>Currently week {waveWeek(draft, today())?.index ?? 1} of 3.</Note> : null}
+              {draft.block ? (
+                <Note>
+                  Currently week {blockWeek(draft, today())?.index ?? 1} of 6,{' '}
+                  {blockWeek(draft, today())?.name.toLowerCase()}.
+                </Note>
+              ) : null}
             </Field>
             <Field label="Never suggest" optional>
               <Chips

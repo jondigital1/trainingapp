@@ -10,7 +10,8 @@ import BottomNav, { type Tab } from './BottomNav'
 import HelpSheet from './HelpSheet'
 import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
-import WaveCard from './WaveCard'
+import BlockCard from './BlockCard'
+import IntensitySheet from './IntensitySheet'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
 import SettingsSheet from './SettingsSheet'
@@ -21,7 +22,8 @@ import { buildDay, dayById, needsCheckin, planFor, unitOf, type Profile } from '
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
-import { waveWeek } from '@/lib/wave'
+import { blockNumber, blockWeek } from '@/lib/block'
+import { durationOf, wantsScore } from '@/lib/session'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
   EMPTY_DATA,
@@ -33,7 +35,7 @@ import {
   type Workout,
 } from '@/lib/types'
 
-type SheetName = 'start' | 'picker' | 'builder' | 'settings' | 'profile' | 'help' | null
+type SheetName = 'start' | 'picker' | 'builder' | 'settings' | 'profile' | 'help' | 'score' | null
 
 // Supabase throws plain objects as often as Error instances, and an unreadable
 // failure would misclassify a dead connection as a real rejection.
@@ -91,6 +93,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [openHistory, setOpenHistory] = useState<string | null>(null)
   const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
+  const [scoring, setScoring] = useState<string | null>(null)
   const [pendingStart, setPendingStart] = useState<{
     title: string
     items: CustomWorkoutItem[]
@@ -340,7 +343,17 @@ export default function App({ userId, email }: { userId: string; email: string }
     // in: ordering with intent is not a mistake to correct.
     if (sort) exercises = hardestFirst(exercises, topLoads(latest.current.workouts))
 
-    const workout: Workout = { id: uid(), date: today(), title, exercises }
+    // The session starts now. That timestamp is what gives it a duration and
+    // what the End button closes.
+    const workout: Workout = {
+      id: uid(),
+      date: today(),
+      title,
+      exercises,
+      startedAt: new Date().toISOString(),
+      endedAt: null,
+      intensity: null,
+    }
     if (sort) generated.current.add(workout.id)
     setData((prev) => ({ ...prev, workouts: [workout, ...prev.workouts] }))
     queueSave(workout)
@@ -428,6 +441,30 @@ export default function App({ userId, email }: { userId: string; email: string }
     if (day) reallyStart(day.name, buildDay(day, profile), true)
   }
 
+  // Ending a session stamps it and asks the one question worth asking. Both
+  // are separate writes so a skipped score still leaves a finished workout.
+  function endWorkout(id: string) {
+    const workout = data.workouts.find((w) => w.id === id)
+    if (!workout) return
+    // Already ended and unscored means they skipped the question and came
+    // back to it. Do not move the end time in that case.
+    if (!workout.endedAt) {
+      const ended = { ...workout, endedAt: new Date().toISOString() }
+      setData((prev) => ({ ...prev, workouts: prev.workouts.map((w) => (w.id === id ? ended : w)) }))
+      queueSave(ended)
+    }
+    setScoring(id)
+    setSheet('score')
+  }
+
+  function scoreWorkout(id: string, intensity: number) {
+    const workout = data.workouts.find((w) => w.id === id)
+    if (!workout) return
+    const scored = { ...workout, intensity }
+    setData((prev) => ({ ...prev, workouts: prev.workouts.map((w) => (w.id === id ? scored : w)) }))
+    queueSave(scored)
+  }
+
   async function setGoal(goal: Goal) {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, goal } }))
     try {
@@ -477,9 +514,8 @@ export default function App({ userId, email }: { userId: string; email: string }
   const now = today()
   const profile = data.settings.profile
   const plan = data.settings.onboardedAt ? planFor(profile, data.settings.goal) : null
-  const rpeOn = !plan || plan.showRpe
-  // The wave only means anything once the RPE box exists to aim with.
-  const wave = rpeOn ? waveWeek(profile, now) : null
+  const week = blockWeek(profile, now)
+  const blockNo = blockNumber(profile, now)
 
   // Only ask about sore joints once a session is behind them, on a later visit.
   // Asking the moment onboarding hands over the first session is two sheets back
@@ -497,6 +533,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const todays = ordered.filter((w) => w.date === now)
   const past = ordered.filter((w) => w.date !== now)
   const targetWorkout = data.workouts.find((w) => w.id === pickerTarget) ?? null
+  const scoringWorkout = data.workouts.find((w) => w.id === scoring) ?? null
 
   // First sign in lands straight in the questionnaire. Nothing to tap through
   // first: the account is new, there is no history to look at, and the plan is
@@ -533,8 +570,8 @@ export default function App({ userId, email }: { userId: string; email: string }
       {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
 
-      {!loading && tab === 'log' && wave ? (
-        <WaveCard week={wave} workouts={data.workouts} today={now} />
+      {!loading && tab === 'log' && week ? (
+        <BlockCard week={week} number={blockNo ?? 1} workouts={data.workouts} today={now} />
       ) : null}
 
       {!loading && tab === 'log' && behind ? (
@@ -604,11 +641,10 @@ export default function App({ userId, email }: { userId: string; email: string }
               key={workout.id}
               workout={workout}
               goal={data.settings.goal}
-              showRpe={rpeOn}
-              rpeBand={wave?.rpe}
               lastFor={lastFor}
               bestsFor={bestsFor}
               live
+              onEnd={() => endWorkout(workout.id)}
               onRest={rest.start}
               loads={loads}
               offerSort={generated.current.has(workout.id)}
@@ -661,8 +697,6 @@ export default function App({ userId, email }: { userId: string; email: string }
                 <WorkoutEditor
                   workout={workout}
                   goal={data.settings.goal}
-                  showRpe={rpeOn}
-                  rpeBand={wave?.rpe}
                   lastFor={lastFor}
                   bestsFor={bestsFor}
                   live={workout.date === now}
@@ -775,6 +809,23 @@ export default function App({ userId, email }: { userId: string; email: string }
           onClose={() => {
             setSheet(null)
             resumePendingStart(profile)
+          }}
+        />
+      ) : null}
+
+      {sheet === 'score' && scoringWorkout ? (
+        <IntensitySheet
+          title={scoringWorkout.title}
+          seconds={durationOf(scoringWorkout)}
+          initial={scoringWorkout.intensity}
+          onSave={(score) => {
+            scoreWorkout(scoringWorkout.id, score)
+            setScoring(null)
+            setSheet(null)
+          }}
+          onSkip={() => {
+            setScoring(null)
+            setSheet(null)
           }}
         />
       ) : null}

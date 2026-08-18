@@ -2,7 +2,7 @@
 
 The artifact build, moved onto Next.js, Supabase and Vercel. Same app: log every
 set, see what you did last time on the line above the inputs, get told what to do
-next when RPE misses the target.
+next when the reps say the load should move.
 
 ## Why it moved
 
@@ -13,7 +13,8 @@ everything can leave as CSV.
 ## Ask Lifty
 
 A built-in knowledge base on the nav bar: 45
-answers across the basics (supersets, drop sets, RPE, soreness, failure), getting
+answers across the basics (supersets, drop sets, how hard to push, soreness,
+failure), getting
 stronger (double progression, increment sizes, plateaus, deloads), the app
 itself, and what its numbers mean. Before you have asked anything it shows
 four questions and four topic chips, not a wall of forty five: a suggestion
@@ -55,11 +56,11 @@ accent text keeps its contrast on white.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0006. Clear the editor before each paste: a partial paste fails in confusing
+   0007. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the seven tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
-   atomic save function, the superset and drop set columns, and the bodyweight
-   table.
+   atomic save function, the superset and drop set columns, the bodyweight
+   table, and the start, end and score on a session.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
@@ -118,7 +119,8 @@ Postgres wants uuids and the artifact did not use them.
     lib/units.ts          pounds in the database, kilos on the screen
     lib/body.ts           bodyweight against day one, the goal, and a weekly average
     lib/gamify.ts         records, beat the ghost, coverage, the grid, the streak
-    lib/wave.ts           the three week effort cycle and what it asks of a set
+    lib/block.ts          the six week training block and what each week asks
+    lib/session.ts        start, end, duration and the 1 to 10 dial
     lib/rest.ts           when a set counts as done and how long it earns
     lib/superset.ts       which consecutive exercises run together
     lib/progress.ts       one point per movement per day, and what to measure
@@ -126,7 +128,7 @@ Postgres wants uuids and the artifact did not use them.
     lib/columns.ts        what each column of a set row is, per movement type
     lib/templates.ts      6 splits, 24 days
     lib/redirect.ts       an auth redirect can only land on this site
-    lib/coach.ts          goal ranges and the RPE response
+    lib/coach.ts          goal rep ranges and double progression
     lib/importer.ts       artifact v1 and v2 blobs in
     lib/csv.ts            one row per set out
     lib/db.ts             every read and write
@@ -136,12 +138,10 @@ Postgres wants uuids and the artifact did not use them.
 
 Each exercise names its columns above the rows rather than leaning on
 placeholder text, because a placeholder disappears the moment you type and
-`80 9 8` is three anonymous numbers. The RPE column holds its width across a
-drop set so the columns above it do not shift sideways, and it is not reserved
-at all when RPE is off.
+`80 9` is two anonymous numbers.
 
-    W   weight and reps, optional RPE
-    R   reps only, optional RPE
+    W   weight and reps
+    R   reps only
     T   time
     WD  weight and distance in feet
     C   cardio, time and optional miles
@@ -161,22 +161,24 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 74 assertions over everything that is pure logic: the movement
+`npm run check` is 75 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
-records, the wave, rest timing, supersets, drop sets, the charts, the ordering
+records, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
-lifetime record, the redirect guard, the set row columns and the knowledge base
-gate. Every program
+lifetime record, the redirect guard, the set row columns, session duration and
+scoring, the six week block, and the knowledge base gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
 point at a template day that does not exist. `npm run build` type checks the app.
 
-The schema is checked differently, by running it. All six migrations have been
-executed against a real PostgreSQL 16, which creates the seven tables, the
+The schema is checked differently, by running it. All seven migrations have
+been executed against a real PostgreSQL 16, which creates the seven tables, the
 indexes and the policies clean; `save_workout` has been called with a payload
 carrying a superset tag and a drop set to confirm both survive the round trip;
-and a bodyweight has been written twice on the same date to confirm the second
-reading edits the first rather than doubling it.
+a session has been saved with a start, an end and a score, re-saved to confirm
+it updates rather than duplicates, and a score of 11 confirmed refused by the
+constraint; and a bodyweight has been written twice on the same date to confirm
+the second reading edits the first rather than doubling it.
 
 The questionnaire is checked by driving it. A headless browser walks all five
 sections at phone size, fills every field, steps back through the rail to
@@ -214,15 +216,15 @@ The answers land you on one of three programs.
 
     Foundation    Learn the movements, build the habit, add weight as it gets easy
     Build         You know the lifts. Now add muscle and load, one session at a time
-    Performance   Long training age. Effort targets and the three week wave from day one
+    Performance   Long training age. Six week training blocks from day one
 
 Four questions score it: training age, whether you have trained seriously
 before, whether you could name the weight you last used, and barbell
 confidence. That last pair matters. The weights question is the most honest
 experience question there is, and asking about the barbell up front is what
 makes the top tier reachable at all, which the version this replaced never was.
-Landing on Performance turns RPE and the effort wave on from day one rather
-than making an experienced lifter go hunting for them in Settings.
+Landing on Performance starts a six week block on day one rather than making
+somebody who has trained for years go hunting for structure in Settings.
 
 The program then picks a split from the 24 template days, decides how many
 movements fit the time available, swaps movements around sore joints, and
@@ -236,7 +238,7 @@ note and a gentler first month, not a beginner course.
 
 Two health questions sit at the end of the body section, and a flagged answer
 is a lighter plan rather than a paragraph: fewer sets, no effort targets to
-chase and no wave, whatever the experience score said. The goal you pick is
+chase and no block, whatever the experience score said. The goal you pick is
 never quietly rewritten either. Leaning out runs as muscle work and staying
 capable runs as endurance work, and the plan screen says so in as many words.
 
@@ -332,8 +334,8 @@ and a tagged movement on its own is just a movement.
 
 A Drop button sits next to Add set on any weighted exercise once the last row
 has a load on it. It adds a row tagged DROP, seeded at 80 percent of that load
-rounded to real plates, with no RPE box, because a number taken in the state a
-drop set leaves you in measures the state, not the set.
+rounded to real plates. It carries no set number of its own, because it is a
+continuation of the set above it rather than a set in its own right.
 
 Drops count toward volume and they are excluded from everything comparative:
 records, the ghost line, the top set in history, and the coach line, which reads
@@ -352,17 +354,45 @@ The bar counts to an end timestamp rather than ticking a number down, so locking
 the phone or reloading the page gives back the right number. It buzzes and beeps
 once at zero. Editing a past session never starts anything.
 
-## The effort wave
+## Sessions
 
-Optional, off by default, switched on in Settings. Three weeks on repeat: build
-at two in reserve, push at one, then a week that goes to the end. The card on the
-Log tab says which week you are in and reads back the average RPE you have
-actually logged this week against it.
+A workout has a start and an end, so it has a duration. Starting one stamps the
+clock; a bar at the top of the live session counts up from that timestamp
+rather than ticking a counter, so locking the phone gives back the right
+number. End workout closes it.
 
-It is not decoration. While the wave is running the coach line takes its RPE band
-from the week rather than the goal, so RPE 9 says nothing in a push week and
-"over target, hold the load, drop a rep" in a build week. Only appears once the
-RPE box does, since a target you cannot aim at is noise.
+Then one question, once: **how was that, 1 to 10**, on a dial that names every
+number rather than leaving you to guess what a 7 is. 1 is easy peasy and 10 is
+what was I thinking. Skipping is fine, and the question stays available on the
+session afterwards rather than being lost.
+
+That one number replaced per-set RPE, which is gone. RPE asked you to estimate
+reps in reserve while out of breath, between sets, ten times a session, and
+beginners are wrong about it by 4 to 5 reps. One honest answer after the fact
+beats ten guesses during. The set row is down to weight and reps, and the coach
+line runs double progression on the reps you actually did: one more rep at the
+same load until you clear the top of the range, then about 5 percent more
+weight and back to the bottom of it.
+
+Sessions logged before any of this existed carry no start, no end and no score.
+That is the honest answer for them rather than a number invented afterwards.
+
+## Training blocks
+
+Optional, off by default, switched on in Settings. Six weeks: a groove week to
+find the loads, two build weeks at two in reserve, a push week at one, a peak
+week where last sets go to the end, then a deload at half the sets.
+
+Six is the floor rather than the target. The three week cycle this replaced was
+too short to be a block at all: the cycle restarted before the body had
+finished adapting to it, and there was no deload, so it was just the same three
+weeks forever. The deload is the point of having a block, since it is the week
+the other five turn into progress.
+
+The card on the Workout tab says which block and which week, what the week asks
+for on the same 1 to 10 dial the session score uses, and reads your scores this
+week back against it. A weekly cycle read from one number a session is a
+straighter line than one averaged from numbers scribbled between sets.
 
 ## All time
 

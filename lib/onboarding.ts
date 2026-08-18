@@ -35,8 +35,11 @@ export interface Profile {
   age?: 'under40' | '40to59' | 'over60'
   dislikes?: string[]
   goalChoice?: 'muscle' | 'strength' | 'lean' | 'health'
-  wave?: boolean
-  waveStart?: string
+  // Six week training blocks, opt in. Named for what they are rather than for
+  // the three week wave they replaced: three weeks is not long enough to be a
+  // block, and the deload at the end is the point of having one.
+  block?: boolean
+  blockStart?: string
   // When the four week check-in was answered, either way. Once set it never
   // shows again: answered is answered.
   checkinDismissedAt?: string
@@ -375,8 +378,7 @@ export interface Plan {
   exercises: number
   reps: string
   sets: string
-  showRpe: boolean
-  wave: boolean
+  block: boolean
   cleared: boolean
   // Said once, on the plan screen, and never again. Seven days a week is the
   // person's call, not something to argue with every time they open the app.
@@ -433,8 +435,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
     sets: cleared || prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
-    showRpe: !cleared && prog !== 'Foundation',
-    wave: !cleared && prog === 'Performance',
+    block: !cleared && prog === 'Performance',
     cleared,
     restNote:
       days >= 7
@@ -446,12 +447,6 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   }
 }
 
-// The RPE box stays hidden until the number would mean something. Beginners
-// underpredict how close to failure they are by 4 to 5 reps.
-export function showRpe(profile: Profile, onboarded: boolean): boolean {
-  if (!onboarded) return true
-  return planFor(profile, 'muscle').showRpe
-}
 
 // The four week check-in, on a rolling window rather than the first month
 // ever, so imported history cannot trigger it and a strong recent month

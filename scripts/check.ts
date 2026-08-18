@@ -28,7 +28,8 @@ import {
   beatsLast, bestsFor, e1rm, LADDERS, lifetime, nextLandmark, prsFor, trainingGrid, volumePr,
   weeklyCoverage, weeklyStreak, weekStart,
 } from '../lib/gamify'
-import { mondayOf, readWave, WAVE, waveWeek } from '../lib/wave'
+import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, mondayOf, readBlock } from '../lib/block'
+import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
 import { isCompound, isFullSet, restFor } from '../lib/rest'
 import { groupRuns, isSuperset, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
@@ -104,13 +105,18 @@ check('a swap inside the circuit keeps the superset tag', () => {
   assert.equal(items[0].swappedFrom, 'Back Squat')
 })
 
-check('coach reacts to RPE against the goal', () => {
-  assert.match(coach({ id: '1', w: 135, r: 8, rpe: 10 }, 'W', 'muscle')!, /drop to 7/)
-  assert.match(coach({ id: '1', w: 135, r: 6, rpe: 10 }, 'W', 'muscle')!, /125/)
-  assert.match(coach({ id: '1', w: 95, r: 12, rpe: 6 }, 'W', 'muscle')!, /100/)
-  assert.equal(coach({ id: '1', w: 95, r: 9, rpe: 8 }, 'W', 'muscle'), null)
+check('the coach runs double progression on the reps you actually did', () => {
+  // Top of the range: add load, start again at the bottom.
+  assert.match(coach({ id: '1', w: 95, r: 12 }, 'W', 'muscle')!, /100/)
+  assert.match(coach({ id: '1', w: 95, r: 12 }, 'W', 'muscle')!, /for 6/)
+  // Inside the range: one more rep at the same load.
+  assert.match(coach({ id: '1', w: 95, r: 9 }, 'W', 'muscle')!, /go for 10/i)
+  // Under the range: the load is too heavy.
+  assert.match(coach({ id: '1', w: 135, r: 4 }, 'W', 'muscle')!, /125/)
+  assert.match(coach({ id: '1', w: 200, r: 6 }, 'W', 'strength')!, /210/)
+  // Nothing to say about a hold, and nothing to say without reps.
   assert.equal(coach({ id: '1', t: 60 }, 'T', 'muscle'), null)
-  assert.match(coach({ id: '1', w: 200, r: 6, rpe: 6 }, 'W', 'strength')!, /210/)
+  assert.equal(coach({ id: '1', w: 95 }, 'W', 'muscle'), null)
   assert.equal(roundLoad(95 * 1.05), 100)
   assert.equal(roundLoad(45 * 1.05), 47.5)
 })
@@ -216,7 +222,7 @@ check('the top program is reachable, which is the whole point of asking', () => 
   const answered = { years: 'overTwo' as const, barbell: 'confident' as const, knows: 'yes' as const }
   assert.equal(program(answered), 'Performance')
   assert.equal(planFor({ ...answered, days: 4 }, 'muscle').splitName, '4 Day Split')
-  assert.equal(planFor({ ...answered, days: 4 }, 'muscle').wave, true)
+  assert.equal(planFor({ ...answered, days: 4 }, 'muscle').block, true)
 })
 
 check('profiles written before the weights question keep their program', () => {
@@ -238,11 +244,10 @@ check('somebody rebuilding is a note, not a beginner course', () => {
 check('a flagged health answer changes the plan, not just the wording', () => {
   const flagged = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'yes' }, 'muscle')
   assert.equal(flagged.cleared, true)
-  assert.equal(flagged.showRpe, false, 'no effort targets to chase')
-  assert.equal(flagged.wave, false, 'no wave either')
+  assert.equal(flagged.block, false, 'no block either')
   assert.equal(flagged.sets, '2 to 3')
   const clear = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'no' }, 'muscle')
-  assert.equal(clear.showRpe, true)
+  assert.equal(clear.block, true)
 })
 
 check('a stated goal is never quietly rewritten', () => {
@@ -298,12 +303,6 @@ check('a six day week may run the same day twice, and stays distinguishable', ()
   assert.equal(new Set(six.dayIds).size, 3, 'push pull legs, twice through')
   // Repeats are why anything rendering these keys by index rather than by id.
   assert.deepEqual(six.dayIds.slice(0, 3), six.dayIds.slice(3))
-})
-
-check('RPE stays hidden until the number means something', () => {
-  assert.equal(planFor({ years: 'never' }, 'muscle').showRpe, false)
-  assert.equal(planFor({ years: 'never', before: 'no', knows: 'no' }, 'muscle').showRpe, false)
-  assert.equal(planFor({ years: 'sixToTwo' }, 'muscle').showRpe, true)
 })
 
 check('a sore knee changes the movement, not the session', () => {
@@ -508,38 +507,38 @@ check('landmarks point at the next round number', () => {
   assert.equal(nextLandmark(99_999_999, LADDERS.volume).pct, 100)
 })
 
-check('the wave runs three weeks and repeats', () => {
-  assert.equal(waveWeek({}, '2026-08-18'), null, 'off unless it is turned on')
-  const on = { wave: true, waveStart: '2026-08-03' }
-  assert.equal(waveWeek(on, '2026-08-05')!.index, 1)
-  assert.equal(waveWeek(on, '2026-08-12')!.index, 2)
-  assert.equal(waveWeek(on, '2026-08-19')!.index, 3)
-  assert.equal(waveWeek(on, '2026-08-26')!.index, 1, 'and round again')
+check('a block runs six weeks and repeats', () => {
+  // Three weeks was never long enough to be a block: the cycle restarted
+  // before the body had finished adapting to it.
+  assert.equal(blockWeek({}, '2026-08-18'), null, 'off unless it is turned on')
+  const on = { block: true, blockStart: '2026-08-03' }
+  assert.equal(blockWeek(on, '2026-08-05')!.index, 1)
+  assert.equal(blockWeek(on, '2026-09-07')!.index, 6, 'the sixth week is the deload')
+  assert.equal(blockWeek(on, '2026-09-07')!.name, 'Deload')
+  assert.equal(blockWeek(on, '2026-09-14')!.index, 1, 'and round again')
+  assert.equal(blockNumber(on, '2026-08-05'), 1)
+  assert.equal(blockNumber(on, '2026-09-14'), 2, 'a new block, not week seven')
+  assert.equal(BLOCK.length, BLOCK_WEEKS)
+  assert.ok(BLOCK_WEEKS >= 6, 'a block is at least six weeks')
   assert.equal(mondayOf('2026-08-19'), '2026-08-17')
-  assert.deepEqual(WAVE.map((w) => w.rpe[1]), [8.5, 9.5, 10])
+  // Effort climbs to the peak and then drops off for the deload.
+  assert.deepEqual(BLOCK.map((w) => w.score[1]), [6, 7, 8, 9, 10, 4])
 })
 
-check('the wave reads the RPE actually logged this week', () => {
-  const week = WAVE[1]
-  const sets = (rpe: number[]): Workout[] => [
-    { id: 'w', date: '2026-08-18', title: 'Push', exercises: [
-      { id: 'e', name: 'Incline Dumbbell Press', type: 'W',
-        sets: rpe.map((v, i) => ({ id: String(i), w: 80, r: 8, rpe: v })) },
-    ] },
-  ]
-  assert.equal(readWave(sets([9, 9]), week, '2026-08-18').verdict, 'on')
-  assert.equal(readWave(sets([7, 7]), week, '2026-08-18').verdict, 'under')
-  assert.equal(readWave(sets([10, 10]), week, '2026-08-18').verdict, 'over')
-  assert.equal(readWave([], week, '2026-08-18').verdict, null)
-  assert.equal(readWave(sets([9, 8]), week, '2026-08-18').average, 8.5)
-})
-
-check('the coach aims at the wave week rather than the goal band', () => {
-  const set = { id: 'x', w: 100, r: 8, rpe: 9 }
-  assert.equal(coach(set, 'W', 'muscle'), null, 'RPE 9 is inside the muscle band')
-  assert.match(coach(set, 'W', 'muscle', WAVE[0].rpe)!, /over target/, 'but too hard for a build week')
-  assert.equal(coach(set, 'W', 'muscle', WAVE[1].rpe), null, 'and right for a push week')
-  assert.match(coach(set, 'W', 'muscle', WAVE[2].rpe)!, /under target/, 'and easy for a send week')
+check('a block reads the session scores written down this week', () => {
+  const week = BLOCK[3]
+  const sessions = (scores: number[]): Workout[] =>
+    scores.map((n, i) => ({
+      id: String(i), date: '2026-08-18', title: 'Push', intensity: n, exercises: [],
+    }))
+  assert.equal(readBlock(sessions([8, 8]), week, '2026-08-18').verdict, 'on')
+  assert.equal(readBlock(sessions([4, 5]), week, '2026-08-18').verdict, 'under')
+  assert.equal(readBlock(sessions([10, 10]), week, '2026-08-18').verdict, 'over')
+  assert.equal(readBlock([], week, '2026-08-18').verdict, null)
+  assert.equal(readBlock(sessions([9, 8]), week, '2026-08-18').average, 8.5)
+  // A session logged last week is not this week's evidence.
+  const old = [{ id: 'o', date: '2026-08-10', title: 'Push', intensity: 2, exercises: [] }]
+  assert.equal(readBlock(old, week, '2026-08-18').verdict, null)
 })
 
 check('a set is only a set once the fields that matter are filled', () => {
@@ -745,7 +744,11 @@ check('the questions people actually type find their answers', () => {
   assert.equal(first('what is a drop set'), 'basic-dropset')
   assert.equal(first('what is a superset'), 'basic-superset')
   assert.ok(['strong-progression', 'strong-increments'].includes(first('how should I increase my weights week by week')!))
-  assert.equal(first('what does rpe 8 mean'), 'basic-rpe')
+  // Somebody typing this is asking about a thing the app no longer has, so
+  // either answer is the honest one: what happened to it, or how hard to push.
+  assert.ok(['app-rpe-hidden', 'basic-rpe'].includes(first('what does rpe 8 mean')!))
+  assert.ok(searchKnowledge('how hard should a set be').some((e) => e.id === 'basic-rpe'))
+  assert.ok(searchKnowledge('what is a training block').some((e) => e.id === 'num-wave'))
   assert.ok(searchKnowledge('protein').some((e) => e.id === 'basic-protein'))
   assert.ok(searchKnowledge('multiple supersets').some((e) => e.id === 'app-superset-how'))
   assert.ok(searchKnowledge('lost my wifi').some((e) => e.id === 'app-offline'))
@@ -930,15 +933,59 @@ check('the heaviest set on a movement ignores the drops under it', () => {
 })
 
 check('a set row says what each of its numbers is', () => {
-  // Filled in, 80 x 9 @8 is three anonymous boxes. The header is the only
-  // thing that tells reps from RPE once the placeholders are gone.
-  assert.deepEqual(columnsFor('W', true), ['lb', 'reps', 'rpe'])
-  assert.deepEqual(columnsFor('W', false), ['lb', 'reps'])
-  assert.deepEqual(columnsFor('R', true), ['reps', 'rpe'])
-  assert.deepEqual(columnsFor('T', true), ['time'], 'a hold has no reps in reserve')
-  assert.deepEqual(columnsFor('C', true), ['time', 'miles'])
-  assert.deepEqual(columnsFor('WD', true), ['lb', 'feet'])
-  assert.deepEqual(columnsFor('X', true), [])
+  // Filled in, 80 x 9 is two anonymous boxes. The header is the only thing
+  // that names them once the placeholders are gone.
+  assert.deepEqual(columnsFor('W'), ['lb', 'reps'])
+  assert.deepEqual(columnsFor('R'), ['reps'])
+  assert.deepEqual(columnsFor('T'), ['time'])
+  assert.deepEqual(columnsFor('C'), ['time', 'miles'])
+  assert.deepEqual(columnsFor('WD'), ['lb', 'feet'])
+  assert.deepEqual(columnsFor('X'), [])
+  // No column asks for effort any more. It is one question when the session
+  // ends, not a box beside every set.
+  assert.ok(Object.values(columnsFor('W')).every((c) => c !== 'rpe'))
+})
+
+check('a session has a start, an end and a duration', () => {
+  const base = { id: 'w', date: '2026-08-18', title: 'Push', exercises: [] }
+  const running = { ...base, startedAt: '2026-08-18T17:02:00Z', endedAt: null }
+  const done = { ...base, startedAt: '2026-08-18T17:02:00Z', endedAt: '2026-08-18T18:09:30Z' }
+  assert.equal(isRunning(running), true)
+  assert.equal(isRunning(done), false)
+  assert.equal(isRunning(base), false, 'a session logged before any of this existed is not running')
+  assert.equal(durationOf(done), 4050)
+  assert.equal(durationOf(running), null)
+  assert.equal(durationOf(base), null, 'no start is not a duration of zero')
+  // A clock that ran backwards is a bug, not a workout of minus ten minutes.
+  assert.equal(durationOf({ ...base, startedAt: '2026-08-18T18:00:00Z', endedAt: '2026-08-18T17:00:00Z' }), null)
+  assert.equal(fmtDuration(4050), '1h 08m')
+  assert.equal(fmtDuration(2880), '48 min')
+  assert.equal(fmtDuration(null), null)
+  assert.equal(fmtDuration(0), null)
+})
+
+check('the one question is asked once, and can be answered late', () => {
+  const ended = {
+    id: 'w', date: '2026-08-18', title: 'Push', endedAt: '2026-08-18T18:00:00Z',
+    exercises: [{ id: 'e', name: 'Leg Press', type: 'W' as const, sets: [{ id: 's', w: 200, r: 10 }] }],
+  }
+  assert.equal(wantsScore(ended), true, 'ended and unscored, so it still wants an answer')
+  assert.equal(wantsScore({ ...ended, intensity: 7 }), false, 'answered is answered')
+  assert.equal(wantsScore({ ...ended, endedAt: null }), false, 'still running')
+  assert.equal(wantsScore({ ...ended, exercises: [] }), false, 'an empty session is not one to rate')
+})
+
+check('the dial runs 1 to 10 and every number says what it means', () => {
+  assert.equal(INTENSITY.length, 10)
+  assert.deepEqual(INTENSITY.map((i) => i.score), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  assert.equal(intensityLabel(1), 'Easy peasy')
+  assert.equal(intensityLabel(10), 'What was I thinking?')
+  assert.equal(intensityLabel(null), null)
+  assert.equal(intensityLabel(99), null)
+  assert.ok(INTENSITY.every((i) => i.label.length > 0))
+  assert.equal(averageIntensity([{ id: 'a', date: 'd', title: 't', exercises: [], intensity: 6 },
+    { id: 'b', date: 'd', title: 't', exercises: [], intensity: 8 }]), 7)
+  assert.equal(averageIntensity([{ id: 'a', date: 'd', title: 't', exercises: [] }]), null)
 })
 
 console.log(`\n${checks} checks passed`)

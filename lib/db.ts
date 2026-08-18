@@ -14,7 +14,7 @@ import type {
 type Row = Record<string, any>
 
 const WORKOUT_SELECT =
-  'id,date,title,exercises(id,name,type,position,superset,sets(id,position,w,r,rpe,t,d,raw,dropset))'
+  'id,date,title,started_at,ended_at,intensity,exercises(id,name,type,position,superset,sets(id,position,w,r,rpe,t,d,raw,dropset))'
 
 function toNum(v: unknown): number | null {
   if (v == null || v === '') return null
@@ -47,7 +47,15 @@ function rowToWorkout(row: Row): Workout {
           }),
         ),
     }))
-  return { id: row.id as string, date: row.date as string, title: row.title as string, exercises }
+  return {
+    id: row.id as string,
+    date: row.date as string,
+    title: row.title as string,
+    startedAt: (row.started_at as string) ?? null,
+    endedAt: (row.ended_at as string) ?? null,
+    intensity: toNum(row.intensity),
+    exercises,
+  }
 }
 
 export async function loadAll(sb: SupabaseClient, userId: string): Promise<TrainingData> {
@@ -92,6 +100,9 @@ export async function saveWorkout(sb: SupabaseClient, _userId: string, workout: 
       id: workout.id,
       date: workout.date,
       title: workout.title,
+      startedAt: workout.startedAt ?? null,
+      endedAt: workout.endedAt ?? null,
+      intensity: workout.intensity ?? null,
       exercises: workout.exercises.map((ex) => ({
         id: ex.id,
         name: ex.name,

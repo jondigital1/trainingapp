@@ -19,6 +19,9 @@ export interface SetEntry {
   id: string
   w?: number | null
   r?: number | null
+  // No longer collected. Sessions imported from the artifact days carry it,
+  // and CSV still exports it, so the history is not rewritten; nothing in the
+  // app reads it or asks for it any more.
   rpe?: number | null
   t?: number | null
   d?: number | null
@@ -43,6 +46,15 @@ export interface Workout {
   date: string // YYYY-MM-DD
   title: string
   exercises: Exercise[]
+  // A session with a start and an end, so it has a duration. Both null on
+  // everything logged before the app asked, which is the honest answer for
+  // those rather than a number invented afterwards.
+  startedAt?: string | null
+  endedAt?: string | null
+  // How hard it felt, 1 to 10, asked once when the session ends. This replaced
+  // per-set RPE: one honest number after the fact beats ten guesses taken
+  // while out of breath.
+  intensity?: number | null
 }
 
 export interface CustomExercise {

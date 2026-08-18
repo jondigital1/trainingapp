@@ -33,8 +33,6 @@ function seedSet(exercise: Exercise, last: LastSession | null): SetEntry {
 export default function ExerciseBlock({
   exercise,
   goal,
-  showRpe,
-  rpeBand,
   last,
   bests,
   live,
@@ -49,8 +47,6 @@ export default function ExerciseBlock({
 }: {
   exercise: Exercise
   goal: Goal
-  showRpe: boolean
-  rpeBand?: [number, number]
   last: LastSession | null
   bests: Bests
   live: boolean
@@ -74,7 +70,7 @@ export default function ExerciseBlock({
   const working = exercise.sets.filter((s) => !s.drop)
   const filled = working.filter((s) => !isEmptySet(s, exercise.type))
   const basis = filled.length ? filled[filled.length - 1] : last ? topSet(last.exercise) ?? undefined : undefined
-  const advice = coach(basis, exercise.type, goal, rpeBand)
+  const advice = coach(basis, exercise.type, goal)
   const fromLast = filled.length === 0 && !!basis
 
   const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal)
@@ -143,7 +139,7 @@ export default function ExerciseBlock({
       </div>
 
       <div className="mt-2.5 flex flex-col gap-1.5">
-        <SetHeader type={exercise.type} showRpe={showRpe} />
+        <SetHeader type={exercise.type} />
         {(() => {
           // set numbers and the ghost comparison count working rows only, so a
           // drop between sets two and three does not shift everything after it
@@ -160,7 +156,6 @@ export default function ExerciseBlock({
                 index={i}
                 set={set}
                 type={exercise.type}
-                showRpe={showRpe}
                 onChange={(patch) => patchSet(set.id, patch)}
                 onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((s) => s.id !== set.id) })}
               />

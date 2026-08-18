@@ -11,6 +11,8 @@ import {
   type Profile,
 } from '@/lib/onboarding'
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
+import { mondayOf } from '@/lib/block'
+import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import type { Goal } from '@/lib/types'
 
@@ -104,10 +106,11 @@ export default function Onboarding({
     const w = num(weight)
     const plan = planFor(full, goal)
     onFinish({
-      // Performance turns the effort wave on from day one. That is the whole
-      // point of asking about experience: an experienced lifter should not
-      // have to go hunting in Settings for the screens they already know.
-      profile: plan.wave ? { ...full, wave: true } : full,
+      // Performance starts a six week block on day one. That is the whole
+      // point of asking about experience: somebody who has trained for years
+      // should not have to go hunting in Settings for structure they already
+      // know they want.
+      profile: plan.block ? { ...full, block: true, blockStart: mondayOf(todayIso()) } : full,
       goal,
       startDayId,
       weight: w != null ? toPounds(w, unit) : null,
@@ -450,13 +453,9 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
     )
   if (plan.returning)
     notes.push('You have done this before, so this is two to three weeks of rebuilding, not a beginner course.')
-  if (!plan.showRpe && !plan.cleared)
+  if (plan.block)
     notes.push(
-      'No effort scale yet. Add a rep or a little load when the last set felt like you had two left. We will turn RPE on when it will mean something.',
-    )
-  if (plan.wave)
-    notes.push(
-      'The three week effort wave is on from day one: build at two in reserve, push at one, then a week that goes to the end. Off in Settings if you would rather not.',
+      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off in Settings if you would rather not.',
     )
   if (plan.goalNote) notes.push(plan.goalNote)
   if (profile.goalWeight != null)
@@ -494,7 +493,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
         <Row label="Weekly target per muscle" value="10 plus" />
         <Row label="Exercises per session" value={String(plan.exercises)} />
         <Row label="How hard" value={plan.cleared ? 'comfortable' : 'stop 2 to 3 short'} />
-        <Row label="Effort scale" value={plan.showRpe ? 'RPE on' : 'hidden for now'} />
+        <Row label="Training blocks" value={plan.block ? '6 weeks, on' : 'off'} />
       </div>
 
       {notes.map((n) => (

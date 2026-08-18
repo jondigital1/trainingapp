@@ -10,22 +10,19 @@ import type { SetEntry, SetType } from '@/lib/types'
 const FIELD =
   'w-full rounded-lg bg-ink px-2 py-1.5 text-center text-base num outline-none ring-1 ring-edge focus:ring-accent'
 
-export function SetHeader({ type, showRpe }: { type: SetType; showRpe: boolean }) {
-  const columns = columnsFor(type, showRpe)
+export function SetHeader({ type }: { type: SetType }) {
+  const columns = columnsFor(type)
   if (!columns.length) return null
-  const rpe = showRpe && (type === 'W' || type === 'R')
-  const fields = rpe ? columns.slice(0, -1) : columns
 
   return (
     <div className="flex items-center gap-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted">
       <span className="w-4 shrink-0" />
       <div className="flex flex-1 items-center gap-2">
-        {fields.map((c) => (
+        {columns.map((c) => (
           <span key={c} className="flex-1 text-center">
             {c}
           </span>
         ))}
-        {rpe ? <span className="w-16 shrink-0 text-center">rpe</span> : null}
       </div>
       <span className="w-7 shrink-0" />
     </div>
@@ -82,23 +79,15 @@ export default function SetRow({
   index,
   set,
   type,
-  showRpe: rpeEnabled,
   onChange,
   onRemove,
 }: {
   index: number
   set: SetEntry
   type: SetType
-  showRpe: boolean
   onChange: (patch: Partial<SetEntry>) => void
   onRemove: () => void
 }) {
-  // The column exists for the whole exercise, so a drop row leaves a gap
-  // rather than shunting the columns above it sideways. It is not reserved at
-  // all when RPE is off, which would be 64px of nothing on every row.
-  const rpeColumn = rpeEnabled && (type === 'W' || type === 'R')
-  const showRpe = rpeColumn && !set.drop
-
   return (
     <div className="flex items-center gap-2">
       {set.drop ? (
@@ -132,14 +121,6 @@ export default function SetRow({
             <ClockField value={set.t} onChange={(t) => onChange({ t })} label="Time" />
             <NumberField value={set.d} onChange={(d) => onChange({ d })} label="Miles" step="0.1" />
           </>
-        ) : null}
-
-        {rpeColumn ? (
-          <div className="w-16 shrink-0">
-            {showRpe ? (
-              <NumberField value={set.rpe} onChange={(rpe) => onChange({ rpe })} label="RPE" step="0.5" />
-            ) : null}
-          </div>
         ) : null}
       </div>
       <button

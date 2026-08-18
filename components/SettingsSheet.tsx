@@ -98,7 +98,7 @@ export default function SettingsSheet({
           >
             <span className="text-sm">{g.label}</span>
             <span className={`text-xs num ${data.settings.goal === g.id ? 'text-on-accent' : 'text-muted'}`}>
-              {g.reps[0]} to {g.reps[1]} reps, RPE {g.rpe[0]} to {g.rpe[1]}
+              {g.reps[0]} to {g.reps[1]} reps
             </span>
           </button>
         ))}

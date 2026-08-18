@@ -44,14 +44,14 @@ const APP: KnowledgeEntry[] = [
     q: 'What is the grey line above my sets?',
     group: 'Using the app',
     aliases: ['ghost line', 'last session line', 'previous workout numbers'],
-    a: 'Your last session of that movement: date, every set, and the RPE if you logged one. It is the number to beat today. The weight from it also prefills when you add a set, so most sets are two taps.',
+    a: 'Your last session of that movement: the date and every set of it. It is the number to beat today. The weight from it also prefills when you add a set, so most sets are two taps.',
   },
   {
     id: 'app-coach',
     q: 'What is the orange advice line under a set?',
     group: 'Using the app',
     aliases: ['coach line', 'over target', 'under target', 'try suggestion'],
-    a: 'The coach line. It compares your set against the rep and effort range of your goal and suggests one concrete change: a load about 5 percent up, 7.5 percent down, or a rep adjustment. When the three week effort wave is on, it aims at the week you are in instead of the goal band.',
+    a: 'The coach line, running double progression. It reads the reps you actually did against the range for your goal and suggests one concrete change: one more rep at the same load, or when you clear the top of the range, about 5 percent more weight and back to the bottom of it. Under the range it takes about 7.5 percent off.',
   },
   {
     id: 'app-rest-timer',
@@ -62,10 +62,10 @@ const APP: KnowledgeEntry[] = [
   },
   {
     id: 'app-rpe-hidden',
-    q: 'Why do I not see an RPE box?',
+    q: 'Why is there no RPE box on a set?',
     group: 'Using the app',
-    aliases: ['no rpe field', 'rpe missing', 'effort scale hidden'],
-    a: 'New lifters misjudge how many reps they have left by 4 to 5, which makes the number worse than useless, so the box stays hidden until your answers say it will mean something. Progress without it is simple: add a rep when the last set felt like two were left, add weight when you clear the top of the range.',
+    aliases: ['no rpe field', 'rpe missing', 'effort scale hidden', 'where did rpe go', 'rate of perceived exertion'],
+    a: 'Because it was a number guessed between sets while out of breath, and ten guesses do not average into a fact. Instead the app asks one question when you end a session: how was that, 1 to 10. That single honest answer is what the training block reads. Progress on the sets themselves is simpler than RPE ever was: add a rep until you clear the top of the range, then add weight and start again at the bottom.',
   },
   {
     id: 'app-offline',
@@ -144,10 +144,10 @@ const NUMBERS: KnowledgeEntry[] = [
   },
   {
     id: 'num-wave',
-    q: 'What is the effort wave?',
+    q: 'What is a training block?',
     group: 'Your numbers',
-    aliases: ['three week wave', 'build push send', 'rir cycle', 'effort cycle'],
-    a: 'An optional three week cycle, off by default in Settings: a week at two reps in reserve, a week at one, then a week where last sets go to the end, repeating. While it runs, the coach line aims at the week you are in, and the card on the log tab reads your logged RPE back against it.',
+    aliases: ['six week block', 'deload', 'mesocycle', 'effort cycle', 'block week', 'training block'],
+    a: 'Six weeks, optional, switched on in Settings. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Workout tab says which week you are in and reads your session scores back against what the week asks for.',
   },
 ]
 
@@ -170,10 +170,10 @@ const BASICS: KnowledgeEntry[] = [
   },
   {
     id: 'basic-rpe',
-    q: 'What is RPE?',
+    q: 'How hard should a set be?',
     group: 'The basics',
-    aliases: ['rpe meaning', 'rir', 'reps in reserve', 'rate of perceived exertion', 'what does rpe 8 mean'],
-    a: 'A 1 to 10 scale for how hard a set was. 10 means nothing left, 9 means one more rep was there, 8 means two more. RIR is the same idea counted the other way: RPE 8 equals 2 reps in reserve. New lifters misjudge it by 4 to 5 reps at first and calibrate over 2 to 3 months of honest logging, which is why the box only appears here once it will mean something.',
+    aliases: ['rpe', 'rir', 'reps in reserve', 'how close to failure', 'how hard to push', 'reps left in the tank'],
+    a: 'Stop when you have 1 to 3 reps left in you. That is the range that builds muscle without wrecking you, and you can judge it by feel: if the last rep slowed right down and the next one looked doubtful, that is about two left. You do not need to write a number down for this. The app asks once, when the session ends, how the whole thing felt on a 1 to 10 dial, which is a question you can answer honestly in a way that guessing reps in reserve mid-set never was.',
   },
   {
     id: 'basic-sets-reps',
@@ -201,7 +201,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I train to failure?',
     group: 'The basics',
     aliases: ['go to failure', 'leave reps in the tank', 'max out every set'],
-    a: 'No. Stopping 1 to 3 reps short builds essentially the same muscle as grinding to zero, with far less wear. The effort has to be real, the last reps should be slow, but the set does not have to end in a failed rep. The exception is the send week of the effort wave, where last sets deliberately go to the end.',
+    a: 'No. Stopping 1 to 3 reps short builds essentially the same muscle as grinding to zero, with far less wear. The effort has to be real, the last reps should be slow, but the set does not have to end in a failed rep. The exception is the peak week of a training block, where last sets deliberately go to the end.',
   },
   {
     id: 'basic-soreness',
@@ -332,7 +332,7 @@ const STRONGER: KnowledgeEntry[] = [
     q: 'When should I not add weight?',
     group: 'Getting stronger',
     aliases: ['should I add weight', 'form breaking down', 'missed reps', 'bad sleep training'],
-    a: 'Hold the load when form broke on the last reps, when you missed the target, or when the same weight suddenly reads a full RPE point harder than last week. Reps that only happened through grinding did not earn a jump. On short sleep or heavy life weeks, cut the load 5 to 10 percent, hit the same reps, and let the week pass. Progress is judged across weeks, never against one bad day.',
+    a: 'Hold the load when form broke on the last reps, when you missed the target, or when the same weight suddenly feels a good deal harder than last week. Reps that only happened through grinding did not earn a jump. On short sleep or heavy life weeks, cut the load 5 to 10 percent, hit the same reps, and let the week pass. Progress is judged across weeks, never against one bad day.',
   },
   {
     id: 'strong-plateau',

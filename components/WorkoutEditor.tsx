@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { fmtDate, workoutVolume, uid } from '@/lib/format'
+import { durationOf, fmtDuration, intensityLabel, isRunning, wantsScore } from '@/lib/session'
+import RunningClock from './RunningClock'
 import ExerciseBlock, { type LastSession } from './ExerciseBlock'
 import type { Bests } from '@/lib/gamify'
 import { groupRuns, isSuperset, supersetLetter, supersetRest, type Run } from '@/lib/superset'
@@ -17,8 +19,6 @@ interface BlockExtras {
 export default function WorkoutEditor({
   workout,
   goal,
-  showRpe,
-  rpeBand,
   lastFor,
   bestsFor,
   live,
@@ -28,12 +28,11 @@ export default function WorkoutEditor({
   onChange,
   onDelete,
   onAddExercise,
+  onEnd,
   showDate = false,
 }: {
   workout: Workout
   goal: Goal
-  showRpe: boolean
-  rpeBand?: [number, number]
   lastFor: (name: string, workout: Workout) => LastSession | null
   bestsFor: (name: string, workout: Workout) => Bests
   live: boolean
@@ -43,6 +42,7 @@ export default function WorkoutEditor({
   onChange: (next: Workout) => void
   onDelete: () => void
   onAddExercise: () => void
+  onEnd?: () => void
   showDate?: boolean
 }) {
   const [confirm, setConfirm] = useState(false)
@@ -59,6 +59,10 @@ export default function WorkoutEditor({
   }
 
   const volume = workoutVolume(workout)
+  const duration = fmtDuration(durationOf(workout))
+  const score = intensityLabel(workout.intensity)
+  const running = isRunning(workout)
+  const unscored = wantsScore(workout)
   const sorted = !offerSort || isHardestFirst(workout.exercises, loads)
 
   const move = (exerciseId: string, direction: -1 | 1) =>
@@ -88,11 +92,13 @@ export default function WorkoutEditor({
               <span className="truncate">{workout.title}</span>
               <span aria-hidden className="shrink-0 text-xs font-normal text-muted">&#9998;</span>
             </h2>
-            <p className="text-xs text-muted num">
+            <p className="num text-xs text-muted">
               {fmtDate(workout.date)}
               {workout.exercises.length ? ` · ${workout.exercises.length} exercises` : ''}
               {volume > 0 ? ` · ${Math.round(volume).toLocaleString()} lb` : ''}
+              {duration ? ` · ${duration}` : ''}
             </p>
+            {score ? <p className="mt-0.5 text-xs text-accent">Felt like {workout.intensity} of 10, {score.toLowerCase()}</p> : null}
           </button>
         )}
         <button
@@ -102,6 +108,22 @@ export default function WorkoutEditor({
           {confirm ? 'Sure?' : 'Delete'}
         </button>
       </div>
+
+      {onEnd && (running || unscored) ? (
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-card px-3 py-2 ring-1 ring-edge">
+          {running ? (
+            <RunningClock startedAt={workout.startedAt!} />
+          ) : (
+            <span className="num text-sm text-muted">{duration ?? 'Session over'}</span>
+          )}
+          <button
+            onClick={onEnd}
+            className="shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-on-accent"
+          >
+            {running ? 'End workout' : 'How was it?'}
+          </button>
+        </div>
+      ) : null}
 
       {workout.exercises.length > 1 && !sorted ? (
         <button
@@ -144,8 +166,6 @@ export default function WorkoutEditor({
             key={exercise.id}
             exercise={exercise}
             goal={goal}
-            showRpe={showRpe}
-            rpeBand={rpeBand}
             last={lastFor(exercise.name, workout)}
             bests={bestsFor(exercise.name, workout)}
             live={live}
