@@ -94,6 +94,25 @@ export function blockNumber(profile: Profile, today: string): number | null {
   return Math.floor(weeksSince(profile.blockStart ?? today, today) / BLOCK_WEEKS) + 1
 }
 
+// How much the week moves the rest timer. A peak week is near max work and
+// wants the time; a deload is half the sets at the same loads and does not.
+// Off a block entirely, nothing moves.
+export function effortFactor(week: BlockWeek | null | undefined): number {
+  if (!week) return 1
+  switch (week.name) {
+    case 'Groove':
+      return 0.85
+    case 'Push':
+      return 1.1
+    case 'Peak':
+      return 1.25
+    case 'Deload':
+      return 0.75
+    default:
+      return 1
+  }
+}
+
 export interface BlockRead {
   scored: number
   average: number | null

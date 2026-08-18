@@ -20,6 +20,7 @@ interface BlockExtras {
 export default function WorkoutEditor({
   workout,
   goal,
+  effort = 1,
   lastFor,
   bestsFor,
   live,
@@ -34,6 +35,8 @@ export default function WorkoutEditor({
 }: {
   workout: Workout
   goal: Goal
+  // What the block week does to the rest timer. 1 when no block is running.
+  effort?: number
   lastFor: (name: string, workout: Workout) => LastSession | null
   bestsFor: (name: string, workout: Workout) => Bests
   live: boolean
@@ -155,6 +158,7 @@ export default function WorkoutEditor({
             key={exercise.id}
             exercise={exercise}
             goal={goal}
+            effort={effort}
             last={lastFor(exercise.name, workout)}
             bests={bestsFor(exercise.name, workout)}
             live={live}
@@ -177,7 +181,7 @@ export default function WorkoutEditor({
         }
 
         // One clock for the group, set by the movement that asks for the most.
-        const rest = supersetRest(run, goal)
+        const rest = supersetRest(run, goal, effort)
         const letter = supersetLetter(run.index)
 
         return (
@@ -230,6 +234,7 @@ export default function WorkoutEditor({
           exercises={workout.exercises}
           anchorId={pairing}
           goal={goal}
+          effort={effort}
           onPick={(partnerId) => {
             onChange({ ...workout, exercises: linkWith(workout.exercises, pairing, partnerId) })
             setPairing(null)

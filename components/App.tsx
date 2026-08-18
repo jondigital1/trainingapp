@@ -22,7 +22,7 @@ import { buildDay, dayById, MIN_DAYS, needsCheckin, planFor, unitOf, type Profil
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
-import { blockNumber, blockWeek } from '@/lib/block'
+import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
 import { durationOf, wantsScore } from '@/lib/session'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -516,6 +516,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const plan = data.settings.onboardedAt ? planFor(profile, data.settings.goal) : null
   const week = blockWeek(profile, now)
   const blockNo = blockNumber(profile, now)
+  const effort = effortFactor(week)
 
   // Only ask about sore joints once a session is behind them, on a later visit.
   // Asking the moment onboarding hands over the first session is two sheets back
@@ -645,6 +646,7 @@ export default function App({ userId, email }: { userId: string; email: string }
               key={workout.id}
               workout={workout}
               goal={data.settings.goal}
+              effort={effort}
               lastFor={lastFor}
               bestsFor={bestsFor}
               live

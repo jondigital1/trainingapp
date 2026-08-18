@@ -29,9 +29,9 @@ import {
   beatsLast, bestsFor, e1rm, LADDERS, lifetime, nextLandmark, prsFor, trainingGrid, volumePr,
   weeklyCoverage, weeklyStreak, weekStart,
 } from '../lib/gamify'
-import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, mondayOf, readBlock } from '../lib/block'
+import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, effortFactor, mondayOf, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
-import { isCompound, isFullSet, restFor, restTier } from '../lib/rest'
+import { isCompound, isFullSet, restFor, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { seriesFor, trackedNames } from '../lib/progress'
@@ -597,6 +597,60 @@ check('a dumbbell or one limb is not the barbell version', () => {
   assert.equal(restTier('Romanian Deadlift', 'W'), 'heavy')
   assert.equal(restTier('Hip Thrust', 'W'), 'heavy')
   assert.equal(restTier('Back Squat', 'W'), 'heavy')
+})
+
+check('a machine can still take a near max effort out of you', () => {
+  // Being held up by a frame does not make a leg press an accessory: it is the
+  // heaviest thing most people move all week, and a sled leaves you on the
+  // floor. Both were sitting on the same clock as a machine shoulder press.
+  assert.equal(restTier('Leg Press', 'W'), 'heavy')
+  assert.equal(restTier('Hack Squat', 'W'), 'heavy')
+  assert.equal(restTier('Belt Squat', 'W'), 'heavy')
+  assert.equal(restTier('Sled Push', 'W'), 'heavy')
+  assert.equal(restTier('Nordic Curl', 'R'), 'heavy', 'and a curl can be a near max effort')
+  assert.equal(restTier('Glute Ham Raise', 'R'), 'heavy')
+  // But one leg at a time is still half the load.
+  assert.equal(restTier('Single Leg Press', 'W'), 'compound')
+  assert.equal(restTier('Single Leg Curl', 'W'), 'isolation', 'and still single joint')
+})
+
+check('moving your own bodyweight is not the same effort as a barbell', () => {
+  // Same pattern, nothing like the same load.
+  assert.equal(restTier('Push Up', 'R'), 'isolation')
+  assert.equal(restTier('Inverted Row', 'R'), 'isolation')
+  assert.equal(restTier('Bench Dip', 'R'), 'isolation')
+  assert.equal(restTier('Bodyweight Squat', 'R'), 'isolation')
+  assert.equal(restTier('Glute Bridge', 'R'), 'isolation')
+  // Loaded, the same movement earns the barbell clock again.
+  assert.equal(restTier('Weighted Push Up', 'W'), 'heavy')
+  assert.equal(restTier('Weighted Dip', 'W'), 'heavy')
+  // A hold is over when you fall out of it.
+  assert.equal(restTier('Wall Sit', 'T'), 'small')
+  assert.equal(restTier('Plank', 'T'), 'small')
+  // And these two are single joint whatever their names suggest.
+  assert.equal(restTier('Straight Arm Pulldown', 'W'), 'cable')
+  assert.equal(restTier('21s', 'W'), 'isolation')
+})
+
+check('the week you are in moves the clock', () => {
+  // What the block asks for is the app's own read on how hard today should be,
+  // and it is the only intensity signal left after RPE went.
+  const week = (name: string) => BLOCK.find((w) => w.name === name)!
+  assert.equal(effortFactor(null), 1, 'off a block, nothing moves')
+  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Peak'))), 150)
+  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Push'))), 135)
+  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Build'))), 120)
+  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Groove'))), 105)
+  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Deload'))), 90)
+  // Rounded to fifteen seconds, and never under thirty.
+  assert.equal(scaleRest(45, 1.25), 60)
+  assert.equal(scaleRest(45, 0.75), 30)
+  assert.equal(scaleRest(30, 0.75), 30, 'nothing is worth less than thirty seconds')
+  assert.equal(scaleRest(0, 1.25), 0, 'and cardio still starts no clock')
+  for (const w of BLOCK) {
+    const seconds = restFor('Cable Curl', 'W', 'muscle', effortFactor(w))
+    assert.equal(seconds % 15, 0, `week ${w.index} gave ${seconds}, which is false precision`)
+  }
 })
 
 check('a machine press is supported work, whatever the word press implies', () => {

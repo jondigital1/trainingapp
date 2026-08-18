@@ -360,12 +360,23 @@ The length comes from what the movement actually costs you, on five tiers
 rather than the compound or not it used to be, which put a plate loaded
 shoulder press and a barbell squat on the same clock.
 
-    heavy       120s   barbell and loaded bodyweight: squat, deadlift, bench, weighted dip
-    compound     90s   supported and machine multi joint: leg press, machine press, pulldown
-    isolation    60s   single joint on free weights: curl, lateral raise, leg extension
+    heavy       120s   near max: barbell lifts, weighted dips and pull ups, leg press,
+                       hack squat, sleds and carries, Nordic curls
+    compound     90s   heavy but supported or one limb: machine and dumbbell presses,
+                       pulldowns, rows, dips, pull ups, lunges, single leg press
+    isolation    60s   single joint on free weights, or multi joint at bodyweight:
+                       curls, lateral raises, leg extensions, push ups, inverted rows
     cable        45s   single joint on a stack: cable curl, pushdown, fly, face pull
-    small        30s   core, calves, forearms
+    small        30s   core, calves, forearms, and any static hold
     cardio         0   never starts a clock
+
+Being held up by a frame does not make something an accessory. A leg press is
+the heaviest thing most people move all week and a sled leaves you on the
+floor, so those sit with the barbell work rather than with the machine presses.
+Moving your own bodyweight is the other way round: a push up and a bench press
+are the same pattern and nothing like the same effort, so bodyweight versions
+drop two tiers and earn the barbell clock back the moment you hang a plate on
+them.
 
 Three things decide the tier: how much muscle the movement asks for, how many
 joints it crosses, and whether you are also holding yourself up under the load.
@@ -388,6 +399,21 @@ supersetting the accessories is buying the same weekly volume a different way,
 and standing about for three minutes is not the shape of that session. So the
 top of the ladder is two minutes rather than three. The distances between the
 tiers are the part worth keeping.
+
+Then the week moves it. What the block asks for is the app's own read on how
+hard today is meant to be, and since RPE went it is the only intensity signal
+left, so a peak week where last sets go to the end earns more time than a
+groove week spent finding the loads.
+
+    Groove   x0.85     squat 105s
+    Build    x1        squat 120s
+    Push     x1.1      squat 135s
+    Peak     x1.25     squat 150s
+    Deload   x0.75     squat 90s
+
+Everything lands on fifteen second steps, because a timer reading 113 is false
+precision on a number this soft, and nothing goes under thirty seconds. Off a
+block, nothing moves.
 
 Every number here is a suggestion. There is a manual button on every exercise
 for the times it guesses wrong, and inside a superset the clock waits for the

@@ -14,12 +14,14 @@ export default function SupersetSheet({
   exercises,
   anchorId,
   goal,
+  effort = 1,
   onPick,
   onClose,
 }: {
   exercises: Exercise[]
   anchorId: string
   goal: Goal
+  effort?: number
   onPick: (partnerId: string) => void
   onClose: () => void
 }) {
@@ -44,7 +46,7 @@ export default function SupersetSheet({
             >
               <span className="min-w-0 flex-1 truncate text-sm">{e.name}</span>
               <span className="num shrink-0 text-xs text-muted">
-                {e.type === 'C' ? 'cardio' : fmtTime(restFor(e.name, e.type, goal))}
+                {e.type === 'C' ? 'cardio' : fmtTime(restFor(e.name, e.type, goal, effort))}
               </span>
             </button>
           ))}

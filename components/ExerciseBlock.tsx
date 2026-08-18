@@ -40,6 +40,7 @@ export default function ExerciseBlock({
   label,
   nested,
   restSeconds,
+  effort = 1,
   restOnComplete = true,
   onMove,
   onSuperset,
@@ -55,6 +56,7 @@ export default function ExerciseBlock({
   label?: string
   nested?: boolean
   restSeconds?: number
+  effort?: number
   restOnComplete?: boolean
   onMove: (direction: -1 | 1) => void
   onSuperset?: () => void
@@ -75,7 +77,7 @@ export default function ExerciseBlock({
   const advice = coach(basis, exercise.type, goal)
   const fromLast = filled.length === 0 && !!basis
 
-  const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal)
+  const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal, effort)
   const lastRow = exercise.sets[exercise.sets.length - 1]
   const lastRowWeight = lastRow && lastRow.w != null ? lastRow.w : null
 

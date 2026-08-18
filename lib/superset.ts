@@ -36,8 +36,8 @@ export function isSuperset(run: Run): boolean {
 }
 
 // One clock for the group, set by whichever movement in it asks for the most.
-export function supersetRest(run: Run, goal: Goal): number {
-  return Math.max(...run.exercises.map((e) => restFor(e.name, e.type, goal)))
+export function supersetRest(run: Run, goal: Goal, factor = 1): number {
+  return Math.max(...run.exercises.map((e) => restFor(e.name, e.type, goal, factor)))
 }
 
 export function supersetLetter(index: number): string {

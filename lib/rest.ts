@@ -57,11 +57,23 @@ export type RestTier = 'heavy' | 'compound' | 'isolation' | 'cable' | 'small'
 // Single joint. One joint moving means one muscle working and a body that has
 // barely noticed.
 const ISOLATION =
-  /Fly|Raise|Curl|Extension|Pushdown|Pressdown|Kickback|Shrug|Crunch|Pullover|Face Pull|Rear Delt|Pec Deck|Adduction|Abduction|Skull Crusher|Reverse Hyper|Back Extension|Pull Through|Woodchop|Pallof|Shoulder External|Sit Up|Leg Raise|Twist/i
+  /Fly|Raise|Curl|Extension|Pushdown|Pressdown|Kickback|Shrug|Crunch|Pullover|Face Pull|Rear Delt|Pec Deck|Adduction|Abduction|Skull Crusher|Reverse Hyper|Back Extension|Pull Through|Woodchop|Pallof|Shoulder External|Sit Up|Leg Raise|Twist|Straight Arm Pulldown/i
 
 // Held up by a bench, a frame or a track, so the load is going through the
 // muscle rather than through you.
 const SUPPORTED = /Machine|Smith|Hammer Strength|Pec Deck|Assisted|Chest Supported|Seated Row|Lever/i
+
+// Machines and implements that still take a near max effort out of you. A leg
+// press is supported, but it is also the heaviest thing most people will move
+// all week, and a sled leaves you on your hands and knees. Being held up by a
+// frame does not make these an accessory.
+const HEAVY_MACHINE =
+  /Leg Press|Hack Squat|Belt Squat|Smith Machine Squat|Sled|Yoke|Nordic Curl|Glute Ham Raise/i
+
+// Multi joint, but moving your own bodyweight or close to it. A push up and a
+// bench press are the same pattern and nothing like the same effort.
+const LIGHT =
+  /Push Up|Bodyweight Squat|Inverted Row|Bench Dip|Glute Bridge|Frog Pump|Wall Sit|Svend|21s|Dead Bug|Bird Dog/i
 
 // The whole body is under it: a bar on your back or in your hands, your spine
 // holding the position, and a walk back to the rack afterwards.
@@ -83,6 +95,17 @@ export function restTier(name: string, type: SetType): RestTier {
   if (type === 'C') return 'small'
   if (SMALL_GROUPS.includes(groupOf(name) ?? '')) return 'small'
 
+  // Weighted bodyweight work is checked before the light list, so a weighted
+  // push up is not filed next to a bodyweight one.
+  if (/^Weighted |Weighted /.test(name) && HEAVY.test(name)) return 'heavy'
+  // A static hold is over when you fall out of it, and you are ready again
+  // almost immediately. Loaded carries are the exception and are caught above.
+  if (type === 'T' && !HEAVY.test(name)) return 'small'
+  if (LIGHT.test(name)) return 'isolation'
+  // A single leg press is not a leg press, so the unilateral guard has to run
+  // here rather than further down where it would already have been claimed.
+  if (HEAVY_MACHINE.test(name) && !LIGHTER.test(name)) return 'heavy'
+
   const isolation = ISOLATION.test(name)
   if (isolation) return equipmentOf(name) === 'cable' || SUPPORTED.test(name) ? 'cable' : 'isolation'
 
@@ -100,9 +123,21 @@ const REST: Record<Goal, Record<RestTier, number>> = {
   endurance: { heavy: 75, compound: 60, isolation: 45, cable: 30, small: 30 },
 }
 
-export function restFor(name: string, type: SetType, goal: Goal): number {
+// What the week asks for is the app's own read on how hard today is meant to
+// be, and how hard a set was is the only other thing that decides how long you
+// need after it. A peak week where last sets go to the end earns more rest than
+// a groove week spent finding the loads; a deload earns less.
+//
+// Rounded to fifteen seconds because a timer reading 113 is false precision on
+// a number this soft, and floored at thirty because nothing is worth less.
+export function scaleRest(seconds: number, factor: number): number {
+  if (seconds <= 0) return 0
+  return Math.max(30, Math.round((seconds * factor) / 15) * 15)
+}
+
+export function restFor(name: string, type: SetType, goal: Goal, factor = 1): number {
   if (type === 'C') return 0
-  return REST[goal][restTier(name, type)]
+  return scaleRest(REST[goal][restTier(name, type)], factor)
 }
 
 // Kept for the ordering rules, which sort multi joint work to the front of a
