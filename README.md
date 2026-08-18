@@ -324,8 +324,13 @@ everything you pick joins the same group until you turn it off, so two taps and
 two movements is a superset. Saved workouts keep their groups. Templates can
 carry them too: the core circuit in the 4 day and 5 day splits is one, and
 the session time cap treats a group as atomic, whole or absent, never sliced.
-In a session, a Link button between any two neighbouring blocks joins them, and
-Unlink puts them back. Supersets render as one block, labelled A1 and A2, and
+In a session, every exercise has a Superset button that asks what to pair it
+with, listing everything else in the workout and what each one rests for. A
+button sat between two neighbours could only ever offer the pair the order
+happened to produce, which is rarely the pair you want. Whatever you pick moves
+up beside the anchor, since a superset is consecutive by definition and it had
+to go there anyway, and picking again adds a third to the end of the same
+group. Unlink on the group header puts them all back. Supersets render as one block, labelled A1 and A2, and
 the rest timer waits for the last movement in the group rather than firing
 between them, which is the only thing about a superset the app actually has to
 understand.

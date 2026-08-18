@@ -42,6 +42,7 @@ export default function ExerciseBlock({
   restSeconds,
   restOnComplete = true,
   onMove,
+  onSuperset,
   onChange,
   onRemove,
 }: {
@@ -56,6 +57,7 @@ export default function ExerciseBlock({
   restSeconds?: number
   restOnComplete?: boolean
   onMove: (direction: -1 | 1) => void
+  onSuperset?: () => void
   onChange: (next: Exercise) => void
   onRemove: () => void
 }) {
@@ -197,6 +199,15 @@ export default function ExerciseBlock({
             className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
           >
             Drop
+          </button>
+        ) : null}
+        {onSuperset ? (
+          <button
+            onClick={onSuperset}
+            aria-label={`Superset ${exercise.name} with another movement`}
+            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+          >
+            Superset
           </button>
         ) : null}
         {live && rest > 0 && restOnComplete ? (

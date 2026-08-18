@@ -32,7 +32,7 @@ import {
 import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, mondayOf, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
 import { isCompound, isFullSet, restFor, restTier } from '../lib/rest'
-import { groupRuns, isSuperset, supersetLetter, supersetRest } from '../lib/superset'
+import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { seriesFor, trackedNames } from '../lib/progress'
 import { groupSize, hardestFirst, isHardestFirst, moveRun, topLoads } from '../lib/order'
@@ -1069,6 +1069,39 @@ check('the time you have got decides how much goes in the session', () => {
   assert.equal(planFor({ minutes: 45 }, 'muscle').exercises, 6)
   assert.equal(planFor({ minutes: 75 }, 'muscle').exercises, 10)
   assert.equal(planFor({}, 'muscle').exercises, 8, 'no answer falls back to an hour')
+})
+
+check('supersetting reaches past the exercise next to it', () => {
+  const ex = (id: string): Exercise => ({ id, name: id, type: 'W', sets: [] })
+  const list = [ex('a'), ex('b'), ex('c'), ex('d')]
+
+  // Pairing the first with the third brings the third up beside it, because a
+  // superset is consecutive by definition and it had to move anyway.
+  const linked = linkWith(list, 'a', 'c')
+  assert.deepEqual(linked.map((e) => e.id), ['a', 'c', 'b', 'd'])
+  assert.equal(linked[0].superset, linked[1].superset)
+  assert.ok(linked[0].superset)
+  assert.equal(linked[2].superset, undefined)
+
+  // A third joins the end of the group rather than the middle of it.
+  const three = linkWith(linked, 'a', 'd')
+  assert.deepEqual(three.map((e) => e.id), ['a', 'c', 'd', 'b'])
+  assert.equal(new Set(three.slice(0, 3).map((e) => e.superset)).size, 1)
+  assert.equal(groupRuns(three).filter(isSuperset).length, 1, 'one group of three, not two of two')
+
+  // Joining an existing group keeps its tag rather than minting a new one.
+  assert.equal(three[0].superset, linked[0].superset)
+  // Nonsense is a no-op rather than a crash.
+  assert.deepEqual(linkWith(list, 'a', 'a'), list)
+  assert.deepEqual(linkWith(list, 'a', 'zzz'), list)
+})
+
+check('the partner list offers everything except your own group', () => {
+  const ex = (id: string, superset?: string): Exercise => ({ id, name: id, type: 'W', sets: [], superset })
+  const list = [ex('a', 't'), ex('b', 't'), ex('c'), ex('d')]
+  assert.deepEqual(partnersFor(list, 'a').map((e) => e.id), ['c', 'd'], 'not b, already paired with a')
+  assert.deepEqual(partnersFor(list, 'c').map((e) => e.id), ['a', 'b', 'd'])
+  assert.deepEqual(partnersFor(list, 'zzz'), [])
 })
 
 console.log(`\n${checks} checks passed`)

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fmtDate, workoutVolume, uid } from '@/lib/format'
+import { fmtDate, workoutVolume } from '@/lib/format'
 import { durationOf, fmtDuration, intensityLabel, isRunning, wantsScore } from '@/lib/session'
 import RunningClock from './RunningClock'
+import SupersetSheet from './SupersetSheet'
 import ExerciseBlock, { type LastSession } from './ExerciseBlock'
 import type { Bests } from '@/lib/gamify'
-import { groupRuns, isSuperset, supersetLetter, supersetRest, type Run } from '@/lib/superset'
+import { groupRuns, isSuperset, linkWith, supersetLetter, supersetRest } from '@/lib/superset'
 import { hardestFirst, isHardestFirst, moveRun } from '@/lib/order'
 import type { Exercise, Goal, Workout } from '@/lib/types'
 
@@ -47,6 +48,7 @@ export default function WorkoutEditor({
 }) {
   const [confirm, setConfirm] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [pairing, setPairing] = useState<string | null>(null)
 
   useEffect(() => {
     if (!confirm) return
@@ -147,19 +149,6 @@ export default function WorkoutEditor({
         const runs = groupRuns(workout.exercises)
 
         // Joining two neighbouring runs into one superset. Everything in both
-        // runs takes a fresh shared tag, so linking a pair, or a single onto an
-        // existing superset, is the same one tap.
-        const link = (a: Run, b: Run) => {
-          const tag = uid()
-          const joined = new Set([...a.exercises, ...b.exercises].map((e) => e.id))
-          onChange({
-            ...workout,
-            exercises: workout.exercises.map((e) =>
-              joined.has(e.id) ? { ...e, superset: tag } : e,
-            ),
-          })
-        }
-
         return runs.map((run, runIndex) => {
         const block = (exercise: Exercise, label?: string, extra?: Partial<BlockExtras>) => (
           <ExerciseBlock
@@ -173,6 +162,9 @@ export default function WorkoutEditor({
             label={label}
             {...extra}
             onMove={(direction) => move(exercise.id, direction)}
+            onSuperset={
+              workout.exercises.length > 1 ? () => setPairing(exercise.id) : undefined
+            }
             onChange={patchExercise}
             onRemove={() =>
               onChange({ ...workout, exercises: workout.exercises.filter((e) => e.id !== exercise.id) })
@@ -223,20 +215,6 @@ export default function WorkoutEditor({
             </div>
           </div>
         )
-        }).flatMap((node, runIndex) => {
-          if (runIndex === runs.length - 1) return [node]
-          return [
-            node,
-            <div key={`link-${runs[runIndex].exercises[0].id}`} className="-my-2 flex justify-center">
-              <button
-                onClick={() => link(runs[runIndex], runs[runIndex + 1])}
-                aria-label="Superset these two together"
-                className="px-3 py-1 text-[11px] text-muted"
-              >
-                &#43; link
-              </button>
-            </div>,
-          ]
         })
       })()}
 
@@ -246,6 +224,19 @@ export default function WorkoutEditor({
       >
         Add exercise
       </button>
+
+      {pairing ? (
+        <SupersetSheet
+          exercises={workout.exercises}
+          anchorId={pairing}
+          goal={goal}
+          onPick={(partnerId) => {
+            onChange({ ...workout, exercises: linkWith(workout.exercises, pairing, partnerId) })
+            setPairing(null)
+          }}
+          onClose={() => setPairing(null)}
+        />
+      ) : null}
     </section>
   )
 }
