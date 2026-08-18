@@ -5,21 +5,29 @@ import { LIBRARY, MUSCLE_GROUPS } from '@/lib/exercises'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
 import Sheet from './Sheet'
-import type { CustomExercise, CustomWorkoutItem } from '@/lib/types'
+import type { CustomExercise, CustomWorkout, CustomWorkoutItem } from '@/lib/types'
 
 export default function CustomBuilder({
   customs,
+  editing,
+  seed,
   onSave,
   onClose,
 }: {
   customs: CustomExercise[]
-  onSave: (name: string, items: CustomWorkoutItem[]) => void
+  // The workout being changed, or nothing when building a new one. Editing
+  // saves back over the same id rather than leaving a second copy behind.
+  editing?: CustomWorkout | null
+  // A template taken as a starting point: seeded like an edit, but with no id,
+  // so saving leaves the template alone and creates one of your own.
+  seed?: { name: string; items: CustomWorkoutItem[] } | null
+  onSave: (name: string, items: CustomWorkoutItem[], id?: string) => void
   onClose: () => void
 }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string | null>(null)
-  const [picked, setPicked] = useState<CustomWorkoutItem[]>([])
+  const [picked, setPicked] = useState<CustomWorkoutItem[]>(editing?.items ?? seed?.items ?? [])
   // While on, everything picked joins the same superset, exactly like the
   // picker in a live session. Off and on again starts a new group.
   const [superset, setSuperset] = useState<string | null>(null)
@@ -46,6 +54,15 @@ export default function CustomBuilder({
     )
   }
 
+  function move(index: number, direction: -1 | 1) {
+    const to = index + direction
+    if (to < 0 || to >= picked.length) return
+    const next = [...picked]
+    const [item] = next.splice(index, 1)
+    next.splice(to, 0, item)
+    setPicked(next)
+  }
+
   // Letters for display: first superset A, second B, in order of appearance.
   const letters = new Map<string, string>()
   for (const p of picked) {
@@ -57,7 +74,10 @@ export default function CustomBuilder({
   const groups = customs.length ? ['My exercises', ...MUSCLE_GROUPS] : MUSCLE_GROUPS
 
   return (
-    <Sheet title="Build a workout" onClose={onClose}>
+    <Sheet
+      title={editing ? 'Edit workout' : seed ? `Your own ${seed.name}` : 'Build a workout'}
+      onClose={onClose}
+    >
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -100,16 +120,48 @@ export default function CustomBuilder({
       </button>
 
       {picked.length ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {picked.map((p) => (
-            <button
+        <div className="mt-3 flex flex-col gap-1">
+          <p className="text-xs uppercase tracking-wide text-muted">
+            In this workout &middot; <span className="num">{picked.length}</span>
+          </p>
+          {/* A list rather than a cloud of chips, because the order here is the
+              order they run in and a wrap cannot say that. */}
+          {picked.map((p, i) => (
+            <div
               key={p.name}
-              onClick={() => toggle(p)}
-              className="rounded-full bg-accent px-3 py-1 text-xs text-on-accent"
+              className="flex items-center gap-1 rounded-xl bg-ink px-3 py-2 ring-1 ring-edge"
             >
-              {p.superset ? `${letters.get(p.superset)} · ` : ''}
-              {p.name} &times;
-            </button>
+              <span className="num w-4 shrink-0 text-xs text-muted">{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate text-sm">
+                {p.superset ? (
+                  <span className="num mr-1.5 text-xs text-accent">{letters.get(p.superset)}</span>
+                ) : null}
+                {p.name}
+              </span>
+              <button
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                aria-label={`Move ${p.name} up`}
+                className="px-1.5 py-1 text-sm text-muted disabled:opacity-25"
+              >
+                &uarr;
+              </button>
+              <button
+                onClick={() => move(i, 1)}
+                disabled={i === picked.length - 1}
+                aria-label={`Move ${p.name} down`}
+                className="px-1.5 py-1 text-sm text-muted disabled:opacity-25"
+              >
+                &darr;
+              </button>
+              <button
+                onClick={() => toggle(p)}
+                aria-label={`Remove ${p.name}`}
+                className="px-1.5 py-1 text-sm text-muted"
+              >
+                &times;
+              </button>
+            </div>
           ))}
         </div>
       ) : null}
@@ -135,10 +187,10 @@ export default function CustomBuilder({
 
       <button
         disabled={!name.trim() || picked.length === 0}
-        onClick={() => onSave(name.trim(), picked)}
+        onClick={() => onSave(name.trim(), picked, editing?.id)}
         className="sticky bottom-0 mt-4 w-full rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
       >
-        Save workout
+        {editing ? 'Save changes' : 'Save and start'}
       </button>
     </Sheet>
   )

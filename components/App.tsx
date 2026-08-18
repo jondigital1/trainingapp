@@ -95,6 +95,8 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
   const [scoring, setScoring] = useState<string | null>(null)
+  const [editingWorkout, setEditingWorkout] = useState<string | null>(null)
+  const [seedWorkout, setSeedWorkout] = useState<{ name: string; items: CustomWorkoutItem[] } | null>(null)
   const [pendingStart, setPendingStart] = useState<{
     title: string
     items: CustomWorkoutItem[]
@@ -391,16 +393,27 @@ export default function App({ userId, email }: { userId: string; email: string }
     }
   }
 
-  async function saveCustomWorkout(name: string, items: CustomWorkoutItem[]) {
-    const workout = { id: uid(), name, items }
-    setData((prev) => ({ ...prev, customWorkouts: [...prev.customWorkouts, workout] }))
+  // Building saves and starts, since you built it to do it. Editing saves and
+  // stops there, because changing next Tuesday's plan is not the same as
+  // deciding to train right now.
+  async function saveCustomWorkout(name: string, items: CustomWorkoutItem[], id?: string) {
+    const editing = !!id
+    const workout = { id: id ?? uid(), name, items }
+    setData((prev) => ({
+      ...prev,
+      customWorkouts: editing
+        ? prev.customWorkouts.map((w) => (w.id === workout.id ? workout : w))
+        : [...prev.customWorkouts, workout],
+    }))
+    setEditingWorkout(null)
+    setSeedWorkout(null)
     setSheet(null)
     try {
       await db.saveCustomWorkout(sb, userId, workout)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save workout')
     }
-    startWorkout(name, items, false)
+    if (!editing) startWorkout(name, items, false)
   }
 
   async function removeCustomWorkout(id: string) {
@@ -790,7 +803,21 @@ export default function App({ userId, email }: { userId: string; email: string }
           profile={profile}
           customWorkouts={data.customWorkouts}
           onStart={startWorkout}
-          onBuild={() => setSheet('builder')}
+          onBuild={() => {
+            setEditingWorkout(null)
+            setSeedWorkout(null)
+            setSheet('builder')
+          }}
+          onEdit={(id) => {
+            setSeedWorkout(null)
+            setEditingWorkout(id)
+            setSheet('builder')
+          }}
+          onCopy={(name, items) => {
+            setEditingWorkout(null)
+            setSeedWorkout({ name, items })
+            setSheet('builder')
+          }}
           onDelete={(id) => void removeCustomWorkout(id)}
           onClose={() => setSheet(null)}
         />
@@ -799,8 +826,14 @@ export default function App({ userId, email }: { userId: string; email: string }
       {sheet === 'builder' ? (
         <CustomBuilder
           customs={data.custom}
-          onSave={(name, items) => void saveCustomWorkout(name, items)}
-          onClose={() => setSheet(null)}
+          editing={data.customWorkouts.find((w) => w.id === editingWorkout) ?? null}
+          seed={seedWorkout}
+          onSave={(name, items, id) => void saveCustomWorkout(name, items, id)}
+          onClose={() => {
+            setEditingWorkout(null)
+            setSeedWorkout(null)
+            setSheet(null)
+          }}
         />
       ) : null}
 

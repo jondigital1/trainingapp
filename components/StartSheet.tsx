@@ -12,6 +12,8 @@ export default function StartSheet({
   customWorkouts,
   onStart,
   onBuild,
+  onEdit,
+  onCopy,
   onDelete,
   onClose,
 }: {
@@ -20,6 +22,8 @@ export default function StartSheet({
   customWorkouts: CustomWorkout[]
   onStart: (title: string, items: CustomWorkoutItem[], sort?: boolean, dayId?: string) => void
   onBuild: () => void
+  onEdit: (id: string) => void
+  onCopy: (name: string, items: CustomWorkoutItem[]) => void
   onDelete: (id: string) => void
   onClose: () => void
 }) {
@@ -82,8 +86,16 @@ export default function StartSheet({
                   <span className="ml-2 text-xs text-muted num">{w.items.length}</span>
                 </button>
                 <button
+                  onClick={() => onEdit(w.id)}
+                  aria-label={`Edit ${w.name}`}
+                  className="rounded-xl px-2 py-3 text-xs text-muted"
+                >
+                  Edit
+                </button>
+                <button
                   onClick={() => (confirm === w.id ? onDelete(w.id) : setConfirm(w.id))}
-                  className={`rounded-xl px-3 py-3 text-xs ${confirm === w.id ? 'bg-accent text-on-accent' : 'text-muted'}`}
+                  aria-label={`Delete ${w.name}`}
+                  className={`rounded-xl px-2 py-3 text-xs ${confirm === w.id ? 'bg-accent text-on-accent' : 'text-muted'}`}
                 >
                   {confirm === w.id ? 'Sure?' : 'Delete'}
                 </button>
@@ -110,17 +122,28 @@ export default function StartSheet({
               </button>
               {openSplit === split.id ? (
                 <div className="flex flex-col border-t border-edge">
+                  {/* Start it as written, or take a copy into the builder and
+                      make it yours. A template that nearly fits is worth
+                      changing rather than working around every week. */}
                   {split.days.map((day) => (
-                    <button
-                      key={day.id}
-                      onClick={() => onStart(day.name, dayItems(day))}
-                      className="flex items-center justify-between px-3 py-3 text-left"
-                    >
-                      <span className="text-sm text-bright">{day.name}</span>
-                      <span className="truncate pl-3 text-xs text-muted">
-                        {dayNames(day).slice(0, 2).join(', ')}
-                      </span>
-                    </button>
+                    <div key={day.id} className="flex items-center">
+                      <button
+                        onClick={() => onStart(day.name, dayItems(day))}
+                        className="min-w-0 flex-1 px-3 py-3 text-left"
+                      >
+                        <span className="block text-sm text-bright">{day.name}</span>
+                        <span className="block truncate text-xs text-muted">
+                          {dayNames(day).slice(0, 2).join(', ')}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => onCopy(day.name, dayItems(day))}
+                        aria-label={`Make my own version of ${day.name}`}
+                        className="shrink-0 px-3 py-3 text-xs text-muted"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : null}

@@ -102,6 +102,20 @@ to the current one. Beside it, this week carries the streak, the 28 day grid
 and the muscle coverage, and charts carries the progression lines and
 bodyweight.
 
+## Your own workouts
+
+Build one from scratch in the Start sheet, or take a copy of any template day
+and make it yours: a plan that nearly fits is worth changing rather than
+working around every week. A copy is seeded with the template's movements and
+saves as your own, leaving the original alone.
+
+Saved workouts can be edited afterwards rather than only deleted and rebuilt.
+The list of movements in the builder is a list rather than a cloud of chips,
+because the order there is the order they run in and arrows are the only way to
+say that. Building saves and starts, since you built it to do it. Editing saves
+and stops there, because changing next Tuesday's plan is not the same as
+deciding to train right now.
+
 ## Bringing the artifact history over
 
 Open the v4 artifact, read `training-data-v2` out of `window.storage`, copy the
