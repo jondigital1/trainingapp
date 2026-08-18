@@ -769,6 +769,7 @@ export default function App({ userId, email }: { userId: string; email: string }
           profile={profile}
           focus={profileFocus}
           weights={data.bodyWeights}
+          workouts={data.workouts}
           onLogWeight={(lb) => void logWeight(lb)}
           onSave={(next) => {
             void saveProfile(next)

@@ -38,13 +38,40 @@ accent text keeps its contrast on white.
    atomic save function, the superset and drop set columns, and the bodyweight
    table.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
-   as a redirect URL. Sign in is a magic link, no password.
+   as a redirect URL. That one URL covers all three mail flows: confirmation,
+   password reset and the magic link.
 4. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
 5. `npm install` then `npm run dev`.
 
 Deploying to Vercel: import the repo, leave the root directory alone since the
 app is the repo, add the same two environment variables, done. Set the framework
 preset to Next.js if Vercel has not worked it out.
+
+## Signing in
+
+Email and a password, at least 8 characters. A magic link is four steps and
+assumes the mail is on the phone you are standing in the gym with, so it is
+still here, one tap away under the password box, but it is no longer the only
+door. Forgotten passwords go out as a reset link that lands on a page to set a
+new one.
+
+Every mail flow lands on `/auth/callback`, which trades the code for a session
+cookie and forwards on. Where it forwards is checked: a path on this site and
+nothing else, since `//evil.example` is a valid relative URL that a browser
+reads as a link to somewhere else entirely.
+
+A one time code by text is the next thing here. It needs an SMS provider
+configured in Supabase, which is a paid account with Twilio or similar, so it
+is a decision to make rather than code to write.
+
+## Your record
+
+A section on the profile for the numbers that only go up: sessions, sets, reps
+and total pounds lifted, the week streak you are on, the longest one you have
+ever strung together, and the heaviest set you have put up on each of the
+movements you train most. A bad month does not delete the winter you strung
+twelve weeks together, which is the whole reason the longest streak sits next
+to the current one.
 
 ## Bringing the artifact history over
 
@@ -71,6 +98,7 @@ Postgres wants uuids and the artifact did not use them.
     lib/progress.ts       one point per movement per day, and what to measure
     lib/order.ts          hardest first, and moving things by hand
     lib/templates.ts      6 splits, 24 days
+    lib/redirect.ts       an auth redirect can only land on this site
     lib/coach.ts          goal ranges and the RPE response
     lib/importer.ts       artifact v1 and v2 blobs in
     lib/csv.ts            one row per set out
@@ -100,12 +128,14 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 68 assertions over everything that is pure logic: the movement
+`npm run check` is 73 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, the wave, rest timing, supersets, drop sets, the charts, the ordering
-rules, the check-in gating, unit conversion, the bodyweight summary and the
-knowledge base gate. `npm run build` type checks the app.
+rules, the check-in gating, unit conversion, the bodyweight summary, the
+lifetime record, the redirect guard and the knowledge base gate. Every program
+is walked across every day count it offers, so a week nobody has tried cannot
+point at a template day that does not exist. `npm run build` type checks the app.
 
 The schema is checked differently, by running it. All six migrations have been
 executed against a real PostgreSQL 16, which creates the seven tables, the
@@ -118,7 +148,9 @@ The questionnaire is checked by driving it. A headless browser walks all five
 sections at phone size, fills every field, steps back through the rail to
 confirm the answers survive navigation, and reads what comes out the far end:
 the program, the split, the day it starts on, the weight in pounds and the
-height in inches.
+height in inches. The same pass drives a three day week and a seven day week,
+the sign in form including the password rule and the expired link notice, and
+the profile page saving a weigh in.
 
 ## Onboarding
 
@@ -146,7 +178,12 @@ than making an experienced lifter go hunting for them in Settings.
 
 The program then picks a split from the 24 template days, decides how many
 movements fit the time available, swaps movements around sore joints, and
-filters to the equipment on hand. Somebody rebuilding after a layoff gets a
+filters to the equipment on hand. Two days a week through seven, and the number
+you give is the number you get: six used to be quietly served back as five,
+which is the app telling somebody what their week is. Six is push pull legs
+twice through, seven is that plus a lighter day, and the plan says once that
+seven leaves no rest day rather than arguing about it every time you open the
+app. Somebody rebuilding after a layoff gets a
 note and a gentler first month, not a beginner course.
 
 Two health questions sit at the end of the body section, and a flagged answer
@@ -294,10 +331,9 @@ Offline boot. Unsaved work survives a dead connection and replays, but opening
 the app cold with no network still fails, because the app itself has to come down
 the wire. A service worker fixes it.
 
-A password. Sign in is still a magic link, which is too many steps and assumes
-the mail is on the phone you are standing in the gym with. Email and password
-first, then a one time code by text.
+A one time code by text. The password is in, and the code by text is the half
+that needs an SMS provider on the Supabase project before there is anything to
+write.
 
-Accomplishments. The profile knows your answers and your bodyweight, but not
-the things worth being pleased about: lifetime totals, the longest streak, the
-PRs behind you.
+Deleting your account. Everything can leave as CSV, but there is no button that
+takes it all away.

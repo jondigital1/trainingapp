@@ -214,7 +214,8 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
                     { v: 3, label: '3 days', note: 'The sweet spot' },
                     { v: 4, label: '4 days' },
                     { v: 5, label: '5 days' },
-                    { v: 6, label: '6 days', note: 'Only if you have before' },
+                    { v: 6, label: '6 days' },
+                    { v: 7, label: '7 days', note: 'No rest day' },
                   ]}
                 />
               </Field>
@@ -416,10 +417,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
   const notes: string[] = []
-  if (plan.capped)
-    notes.push(
-      'You said 6 days. We have put 5 in front of you, because the week that goes wrong is the week you miss all six. Add the sixth whenever you want it.',
-    )
+  if (plan.restNote) notes.push(plan.restNote)
   if (plan.cleared)
     notes.push(
       'You flagged something on the health questions, so this starts lighter, nothing goes to failure and the effort targets stay off. Worth a word with your doctor before you push hard.',
@@ -456,7 +454,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
       <div className="mt-3 flex flex-col gap-2">
         {days.map((d, i) => (
           <div
-            key={d!.id}
+            key={`${d!.id}-${i}`}
             className="flex items-center justify-between rounded-xl bg-card px-3 py-3 ring-1 ring-edge"
           >
             <span className="text-sm">{d!.name}</span>

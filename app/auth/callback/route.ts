@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
+import { safeNext } from '@/lib/redirect'
 
-// Magic link lands here, the code is traded for a session cookie.
+// Magic links, email confirmations and password resets all land here, and the
+// code is traded for a session cookie.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = safeNext(searchParams.get('next'))
 
   if (code) {
     const sb = await supabaseServer()
@@ -13,5 +15,5 @@ export async function GET(request: NextRequest) {
     if (!error) return NextResponse.redirect(`${origin}${next}`)
   }
 
-  return NextResponse.redirect(`${origin}/login?error=1`)
+  return NextResponse.redirect(`${origin}/login?expired=1`)
 }

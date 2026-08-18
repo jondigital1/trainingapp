@@ -251,3 +251,69 @@ export function nextLandmark(value: number, ladder: number[]): Landmark {
   const span = next - previous
   return { next, pct: Math.max(0, Math.min(100, ((value - previous) / span) * 100)) }
 }
+
+// The longest run of weeks that ever met the target, which is a different
+// number from the streak you are on and the one worth keeping. A bad month
+// does not delete the winter you strung twelve weeks together.
+export function longestStreak(workouts: Workout[], target: number): number {
+  const met = new Set<string>()
+  const trained = new Map<string, Set<string>>()
+  for (const w of workouts) {
+    if (!w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type)))) continue
+    const key = weekStart(w.date)
+    if (!trained.has(key)) trained.set(key, new Set())
+    trained.get(key)!.add(w.date)
+  }
+  for (const [week, days] of trained) if (days.size >= target) met.add(week)
+  if (!met.size) return 0
+
+  const weeks = [...met].sort()
+  let best = 1
+  let run = 1
+  for (let i = 1; i < weeks.length; i += 1) {
+    const previous = new Date(weeks[i - 1] + 'T00:00:00')
+    previous.setDate(previous.getDate() + 7)
+    if (previous.toISOString().slice(0, 10) === weeks[i]) run += 1
+    else run = 1
+    if (run > best) best = run
+  }
+  return best
+}
+
+export interface BestLift {
+  name: string
+  weight: number
+  reps: number
+  date: string
+  sessions: number
+}
+
+// The heaviest set ever put up on each weighted movement, with the day it
+// happened. Drops are skipped: near failure at a lighter load is a technique,
+// not a best. Ranked by how often the movement is trained, so the list opens
+// with the lifts this person actually cares about rather than the one time
+// they tried a machine in a hotel gym.
+export function bestLifts(workouts: Workout[], limit = 5): BestLift[] {
+  const best = new Map<string, BestLift>()
+  const seen = new Map<string, Set<string>>()
+
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      if (ex.type !== 'W') continue
+      for (const s of ex.sets) {
+        if (s.drop || s.w == null || s.r == null) continue
+        if (!seen.has(ex.name)) seen.set(ex.name, new Set())
+        seen.get(ex.name)!.add(w.date)
+        const held = best.get(ex.name)
+        if (!held || s.w > held.weight || (s.w === held.weight && s.r > held.reps)) {
+          best.set(ex.name, { name: ex.name, weight: s.w, reps: s.r, date: w.date, sessions: 0 })
+        }
+      }
+    }
+  }
+
+  return [...best.values()]
+    .map((b) => ({ ...b, sessions: seen.get(b.name)?.size ?? 0 }))
+    .sort((a, b) => b.sessions - a.sessions || b.weight - a.weight || a.name.localeCompare(b.name))
+    .slice(0, limit)
+}

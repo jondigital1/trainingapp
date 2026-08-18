@@ -44,7 +44,7 @@ export default function StartSheet({
           <div className="mt-2 flex flex-col gap-2">
             {planDays.map((day, i) => (
               <button
-                key={day!.id}
+                key={`${day!.id}-${i}`}
                 onClick={() => onStart(day!.name, buildDay(day!, profile), true, day!.id)}
                 className="flex items-center justify-between rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
               >

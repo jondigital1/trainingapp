@@ -12,11 +12,15 @@ import {
   dayById,
   experienceScore,
   needsCheckin,
+  MAX_DAYS,
+  MIN_DAYS,
   planFor,
   program,
   returning,
 } from '../lib/onboarding'
 import { summarise, trend } from '../lib/body'
+import { bestLifts, longestStreak } from '../lib/gamify'
+import { safeNext } from '../lib/redirect'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
 import {
@@ -253,23 +257,46 @@ check('age comes from the number when there is one', () => {
   assert.equal(planFor({ ageYears: 35, years: 'overTwo', barbell: 'confident', knows: 'yes' }, 'muscle').sets, '3 to 4')
 })
 
-check('the plan points at template days that exist', () => {
-  const cases = [
-    { years: 'never' as const, days: 2 },
-    { years: 'never' as const, days: 3 },
-    { years: 'under6' as const, before: 'thisYear' as const, days: 4 },
-    { years: 'under6' as const, before: 'longAgo' as const, days: 4 },
-    { years: 'sixToTwo' as const, days: 3 },
-    { years: 'overTwo' as const, barbell: 'confident' as const, days: 4 },
-    { years: 'overTwo' as const, barbell: 'confident' as const, days: 5 },
+check('every program has a real week for every day count it offers', () => {
+  const shapes = [
+    { years: 'never' as const, before: 'no' as const, knows: 'no' as const },
+    { years: 'under6' as const, before: 'longAgo' as const },
+    { years: 'sixToTwo' as const, barbell: 'rusty' as const, knows: 'roughly' as const },
+    { years: 'overTwo' as const, barbell: 'confident' as const, knows: 'yes' as const },
   ]
-  for (const profile of cases) {
-    const plan = planFor(profile, 'muscle')
-    assert.equal(plan.dayIds.length, plan.days, `${plan.splitName} ${plan.days}`)
-    for (const id of plan.dayIds) assert.ok(dayById(id), `missing template day ${id}`)
+  for (const shape of shapes) {
+    for (let days = MIN_DAYS; days <= MAX_DAYS; days += 1) {
+      const plan = planFor({ ...shape, days }, 'muscle')
+      assert.equal(plan.days, days, `${plan.program} asked for ${days}`)
+      assert.equal(plan.dayIds.length, days, `${plan.program} ${days} day week is short`)
+      assert.ok(plan.splitName, `${plan.program} ${days} has no name`)
+      for (const id of plan.dayIds) assert.ok(dayById(id), `missing template day ${id}`)
+    }
   }
-  assert.equal(planFor({ years: 'never', days: 6 }, 'muscle').days, 5)
-  assert.equal(planFor({ years: 'never', days: 6 }, 'muscle').capped, true)
+})
+
+check('the days you say are the days you get', () => {
+  // Six used to be quietly served back as five. Whether somebody trains three
+  // days or seven is theirs to state.
+  assert.equal(planFor({ days: 3 }, 'muscle').days, 3)
+  assert.equal(planFor({ days: 6 }, 'muscle').days, 6)
+  assert.equal(planFor({ days: 6 }, 'muscle').capped, false)
+  assert.equal(planFor({ days: 7 }, 'muscle').days, 7)
+  assert.equal(planFor({ days: 7 }, 'muscle').capped, false)
+  assert.ok(planFor({ days: 7 }, 'muscle').restNote, 'seven days says so once')
+  assert.equal(planFor({ days: 4 }, 'muscle').restNote, null)
+  // Only something outside the table is clamped, and it says so.
+  assert.equal(planFor({ days: 9 }, 'muscle').days, MAX_DAYS)
+  assert.equal(planFor({ days: 9 }, 'muscle').capped, true)
+  assert.equal(planFor({ days: 1 }, 'muscle').days, MIN_DAYS)
+})
+
+check('a six day week may run the same day twice, and stays distinguishable', () => {
+  const six = planFor({ years: 'sixToTwo', barbell: 'rusty', knows: 'roughly', days: 6 }, 'muscle')
+  assert.equal(six.dayIds.length, 6)
+  assert.equal(new Set(six.dayIds).size, 3, 'push pull legs, twice through')
+  // Repeats are why anything rendering these keys by index rather than by id.
+  assert.deepEqual(six.dayIds.slice(0, 3), six.dayIds.slice(3))
 })
 
 check('RPE stays hidden until the number means something', () => {
@@ -847,6 +874,58 @@ check('the weight line is a weekly average, not a diary of water', () => {
   // A reading outside the window is outside the average.
   const wide = trend([...rows, { date: '2026-09-30', weight: 190 }])
   assert.equal(wide[3].weight, 190)
+})
+
+check('an auth redirect can only land on this site', () => {
+  // "//evil.example" is a valid relative URL that a browser reads as a
+  // protocol relative link, so startsWith('/') on its own is not a check.
+  assert.equal(safeNext('/reset'), '/reset')
+  assert.equal(safeNext(null), '/')
+  assert.equal(safeNext('//evil.example'), '/')
+  assert.equal(safeNext('/\\evil.example'), '/')
+  assert.equal(safeNext('https://evil.example'), '/')
+  assert.equal(safeNext('reset'), '/')
+})
+
+check('the longest streak survives a month that went badly', () => {
+  const w = (date: string) => ({
+    id: date, date, title: 'S',
+    exercises: [{ id: 'e', name: 'Leg Press', type: 'W' as const, sets: [{ id: 's', w: 200, r: 10 }] }],
+  })
+  // Three weeks of two sessions, a gap, then two weeks of two.
+  const rows = [
+    '2026-01-05', '2026-01-07',
+    '2026-01-12', '2026-01-14',
+    '2026-01-19', '2026-01-21',
+    '2026-03-02', '2026-03-04',
+    '2026-03-09', '2026-03-11',
+  ].map(w)
+  assert.equal(longestStreak(rows, 2), 3)
+  assert.equal(longestStreak(rows, 3), 0, 'a target never met is no streak at all')
+  assert.equal(longestStreak([], 2), 0)
+})
+
+check('the heaviest set on a movement ignores the drops under it', () => {
+  const rows = [
+    { id: '1', date: '2026-01-05', title: 'A', exercises: [
+      { id: 'e', name: 'Incline Dumbbell Press', type: 'W' as const, sets: [
+        { id: 'a', w: 80, r: 8 },
+        { id: 'b', w: 200, r: 20, drop: true },
+      ] },
+    ] },
+    { id: '2', date: '2026-02-05', title: 'B', exercises: [
+      { id: 'f', name: 'Incline Dumbbell Press', type: 'W' as const, sets: [{ id: 'c', w: 85, r: 6 }] },
+      { id: 'g', name: 'Cable Curl', type: 'W' as const, sets: [{ id: 'd', w: 40, r: 12 }] },
+    ] },
+  ]
+  const lifts = bestLifts(rows)
+  assert.equal(lifts[0].name, 'Incline Dumbbell Press', 'the movement trained most comes first')
+  assert.equal(lifts[0].weight, 85, 'a heavy drop is not a best')
+  assert.equal(lifts[0].reps, 6)
+  assert.equal(lifts[0].date, '2026-02-05')
+  assert.equal(lifts[0].sessions, 2)
+  assert.equal(lifts.length, 2)
+  assert.equal(bestLifts([]).length, 0)
 })
 
 console.log(`\n${checks} checks passed`)

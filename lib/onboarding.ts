@@ -109,29 +109,43 @@ export function returning(p: Profile): boolean {
   return green && (p.before === 'thisYear' || p.before === 'longAgo')
 }
 
-// Program by days, over the template days that already exist. Foundation runs
-// full body because a missed session still leaves every muscle trained that
-// week.
+// Program by days, over the template days that already exist. Two through
+// seven, because the week somebody actually trains is theirs to state: four
+// and five as the only real answers left the person who lifts three days a
+// week, or six, being told what their week is.
+//
+// A day id can appear twice. Push pull legs run through twice is the standard
+// six day week, not a mistake, so anything rendering these keys by index
+// rather than by id.
 const TABLE: Record<Program, Record<number, string[]>> = {
   Foundation: {
     2: ['fb-a', 'fb-b'],
     3: ['fb-a', 'fb-b', 'fb-c'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-c'],
+    6: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-a', 'fb-b'],
+    7: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-a', 'fb-b', 'fb-c'],
   },
   Build: {
     2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
+    6: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'ppl-legs'],
+    7: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'ppl-legs', 'five-pump'],
   },
   Performance: {
     2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
     5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
+    6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper'],
+    7: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper', 'five-pump'],
   },
 }
+
+export const MIN_DAYS = 2
+export const MAX_DAYS = 7
 
 // A returner on Foundation gets full body four days rather than an upper lower
 // split, because the first month back is about frequency on the patterns, not
@@ -141,9 +155,30 @@ const RETURNER_DAYS: Record<number, string[]> = {
 }
 
 const SPLIT_NAME: Record<Program, Record<number, string>> = {
-  Foundation: { 2: 'Full Body', 3: 'Full Body', 4: 'Upper Lower', 5: 'Upper Lower' },
-  Build: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Upper Lower', 5: '5 Day Split' },
-  Performance: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: '4 Day Split', 5: '5 Day Split' },
+  Foundation: {
+    2: 'Full Body',
+    3: 'Full Body',
+    4: 'Upper Lower',
+    5: 'Upper Lower',
+    6: 'Upper Lower plus Full Body',
+    7: 'Upper Lower plus Full Body',
+  },
+  Build: {
+    2: 'Upper Lower',
+    3: 'Push Pull Legs',
+    4: 'Upper Lower',
+    5: '5 Day Split',
+    6: 'Push Pull Legs, twice through',
+    7: 'Push Pull Legs twice, plus a pump day',
+  },
+  Performance: {
+    2: 'Upper Lower',
+    3: 'Push Pull Legs',
+    4: '4 Day Split',
+    5: '5 Day Split',
+    6: 'A muscle a day, plus an upper mix',
+    7: 'A muscle a day, an upper mix and a pump day',
+  },
 }
 
 const ALL_DAYS: TemplateDay[] = SPLITS.flatMap((s) => s.days)
@@ -343,6 +378,9 @@ export interface Plan {
   showRpe: boolean
   wave: boolean
   cleared: boolean
+  // Said once, on the plan screen, and never again. Seven days a week is the
+  // person's call, not something to argue with every time they open the app.
+  restNote: string | null
   // What the stated goal was turned into, and why, so nothing is quietly
   // rewritten behind the person who chose it.
   goalNote: string | null
@@ -376,7 +414,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   const prog = program(profile)
   const back = returning(profile)
   const asked = profile.days ?? 3
-  const days = Math.min(Math.max(asked, 2), 5)
+  const days = Math.min(Math.max(asked, MIN_DAYS), MAX_DAYS)
   // A flagged health answer is not a note, it is a lighter plan: fewer sets,
   // no effort targets to chase and no wave, whatever the experience score says.
   const cleared = profile.condition === 'yes' || profile.symptoms === 'yes'
@@ -388,16 +426,22 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     program: prog,
     returning: back,
     days,
-    capped: asked > 5,
+    capped: asked > MAX_DAYS,
     splitName: back && prog === 'Foundation' && days === 4 ? 'Full Body, building up' : SPLIT_NAME[prog][days],
     dayIds,
-    perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : '2 to 3',
+    perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
     sets: cleared || prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
     showRpe: !cleared && prog !== 'Foundation',
     wave: !cleared && prog === 'Performance',
     cleared,
+    restNote:
+      days >= 7
+        ? 'Seven days a week leaves no rest day. The seventh here is the lightest of them, and skipping it costs you nothing.'
+        : days === 6
+          ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done.'
+          : null,
     goalNote: choice ? GOAL_NOTE[choice] : null,
   }
 }
