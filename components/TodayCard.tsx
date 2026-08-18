@@ -15,9 +15,12 @@ import { weeklyStreak } from '@/lib/gamify'
 import type { Profile } from '@/lib/onboarding'
 import type { Workout } from '@/lib/types'
 
-// What today asks of you, and how long you have been answering. The streak was
-// buried three taps deep, which is no use for a number whose whole job is that
-// you do not want to see it end.
+// The week, and how long you have been keeping it. Every day is a way into a
+// session: the Start button picks any workout, this picks the one your week
+// says belongs to that day.
+//
+// The streak sits here because it was three taps deep before, which is no use
+// for a number whose whole job is that you do not want to see it end.
 export default function TodayCard({
   profile,
   workouts,
@@ -47,7 +50,7 @@ export default function TodayCard({
     return {
       iso,
       label: WEEKDAYS[weekday],
-      planned: schedule[weekday] !== null && schedule[weekday] !== undefined,
+      dayId: schedule[weekday] ?? null,
       done: trainedOn(workouts, iso),
       today: iso === today,
     }
@@ -70,24 +73,41 @@ export default function TodayCard({
         ) : null}
       </div>
 
+      {/* Every day is a button. Tapping Thursday starts Thursday's session,
+          which is the other way into a workout: the Start button picks any of
+          them, this picks the one the week says. */}
       <div className="mt-3 flex gap-1">
-        {week.map((d) => (
-          <div key={d.iso} className="flex-1 text-center">
-            <span className={`block text-[10px] uppercase ${d.today ? 'text-bright' : 'text-muted'}`}>
-              {d.label}
-            </span>
-            <span
-              aria-label={`${d.label}${d.done ? ', trained' : d.planned ? ', planned' : ''}`}
-              className={`mx-auto mt-1 block h-6 rounded-md ring-1 ${
-                d.done
-                  ? 'bg-accent ring-accent'
-                  : d.planned
-                    ? 'bg-transparent ring-accent'
-                    : 'bg-transparent ring-edge'
-              } ${d.today ? 'ring-2' : ''}`}
-            />
-          </div>
-        ))}
+        {week.map((d) => {
+          const its = d.dayId ? dayById(d.dayId) : null
+          return (
+            <button
+              key={d.iso}
+              onClick={() => d.dayId && onStart(d.dayId)}
+              disabled={!d.dayId}
+              aria-label={
+                its
+                  ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`
+                  : `${d.label}, rest${d.done ? ', trained anyway' : ''}`
+              }
+              className="flex-1 text-center disabled:cursor-default"
+            >
+              <span className={`block text-[10px] uppercase ${d.today ? 'text-bright' : 'text-muted'}`}>
+                {d.label}
+              </span>
+              <span
+                className={`mx-auto mt-1 flex h-9 items-center justify-center rounded-md px-0.5 text-[9px] leading-tight ring-1 ${
+                  d.done
+                    ? 'bg-accent text-on-accent ring-accent'
+                    : d.dayId
+                      ? 'bg-transparent text-accent ring-accent'
+                      : 'bg-transparent text-muted ring-edge'
+                } ${d.today ? 'ring-2' : ''}`}
+              >
+                <span className="line-clamp-2 overflow-hidden">{its ? its.name : ''}</span>
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {day && !doneToday ? (

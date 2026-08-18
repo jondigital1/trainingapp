@@ -15,9 +15,11 @@ import {
 } from '@/lib/onboarding'
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
+import RecordsTab from './RecordsTab'
 import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtDate, today } from '@/lib/format'
 import { blockWeek, mondayOf } from '@/lib/block'
+import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import Sheet from './Sheet'
@@ -31,6 +33,7 @@ const SECTIONS = [
   { id: 'experience', label: 'Experience' },
   { id: 'week', label: 'Your week' },
   { id: 'body', label: 'Your body' },
+  { id: 'records', label: 'Records' },
 ] as const
 
 type Section = (typeof SECTIONS)[number]['id']
@@ -346,6 +349,14 @@ export default function ProfileSheet({
               />
             </Field>
           </>
+        ) : null}
+
+        {section === 'records' ? (
+          <RecordsTab
+            workouts={workouts}
+            today={today()}
+            target={scheduledDays(draft) || draft.days || 3}
+          />
         ) : null}
 
         {section === 'body' ? (

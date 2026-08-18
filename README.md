@@ -34,9 +34,9 @@ the sessions across the days most people train and leaves the weekend clear
 until there are more sessions than weekdays, and every day can then be moved by
 hand.
 
-The Workout tab opens on what today asks of you, the week as seven blocks
-filled where you trained and outlined where you meant to, and the streak beside
-it. The streak was three taps deep before, which is no use for a number whose
+The Calendar tab opens on what today asks of you, the week as seven named
+blocks filled where you trained and outlined where you meant to, and the streak
+beside it. Every block is a button: tapping Thursday starts Thursday's session. The streak was three taps deep before, which is no use for a number whose
 whole job is that you do not want to see it end. Once a schedule exists the
 streak counts against the days it asks for rather than the number the
 questionnaire once took.
@@ -50,7 +50,7 @@ number beside it can never disagree about which week you are in.
 
 ## Getting around
 
-Four destinations and one action across the bottom: Workout, Records, Start,
+Four destinations and one action across the bottom: Calendar, History, Start,
 Ask Lifty, Profile. Starting a workout is the reason the app is open, so it
 sits in the middle where the thumb already is, raised off the bar and in the
 accent colour: the one thing there that does something rather than takes you
@@ -62,9 +62,15 @@ bar's clothes. Ask Lifty and Profile carry the same content in either frame,
 and the card colour resolves from the frame rather than each card guessing what
 is behind it.
 
-Workout is today's sessions with everything earlier underneath, since the log
-is the history and splitting them was a tab that need not have existed. Records
-answers how am I doing, in three views: this week, all time, and the charts.
+Calendar is the week and whatever you are logging today. Every day of it is a
+way into a session, which is the second door: Start picks any workout, the
+calendar picks the one your week says belongs to that day. History is
+everything behind you.
+
+Records moved onto the profile, next to your bodyweight, because both are
+things you go and look at rather than places you work. It keeps its three
+views there: this week, all time, and the charts.
+
 The rest timer sits on a shelf just above the bar, off one measurement defined
 once, and the bar itself carries the home indicator inset.
 

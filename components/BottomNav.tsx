@@ -1,6 +1,6 @@
 'use client'
 
-export type Tab = 'log' | 'records' | 'lifty' | 'profile'
+export type Tab = 'calendar' | 'history' | 'lifty' | 'profile'
 
 // Four destinations and one action. Starting a workout is the reason the app
 // is open, so it sits in the middle where the thumb already is, raised and in
@@ -8,28 +8,28 @@ export type Tab = 'log' | 'records' | 'lifty' | 'profile'
 // takes you somewhere.
 const LEFT: NavItem[] = [
   {
-    id: 'log',
-    label: 'Workout',
+    id: 'calendar',
+    label: 'Calendar',
     icon: (
       <>
-        <rect x="2.5" y="9.5" width="2.5" height="5" rx="1" />
-        <rect x="6" y="7" width="3" height="10" rx="1.2" />
-        <rect x="10" y="10.75" width="4" height="2.5" rx="1" />
-        <rect x="15" y="7" width="3" height="10" rx="1.2" />
-        <rect x="19" y="9.5" width="2.5" height="5" rx="1" />
+        <rect x="3" y="5" width="18" height="16" rx="3" fillOpacity="0.2" />
+        <rect x="3" y="5" width="18" height="4.5" rx="2" />
+        <rect x="6.5" y="2.5" width="2.2" height="4" rx="1.1" />
+        <rect x="15.3" y="2.5" width="2.2" height="4" rx="1.1" />
+        <rect x="6.5" y="12" width="3.2" height="3.2" rx="1" />
+        <rect x="14.3" y="12" width="3.2" height="3.2" rx="1" />
+        <rect x="6.5" y="16.6" width="3.2" height="3.2" rx="1" />
       </>
     ),
   },
   {
-    id: 'records',
-    label: 'Records',
+    id: 'history',
+    label: 'History',
     icon: (
       <>
-        <path d="M7 3.5h10v5a5 5 0 0 1-10 0Z" />
-        <path d="M7 5H4.5v1.5A3.5 3.5 0 0 0 8 10V8.5A2 2 0 0 1 7 7Z" />
-        <path d="M17 5h2.5v1.5A3.5 3.5 0 0 1 16 10V8.5A2 2 0 0 0 17 7Z" />
-        <rect x="10.75" y="13" width="2.5" height="4" rx="1" />
-        <rect x="7.5" y="17.5" width="9" height="2.6" rx="1.2" />
+        <path d="M12 4.5a7.5 7.5 0 1 0 7.2 9.6l-2.1-.6A5.4 5.4 0 1 1 12 6.6V9l4-3.4L12 2.2Z" />
+        <rect x="11" y="8.5" width="1.9" height="5" rx="0.95" />
+        <rect x="11.6" y="11.6" width="4.2" height="1.9" rx="0.95" />
       </>
     ),
   },

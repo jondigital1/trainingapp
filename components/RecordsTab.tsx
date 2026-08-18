@@ -30,8 +30,6 @@ export default function RecordsTab({
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold tracking-tight">Records</h2>
-
       <div className="mb-4 flex flex-wrap gap-2">
         {VIEWS.map((v) => (
           <button
@@ -39,7 +37,7 @@ export default function RecordsTab({
             onClick={() => setView(v.id)}
             aria-current={view === v.id ? 'page' : undefined}
             className={`rounded-full px-3 py-2 text-sm ring-1 ${
-              view === v.id ? 'bg-accent text-on-accent ring-accent' : 'bg-card text-muted ring-edge'
+              view === v.id ? 'bg-accent text-on-accent ring-accent' : 'surface text-muted ring-edge'
             }`}
           >
             {v.label}

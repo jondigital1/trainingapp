@@ -90,7 +90,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [data, setData] = useState<TrainingData>(EMPTY_DATA)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [tab, setTab] = useState<Tab>('log')
+  const [tab, setTab] = useState<Tab>('calendar')
   const [sheet, setSheet] = useState<SheetName>(null)
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
   // The exercise being swapped out, when the picker was opened to substitute
@@ -382,7 +382,7 @@ export default function App({ userId, email }: { userId: string; email: string }
     setData((prev) => ({ ...prev, workouts: [workout, ...prev.workouts] }))
     queueSave(workout)
     setSheet(null)
-    setTab('log')
+    setTab('calendar')
   }
 
   function addExercise(workoutId: string, name: string, type: SetType, superset: string | null) {
@@ -645,9 +645,9 @@ export default function App({ userId, email }: { userId: string; email: string }
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-nav">
       <header className="flex items-center justify-between pb-4 pt-5">
         <h1 className="text-xl font-semibold tracking-tight">
-          {tab === 'log' ? 'Training Log' : ''}
+          {tab === 'calendar' ? 'Training Log' : tab === 'history' ? 'History' : ''}
         </h1>
-        {tab === 'log' ? (
+        {tab === 'calendar' ? (
           <button
             onClick={() => setSheet('settings')}
             className="rounded-full bg-card px-3 py-1 text-xs text-muted ring-1 ring-edge"
@@ -667,7 +667,7 @@ export default function App({ userId, email }: { userId: string; email: string }
       {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
 
-      {!loading && tab === 'log' ? (
+      {!loading && tab === 'calendar' ? (
         <TodayCard
           profile={profile}
           workouts={data.workouts}
@@ -679,11 +679,11 @@ export default function App({ userId, email }: { userId: string; email: string }
         />
       ) : null}
 
-      {!loading && tab === 'log' && week ? (
+      {!loading && tab === 'calendar' && week ? (
         <BlockCard week={week} number={blockNo ?? 1} workouts={data.workouts} today={now} />
       ) : null}
 
-      {!loading && tab === 'log' && behind ? (
+      {!loading && tab === 'calendar' && behind ? (
         <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
           <p className="text-xs uppercase tracking-wide text-muted">The last four weeks</p>
           <p className="mt-1 text-2xl num">{trainedLast28} / 28 days</p>
@@ -717,7 +717,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {!loading && tab === 'log' && wantsSore && !behind ? (
+      {!loading && tab === 'calendar' && wantsSore && !behind ? (
         <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
           <p className="text-sm">
             Anything giving you trouble? Flag a joint and sessions swap around it.
@@ -742,7 +742,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {!loading && tab === 'log' ? (
+      {!loading && tab === 'calendar' ? (
         <div className="flex flex-col gap-6">
           {todays.length === 0 ? (
             <p className="rounded-2xl bg-card p-4 text-sm text-muted ring-1 ring-edge">
@@ -779,11 +779,9 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {!loading && tab === 'records' ? (
-        <RecordsTab workouts={data.workouts} today={now} target={profile.days ?? plan?.days ?? 3} />
-      ) : null}
 
-      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('log')} /> : null}
+
+      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('calendar')} /> : null}
 
       {!loading && tab === 'profile' ? (
         <ProfileSheet
@@ -795,13 +793,12 @@ export default function App({ userId, email }: { userId: string; email: string }
           onOpenSettings={() => setSheet('settings')}
           onLogWeight={(lb) => void logWeight(lb)}
           onSave={(next) => void saveProfile(next)}
-          onClose={() => setTab('log')}
+          onClose={() => setTab('calendar')}
         />
       ) : null}
 
-      {!loading && tab === 'log' ? (
-        <div className="mt-8 flex flex-col gap-3">
-          <h2 className="text-xs uppercase tracking-wide text-muted">Earlier sessions</h2>
+      {!loading && tab === 'history' ? (
+        <div className="flex flex-col gap-3">
           {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}
           {past.map((workout) =>
             openHistory === workout.id ? (
