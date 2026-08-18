@@ -1,19 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { SPLITS, dayItems } from '@/lib/templates'
+import { SPLITS, dayItems, dayNames } from '@/lib/templates'
+import { buildDay, dayById, type Plan, type Profile } from '@/lib/onboarding'
 import Sheet from './Sheet'
 import type { CustomWorkout, CustomWorkoutItem } from '@/lib/types'
 
 export default function StartSheet({
+  plan,
+  profile,
   customWorkouts,
   onStart,
   onBuild,
   onDelete,
   onClose,
 }: {
+  plan: Plan | null
+  profile: Profile
   customWorkouts: CustomWorkout[]
-  onStart: (title: string, items: CustomWorkoutItem[]) => void
+  onStart: (title: string, items: CustomWorkoutItem[], sort?: boolean, dayId?: string) => void
   onBuild: () => void
   onDelete: (id: string) => void
   onClose: () => void
@@ -27,8 +32,30 @@ export default function StartSheet({
     return () => clearTimeout(timer)
   }, [confirm])
 
+  const planDays = (plan?.dayIds ?? []).map((id) => dayById(id)).filter(Boolean)
+
   return (
     <Sheet title="Start a workout" onClose={onClose}>
+      {planDays.length ? (
+        <div className="mb-5">
+          <h3 className="text-xs uppercase tracking-wide text-muted">
+            Your plan &middot; {plan!.splitName}
+          </h3>
+          <div className="mt-2 flex flex-col gap-2">
+            {planDays.map((day, i) => (
+              <button
+                key={day!.id}
+                onClick={() => onStart(day!.name, buildDay(day!, profile), true, day!.id)}
+                className="flex items-center justify-between rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
+              >
+                <span className="text-sm">{day!.name}</span>
+                <span className="text-xs text-muted num">day {i + 1}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex gap-2">
         <button
           onClick={() => onStart('Workout', [])}
@@ -56,7 +83,7 @@ export default function StartSheet({
                 </button>
                 <button
                   onClick={() => (confirm === w.id ? onDelete(w.id) : setConfirm(w.id))}
-                  className={`rounded-xl px-3 py-3 text-xs ${confirm === w.id ? 'bg-accent text-ink' : 'text-muted'}`}
+                  className={`rounded-xl px-3 py-3 text-xs ${confirm === w.id ? 'bg-accent text-on-accent' : 'text-muted'}`}
                 >
                   {confirm === w.id ? 'Sure?' : 'Delete'}
                 </button>
@@ -91,7 +118,7 @@ export default function StartSheet({
                     >
                       <span className="text-sm text-bright">{day.name}</span>
                       <span className="truncate pl-3 text-xs text-muted">
-                        {day.exercises.slice(0, 2).join(', ')}
+                        {dayNames(day).slice(0, 2).join(', ')}
                       </span>
                     </button>
                   ))}
