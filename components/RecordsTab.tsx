@@ -4,8 +4,7 @@ import { useState } from 'react'
 import StatsPanel from './StatsPanel'
 import RecordPanel from './RecordPanel'
 import ProgressTab from './ProgressTab'
-import type { BodyWeight, Workout } from '@/lib/types'
-import type { Unit } from '@/lib/units'
+import type { Workout } from '@/lib/types'
 
 // Everything that answers "how am I doing", in one place. Three questions,
 // three views, and they are worth having together: this week, all time, and
@@ -20,20 +19,12 @@ type View = (typeof VIEWS)[number]['id']
 
 export default function RecordsTab({
   workouts,
-  weights,
-  goalWeight,
-  unit,
   today,
   target,
-  onLogWeight,
 }: {
   workouts: Workout[]
-  weights: BodyWeight[]
-  goalWeight: number | undefined
-  unit: Unit
   today: string
   target: number
-  onLogWeight: (pounds: number) => void
 }) {
   const [view, setView] = useState<View>('week')
 
@@ -65,13 +56,7 @@ export default function RecordsTab({
       ) : null}
 
       {view === 'charts' ? (
-        <ProgressTab
-          workouts={workouts}
-          weights={weights}
-          goalWeight={goalWeight}
-          unit={unit}
-          onLogWeight={onLogWeight}
-        />
+        <ProgressTab workouts={workouts} />
       ) : null}
     </section>
   )

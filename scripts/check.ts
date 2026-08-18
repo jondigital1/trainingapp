@@ -23,6 +23,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
+import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
@@ -466,7 +467,13 @@ check('weekly coverage counts logged sets by muscle group', () => {
   const chest = weeklyCoverage(week, '2026-08-18').find((g) => g.group === 'Chest')!
   assert.equal(chest.sets, 2, 'the empty set row should not count')
   assert.equal(weeklyCoverage(week, '2026-08-25').find((g) => g.group === 'Chest')!.sets, 0, 'last week is not this week')
-  assert.equal(weekStart('2026-08-18'), '2026-08-17', 'weeks start on Monday')
+  // Sunday to Saturday, the way the schedule reads and a phone draws a
+  // calendar. One definition, so the strip on the Workout tab and the streak
+  // beside it can never disagree about which week you are in.
+  assert.equal(weekStart('2026-08-18'), '2026-08-16', 'a Tuesday belongs to the Sunday before it')
+  assert.equal(weekStart('2026-08-16'), '2026-08-16', 'and a Sunday starts its own week')
+  assert.equal(weekStart('2026-08-22'), '2026-08-16', 'through to the Saturday')
+  assert.equal(weekStart('2026-08-23'), '2026-08-23', 'the next Sunday starts the next one')
 })
 
 check('the 28 day grid marks only days with something written down', () => {
@@ -531,7 +538,9 @@ check('a block runs six weeks and repeats', () => {
   assert.equal(blockNumber(on, '2026-09-14'), 2, 'a new block, not week seven')
   assert.equal(BLOCK.length, BLOCK_WEEKS)
   assert.ok(BLOCK_WEEKS >= 6, 'a block is at least six weeks')
-  assert.equal(mondayOf('2026-08-19'), '2026-08-17')
+  // A block week is the same week as everything else: Sunday to Saturday.
+  assert.equal(mondayOf('2026-08-19'), '2026-08-16')
+  assert.equal(mondayOf('2026-08-19'), weekStart('2026-08-19'), 'one definition, not two')
   // Effort climbs to the peak and then drops off for the deload.
   assert.deepEqual(BLOCK.map((w) => w.score[1]), [6, 7, 8, 9, 10, 4])
 })
@@ -1209,6 +1218,50 @@ check('a substitute is the same muscle first, then the closest swap', () => {
   const back = similarTo('Barbell Row', [{ name: 'Jefferson Curl', type: 'W', group: 'Back' }])
   assert.ok(back.some((e) => e.name === 'Jefferson Curl'), 'your own movements are substitutes too')
   resetCustoms()
+})
+
+check('a week is days of the week, not dates', () => {
+  // Say Push on Monday once and it is Push every Monday, with nothing to fill
+  // in again.
+  assert.deepEqual(scheduleOf({}), [null, null, null, null, null, null, null])
+  assert.equal(hasSchedule({}), false)
+  const week = { schedule: [null, 'ppl-push', null, 'ppl-pull', null, 'ppl-legs', null] }
+  assert.equal(hasSchedule(week), true)
+  assert.equal(scheduledDays(week), 3)
+  // 2026-08-17 is a Monday, 2026-08-18 a Tuesday.
+  assert.equal(todaysDayId(week, '2026-08-17'), 'ppl-push')
+  assert.equal(todaysDayId(week, '2026-08-18'), null, 'a rest day asks nothing')
+  assert.equal(todaysDayId(week, '2026-08-21'), 'ppl-legs')
+  // A day id that no longer exists is dropped rather than crashing the week.
+  assert.deepEqual(scheduleOf({ schedule: ['nope', null, null, null, null, null, null] })[0], null)
+  assert.deepEqual(scheduleOf({ schedule: ['ppl-push'] }), scheduleOf({}), 'a short week is no week')
+})
+
+check('laying out a plan puts the sessions on days people train', () => {
+  const three = suggestSchedule(planFor({ days: 3 }, 'muscle'))
+  assert.equal(three.filter(Boolean).length, 3)
+  assert.equal(three[0], null, 'Sunday stays clear at three days')
+  assert.equal(three[6], null, 'and so does Saturday')
+  assert.ok(three[1] && three[3] && three[5], 'Monday, Wednesday, Friday')
+  const six = suggestSchedule(planFor({ days: 6 }, 'muscle'))
+  assert.equal(six.filter(Boolean).length, 6)
+  assert.equal(six[0], null, 'the weekend goes last')
+  assert.deepEqual(suggestSchedule(null).filter(Boolean), [], 'no plan is an empty week')
+})
+
+check('the streak counts against the week you set yourself', () => {
+  const w = (date: string): Workout => ({
+    id: date, date, title: 'S',
+    exercises: [{ id: 'e', name: 'Leg Press', type: 'W', sets: [{ id: 's', w: 200, r: 10 }] }],
+  })
+  const rows = ['2026-08-17', '2026-08-19', '2026-08-10', '2026-08-12'].map(w)
+  // Two sessions each week meets a two day week and misses a three day one.
+  assert.equal(weeklyStreak(rows, '2026-08-21', 2), 2)
+  assert.equal(weeklyStreak(rows, '2026-08-21', 3), 0)
+  // An empty workout is not a session, the same rule the grid uses.
+  assert.equal(trainedOn(rows, '2026-08-17'), true)
+  assert.equal(trainedOn(rows, '2026-08-18'), false)
+  assert.equal(trainedOn([{ id: 'x', date: '2026-08-18', title: 'S', exercises: [] }], '2026-08-18'), false)
 })
 
 console.log(`\n${checks} checks passed`)

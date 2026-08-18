@@ -13,7 +13,8 @@ import {
   unitOf,
   type Profile,
 } from '@/lib/onboarding'
-import { summarise } from '@/lib/body'
+import BodyWeightCard from './BodyWeightCard'
+import ScheduleCard from './ScheduleCard'
 import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtDate, today } from '@/lib/format'
 import { blockWeek, mondayOf } from '@/lib/block'
@@ -131,7 +132,6 @@ export default function ProfileSheet({
     )
   }
 
-  const body = summarise(weights, draft.goalWeight)
   const plan = planFor(draft, GOAL_FROM_CHOICE[draft.goalChoice ?? 'muscle'] ?? 'muscle')
   const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
@@ -268,6 +268,12 @@ export default function ProfileSheet({
 
         {section === 'week' ? (
           <>
+            <ScheduleCard
+              profile={draft}
+              plan={plan}
+              onChange={(schedule) => set({ schedule })}
+            />
+
             <Field label="Days a week">
               <Options
                 columns={2}
@@ -344,34 +350,13 @@ export default function ProfileSheet({
 
         {section === 'body' ? (
           <>
-            <div className="rounded-2xl surface p-3 ring-1 ring-edge">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs uppercase tracking-wide text-muted">Current</span>
-                <span className="num text-lg">{fmtWeight(body.current, unit)}</span>
-              </div>
-              <div className="mt-2 flex items-baseline justify-between text-sm">
-                <span className="text-muted">
-                  Day one{body.firstDate ? `, ${fmtDate(body.firstDate)}` : ''}
-                </span>
-                <span className="num text-muted">{fmtWeight(body.first, unit)}</span>
-              </div>
-              {body.change != null ? (
-                <div className="mt-1 flex items-baseline justify-between text-sm">
-                  <span className="text-muted">Since then</span>
-                  <span className="num text-accent">{fmtDelta(body.change, unit) ?? 'no change'}</span>
-                </div>
-              ) : null}
-              {body.goal != null ? (
-                <div className="mt-1 flex items-baseline justify-between text-sm">
-                  <span className="text-muted">Goal</span>
-                  <span className="num text-muted">{fmtWeight(body.goal, unit)}</span>
-                </div>
-              ) : null}
-            </div>
+            <BodyWeightCard
+              weights={weights}
+              goalWeight={draft.goalWeight}
+              unit={unit}
+              onLog={onLogWeight}
+            />
 
-            <Field label="Weigh in" hint={`Today, ${fmtDate(today())}. One reading a day: weighing again replaces it.`} optional>
-              <NumberInput decimal value={todayWeight} onChange={setTodayWeight} suffix={unitLabel(unit)} />
-            </Field>
             <Field label="Goal weight" optional>
               <NumberInput decimal value={goalWeight} onChange={setGoalWeight} suffix={unitLabel(unit)} />
             </Field>

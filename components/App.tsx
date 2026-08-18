@@ -11,6 +11,7 @@ import HelpSheet from './HelpSheet'
 import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
+import TodayCard from './TodayCard'
 import IntensitySheet from './IntensitySheet'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
@@ -666,6 +667,18 @@ export default function App({ userId, email }: { userId: string; email: string }
       {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
 
+      {!loading && tab === 'log' ? (
+        <TodayCard
+          profile={profile}
+          workouts={data.workouts}
+          today={now}
+          onStart={(dayId) => {
+            const day = dayById(dayId)
+            if (day) reallyStart(day.name, buildDay(day, profile), true)
+          }}
+        />
+      ) : null}
+
       {!loading && tab === 'log' && week ? (
         <BlockCard week={week} number={blockNo ?? 1} workouts={data.workouts} today={now} />
       ) : null}
@@ -767,15 +780,7 @@ export default function App({ userId, email }: { userId: string; email: string }
       ) : null}
 
       {!loading && tab === 'records' ? (
-        <RecordsTab
-          workouts={data.workouts}
-          weights={data.bodyWeights}
-          goalWeight={profile.goalWeight}
-          unit={unitOf(profile)}
-          today={now}
-          target={profile.days ?? plan?.days ?? 3}
-          onLogWeight={(lb) => void logWeight(lb)}
-        />
+        <RecordsTab workouts={data.workouts} today={now} target={profile.days ?? plan?.days ?? 3} />
       ) : null}
 
       {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('log')} /> : null}

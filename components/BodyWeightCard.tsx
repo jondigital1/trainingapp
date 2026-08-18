@@ -62,22 +62,40 @@ export default function BodyWeightCard({
             <span className="ml-1 text-sm text-muted">{unitLabel(unit)}</span>
           </p>
           {body.change != null ? (
-            <p className="text-xs text-muted">{fmtDelta(body.change, unit)} since day one</p>
+            <p className="text-xs text-muted">{fmtDelta(body.change, unit)} since the start</p>
           ) : null}
         </div>
       </div>
 
       {line.length >= 2 ? <Sparkline points={line} /> : null}
 
-      {body.first != null ? (
-        <div className="mt-3 flex justify-between text-xs text-muted">
-          <span>
-            Day one {fmtWeight(body.first, unit)}
-            {body.firstDate ? `, ${fmtDate(body.firstDate)}` : ''}
-          </span>
-          {body.goal != null ? <span className="num">Goal {fmtWeight(body.goal, unit)}</span> : null}
+      {/* The three numbers that matter, said rather than implied: where you
+          started, where you are, where you are going. */}
+      <div className="mt-3 grid grid-cols-3 gap-2 border-t border-edge pt-3 text-center">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted">Starting</p>
+          <p className="num mt-0.5 text-sm">{fmtWeight(body.first, unit)}</p>
+          {body.firstDate ? (
+            <p className="num text-[11px] text-muted">{fmtDate(body.firstDate)}</p>
+          ) : null}
         </div>
-      ) : null}
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted">Current</p>
+          <p className="num mt-0.5 text-sm text-accent">{fmtWeight(body.current, unit)}</p>
+          {body.currentDate ? (
+            <p className="num text-[11px] text-muted">{fmtDate(body.currentDate)}</p>
+          ) : null}
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted">Goal</p>
+          <p className="num mt-0.5 text-sm">{fmtWeight(body.goal, unit)}</p>
+          {body.goal != null && body.current != null ? (
+            <p className="num text-[11px] text-muted">
+              {Math.abs(Math.round((body.current - body.goal) * 10) / 10)} to go
+            </p>
+          ) : null}
+        </div>
+      </div>
 
       {body.goal != null && body.toGoal != null ? (
         <>

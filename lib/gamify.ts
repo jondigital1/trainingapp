@@ -1,5 +1,6 @@
 import { groupOf, MUSCLE_GROUPS } from './exercises'
 import { isEmptySet } from './format'
+import { weekStart } from './schedule'
 import type { Exercise, Goal, SetEntry, SetType, Workout } from './types'
 
 // Epley. Lets a set of 80 x 9 register as progress over 80 x 8 without anyone
@@ -123,12 +124,7 @@ export function beatsLast(set: SetEntry, previous: SetEntry | undefined, type: S
 }
 
 // Monday as the start of the week, because that is how a training week reads.
-export function weekStart(iso: string): string {
-  const d = new Date(iso + 'T00:00:00')
-  const shift = (d.getDay() + 6) % 7
-  d.setDate(d.getDate() - shift)
-  return d.toISOString().slice(0, 10)
-}
+export { weekStart }
 
 export interface GroupVolume {
   group: string

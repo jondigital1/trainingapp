@@ -50,6 +50,10 @@ export interface Profile {
   // block, and the deload at the end is the point of having one.
   block?: boolean
   blockStart?: string
+  // Which day of the week runs which session, Sunday first. A template day id
+  // trains that day, null rests. Empty until somebody sets it, and the app
+  // works exactly as before while it is.
+  schedule?: (string | null)[]
   // When the four week check-in was answered, either way. Once set it never
   // shows again: answered is answered.
   checkinDismissedAt?: string

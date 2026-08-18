@@ -25,6 +25,29 @@ internet. Nutrition, supplements and
 pain are answered with an honest gate rather than silence. lib/knowledge.ts is
 the content, sourced from the beginner questions people actually ask.
 
+## Your week
+
+Which session lands on which day, Sunday through Saturday. Days of the week
+rather than dates, because training repeats weekly: say Push on Monday once and
+it is Push every Monday, with nothing to fill in again. Lay out my plan spreads
+the sessions across the days most people train and leaves the weekend clear
+until there are more sessions than weekdays, and every day can then be moved by
+hand.
+
+The Workout tab opens on what today asks of you, the week as seven blocks
+filled where you trained and outlined where you meant to, and the streak beside
+it. The streak was three taps deep before, which is no use for a number whose
+whole job is that you do not want to see it end. Once a schedule exists the
+streak counts against the days it asks for rather than the number the
+questionnaire once took.
+
+Nothing about it is a rule. Training on a rest day is fine and a session on the
+wrong day still counts toward the week: the schedule is a plan, not a gate.
+
+A week runs Sunday to Saturday, defined once in `lib/schedule.ts` and used by
+the streak, the coverage count and the training block, so the strip and the
+number beside it can never disagree about which week you are in.
+
 ## Getting around
 
 Four destinations and one action across the bottom: Workout, Records, Start,
@@ -315,11 +338,10 @@ Its own table, one reading per day, stored in pounds like every other load
 here. Weighing again the same morning replaces the number rather than adding a
 second point, because weighing twice before breakfast is noise.
 
-It sits on the Progress tab beside the lifts on purpose: strength climbing
-while bodyweight holds is a different story from both climbing together, and
-the two lines have to be in the same place to tell them apart. The card carries
-the current number, day one and the date it was taken, the change between them,
-and the road to a goal weight if you set one. The line is a seven day average
+It lives on the profile, since it is a fact about you rather than about your
+training. The card names the three numbers plainly rather than leaving two of
+them to be worked out: where you started, where you are, where you are going,
+with the distance left to the goal under it. The line is a seven day average
 rather than the raw readings, since day to day swings are water and a big
 dinner, and a chart of those tells a story that is not happening.
 
