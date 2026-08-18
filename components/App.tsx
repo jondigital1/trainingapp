@@ -483,7 +483,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-4 pb-28">
+    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-28">
       <header className="flex items-center justify-between pb-3 pt-5">
         <h1 className="text-xl font-semibold tracking-tight">Training Log</h1>
         <div className="flex items-center gap-2">
@@ -679,7 +679,7 @@ export default function App({ userId, email }: { userId: string; email: string }
       {/* Sticky only when there is nothing to cover. Mid session the big orange
           bar would sit on top of the set you are typing into. */}
       {(tab !== 'log' || todays.length === 0) && !rest.rest ? (
-        <div className="fixed inset-x-0 bottom-0 mx-auto max-w-lg px-4 pb-6">
+        <div className="fixed inset-x-0 bottom-0 mx-auto max-w-lg px-4 pb-safe">
           <button
             onClick={() => setSheet('start')}
             className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent shadow-lg"

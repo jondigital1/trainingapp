@@ -288,7 +288,7 @@ export default function Onboarding({
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-5 pb-6 pt-8">{children}</main>
+    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-5 pb-safe pt-8">{children}</main>
   )
 }
 
