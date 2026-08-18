@@ -3,6 +3,13 @@ import { dayItems, SPLITS, type TemplateDay } from './templates'
 import type { CustomWorkoutItem, Goal, SetType } from './types'
 import type { Unit } from './units'
 
+// The long session. Ninety minutes is what somebody means when they say they
+// are not in a hurry, and its budget of twelve is past the length of every
+// template day there is, so in practice nothing gets trimmed. The cap only
+// ever removes work, it never invents any.
+export const LONG_SESSION = 90
+
+
 // Everything the first run asks, plus the questions that arrive later in
 // context. See docs/onboarding-research.md for why each one earns its place.
 export interface Profile {
@@ -24,7 +31,10 @@ export interface Profile {
   knows?: 'yes' | 'roughly' | 'no'
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
-  minutes?: 30 | 45 | 60 | 75
+  // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still
+  // understood, so a profile saved when they were does not lose its session
+  // length.
+  minutes?: 30 | 45 | 60 | 75 | typeof LONG_SESSION
   sore?: string[]
   redFlag?: boolean
   barbell?: 'confident' | 'rusty' | 'never' | 'no'
@@ -292,7 +302,7 @@ export interface PlannedItem extends CustomWorkoutItem {
 }
 
 // How many movements fit in the time they said they had.
-const BUDGET: Record<number, number> = { 30: 4, 45: 6, 60: 8, 75: 10 }
+const BUDGET: Record<number, number> = { 30: 4, 45: 6, 60: 8, 75: 10, [LONG_SESSION]: 12 }
 
 export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
   const bans = banned(profile)

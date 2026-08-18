@@ -227,7 +227,7 @@ Landing on Performance starts a six week block on day one rather than making
 somebody who has trained for years go hunting for structure in Settings.
 
 The program then picks a split from the 24 template days, decides how many
-movements fit the time available, swaps movements around sore joints, and
+movements fit the session length, swaps movements around sore joints, and
 filters to the equipment on hand. Three days a week through six, and the number
 you give is the number you get: six used to be quietly served back as five,
 which is the app telling somebody what their week is. Six is push pull legs

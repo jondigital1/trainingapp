@@ -12,6 +12,7 @@ import {
   dayById,
   experienceScore,
   needsCheckin,
+  LONG_SESSION,
   MAX_DAYS,
   MIN_DAYS,
   planFor,
@@ -995,6 +996,28 @@ check('the dial runs 1 to 10 and every number says what it means', () => {
   assert.equal(averageIntensity([{ id: 'a', date: 'd', title: 't', exercises: [], intensity: 6 },
     { id: 'b', date: 'd', title: 't', exercises: [], intensity: 8 }]), 7)
   assert.equal(averageIntensity([{ id: 'a', date: 'd', title: 't', exercises: [] }]), null)
+})
+
+check('the time you have got decides how much goes in the session', () => {
+  const day = dayById('five-legs')!
+  const long = buildDay(day, { minutes: LONG_SESSION }).length
+  const hour = buildDay(day, { minutes: 60 }).length
+  const half = buildDay(day, { minutes: 30 }).length
+  assert.ok(half <= 4, `30 minutes caps at 4, got ${half}`)
+  assert.ok(hour <= 8, `an hour caps at 8, got ${hour}`)
+  assert.ok(half <= hour && hour <= long, 'more time is never fewer movements')
+  // Ninety minutes is past the length of every template day, so in practice
+  // it trims nothing. Check that against the longest day in the library.
+  const longest = Math.max(...SPLITS.flatMap((s) => s.days).map((d) => dayItems(d).length))
+  assert.ok(planFor({ minutes: LONG_SESSION }, 'muscle').exercises >= longest,
+    `a 90 minute budget of 12 should clear the longest day, which is ${longest}`)
+  assert.equal(long, dayItems(day).length, 'so the whole day comes back')
+  assert.equal(planFor({ minutes: 30 }, 'muscle').exercises, 4)
+  assert.equal(planFor({ minutes: 60 }, 'muscle').exercises, 8)
+  // 45 and 75 are no longer offered but a profile saved with one still works.
+  assert.equal(planFor({ minutes: 45 }, 'muscle').exercises, 6)
+  assert.equal(planFor({ minutes: 75 }, 'muscle').exercises, 10)
+  assert.equal(planFor({}, 'muscle').exercises, 8, 'no answer falls back to an hour')
 })
 
 console.log(`\n${checks} checks passed`)

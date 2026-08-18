@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import {
   ageBand,
+  LONG_SESSION,
   COMMON_DISLIKES,
   GOAL_FROM_CHOICE,
   OTHER_TRAINING,
@@ -116,10 +117,9 @@ export default function ProfileSheet({
               value={draft.minutes}
               onPick={(v) => set({ minutes: v })}
               options={[
-                { v: 30 as const, label: '30 min' },
-                { v: 45 as const, label: '45 min' },
-                { v: 60 as const, label: '60 min' },
-                { v: 75 as const, label: '75 or more' },
+                { v: 30 as const, label: '30 minutes' },
+                { v: 60 as const, label: '1 hour' },
+                { v: LONG_SESSION, label: '90 minutes' },
               ]}
             />
           </Field>
@@ -282,10 +282,9 @@ export default function ProfileSheet({
                 value={draft.minutes}
                 onPick={(v) => set({ minutes: v })}
                 options={[
-                  { v: 30 as const, label: '30 min' },
-                  { v: 45 as const, label: '45 min' },
-                  { v: 60 as const, label: '60 min' },
-                  { v: 75 as const, label: '75 or more' },
+                  { v: 30 as const, label: '30 minutes' },
+                  { v: 60 as const, label: '1 hour' },
+                  { v: LONG_SESSION, label: '90 minutes' },
                 ]}
               />
             </Field>

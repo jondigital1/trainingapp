@@ -5,6 +5,7 @@ import {
   buildDay,
   dayById,
   GOAL_FROM_CHOICE,
+  LONG_SESSION,
   planFor,
   PROGRAMS,
   SORE_JOINTS,
@@ -260,10 +261,9 @@ export default function Onboarding({
                   value={profile.minutes}
                   onPick={(v) => set({ minutes: v })}
                   options={[
-                    { v: 30 as const, label: '30 min' },
-                    { v: 45 as const, label: '45 min' },
-                    { v: 60 as const, label: '60 min' },
-                    { v: 75 as const, label: '75 or more' },
+                    { v: 30 as const, label: '30 minutes' },
+                    { v: 60 as const, label: '1 hour' },
+                    { v: LONG_SESSION, label: '90 minutes', note: 'Nothing gets trimmed' },
                   ]}
                 />
               </Field>
