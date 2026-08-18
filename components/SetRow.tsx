@@ -1,6 +1,6 @@
 'use client'
 
-import { fmtTime, parseClock } from '@/lib/format'
+import { fmtPrevious, fmtTime, parseClock } from '@/lib/format'
 import { columnsFor } from '@/lib/columns'
 import type { SetEntry, SetType } from '@/lib/types'
 
@@ -10,13 +10,14 @@ import type { SetEntry, SetType } from '@/lib/types'
 const FIELD =
   'w-full rounded-lg bg-ink px-2 py-1.5 text-center text-base num outline-none ring-1 ring-edge focus:ring-accent'
 
-export function SetHeader({ type }: { type: SetType }) {
+export function SetHeader({ type, showPrevious }: { type: SetType; showPrevious: boolean }) {
   const columns = columnsFor(type)
   if (!columns.length) return null
 
   return (
     <div className="flex items-center gap-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted">
       <span className="w-4 shrink-0" />
+      {showPrevious ? <span className="w-14 shrink-0 text-center">last</span> : null}
       <div className="flex flex-1 items-center gap-2">
         {columns.map((c) => (
           <span key={c} className="flex-1 text-center">
@@ -79,15 +80,23 @@ export default function SetRow({
   index,
   set,
   type,
+  previous,
+  showPrevious,
   onChange,
   onRemove,
 }: {
   index: number
   set: SetEntry
   type: SetType
+  // What you did on this numbered set last time. Beside the row rather than
+  // summarised above it, so comparing set three to set three is reading rather
+  // than arithmetic.
+  previous?: SetEntry | null
+  showPrevious: boolean
   onChange: (patch: Partial<SetEntry>) => void
   onRemove: () => void
 }) {
+  const last = set.drop ? null : fmtPrevious(previous, type)
   return (
     <div className="flex items-center gap-2">
       {set.drop ? (
@@ -97,6 +106,9 @@ export default function SetRow({
       ) : (
         <span className="num w-4 shrink-0 text-xs text-muted">{index + 1}</span>
       )}
+      {showPrevious ? (
+        <span className="num w-14 shrink-0 truncate text-center text-xs text-muted">{last ?? '\u2013'}</span>
+      ) : null}
       <div className="flex flex-1 items-center gap-2">
         {type === 'W' ? (
           <>

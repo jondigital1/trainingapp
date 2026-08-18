@@ -239,6 +239,14 @@ Each exercise names its columns above the rows rather than leaning on
 placeholder text, because a placeholder disappears the moment you type and
 `80 9` is two anonymous numbers.
 
+The first column is what you did on that numbered set last time. It used to be
+one line above the exercise summarising the whole of last session, which meant
+comparing set three to set three was arithmetic you did in your head. Beside
+the row it is reading. The header keeps only the date, since the rows carry the
+rest, and a movement you have never logged has no column at all rather than a
+column of dashes. A drop set has no previous either: it continues the set above
+it and there is nothing it is the same set as.
+
     W   weight and reps
     R   reps only
     T   time

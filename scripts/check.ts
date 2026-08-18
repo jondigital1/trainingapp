@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, dropFrom, roundLoad } from '../lib/coach'
-import { fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
+import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import {
@@ -1285,6 +1285,27 @@ check('a workout says what it will cost you before you commit', () => {
   assert.equal(fmtEstimate(47 * 60), 'about 45 min')
   assert.equal(fmtEstimate(60 * 60), 'about 1h')
   assert.equal(fmtEstimate(85 * 60), 'about 1h 25m')
+})
+
+check('each set row says what you did on that set last time', () => {
+  // Beside the row rather than summarised above it, so comparing set three to
+  // set three is reading rather than arithmetic.
+  assert.equal(fmtPrevious({ id: '1', w: 80, r: 9 }, 'W'), '80\u00d79')
+  assert.equal(fmtPrevious({ id: '1', w: 82.5, r: 8 }, 'W'), '82.5\u00d78')
+  // No effort number even where old data carries one: the row beside it has
+  // nowhere to put it and a lone @8 explains nothing.
+  assert.equal(fmtPrevious({ id: '1', w: 80, r: 9, rpe: 8 }, 'W'), '80\u00d79')
+  assert.equal(fmtPrevious({ id: '1', r: 12 }, 'R'), '12')
+  assert.equal(fmtPrevious({ id: '1', t: 90 }, 'T'), '1:30')
+  assert.equal(fmtPrevious({ id: '1', w: 100, d: 40 }, 'WD'), '100\u00d740')
+  assert.equal(fmtPrevious({ id: '1', t: 1200, d: 2.1 }, 'C'), '20:00')
+  // Nothing to show is nothing, not a half filled string.
+  assert.equal(fmtPrevious(null, 'W'), null)
+  assert.equal(fmtPrevious(undefined, 'W'), null)
+  assert.equal(fmtPrevious({ id: '1' }, 'W'), null)
+  assert.equal(fmtPrevious({ id: '1' }, 'R'), null)
+  // Half a set still says what it knows.
+  assert.equal(fmtPrevious({ id: '1', w: 80 }, 'W'), '80\u00d7?')
 })
 
 console.log(`\n${checks} checks passed`)

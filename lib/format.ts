@@ -127,3 +127,27 @@ export function parseClock(text: string): number | null {
   if (parts.length === 3) return Math.round(parts[0] * 3600 + parts[1] * 60 + parts[2])
   return null
 }
+
+// What you did on this numbered set last time, short enough to sit in a column
+// beside the boxes you are typing into. No effort number even where old data
+// carries one, because the row it sits next to no longer has anywhere to put
+// it and a lone @8 on a history line explains nothing.
+export function fmtPrevious(set: SetEntry | undefined | null, type: SetType): string | null {
+  if (!set) return null
+  switch (type) {
+    case 'W':
+      if (set.w == null && set.r == null) return null
+      return `${set.w != null ? fmtNum(set.w) : '?'}\u00d7${set.r ?? '?'}`
+    case 'R':
+      return set.r != null ? String(set.r) : null
+    case 'T':
+      return set.t != null ? fmtTime(set.t) : null
+    case 'WD':
+      if (set.w == null && set.d == null) return null
+      return `${set.w != null ? fmtNum(set.w) : '?'}\u00d7${set.d != null ? fmtNum(set.d) : '?'}`
+    case 'C':
+      return set.t != null ? fmtTime(set.t) : null
+    default:
+      return set.raw ?? null
+  }
+}

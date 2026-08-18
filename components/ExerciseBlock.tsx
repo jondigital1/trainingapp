@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { coach, dropFrom } from '@/lib/coach'
-import { fmtDate, fmtSets, isEmptySet, topSet, uid } from '@/lib/format'
+import { fmtDate, isEmptySet, topSet, uid } from '@/lib/format'
 import { beatsLast, PR_LABEL, prsFor, volumePr, type Bests } from '@/lib/gamify'
 import { isFullSet, restFor } from '@/lib/rest'
 import { fmtTime } from '@/lib/format'
@@ -117,12 +117,11 @@ export default function ExerciseBlock({
               </span>
             ) : null}
           </h3>
-          {/* What you did last time is the most useful line on this screen, so
-              it wraps rather than trailing off in an ellipsis. */}
+          {/* Just the date. What you did is on the rows themselves now, where
+              set three sits beside set three instead of being summarised into
+              a line you have to parse. */}
           {last ? (
-            <p className="num mt-0.5 text-xs leading-snug text-muted">
-              {fmtDate(last.date)} &middot; {fmtSets(last.exercise)}
-            </p>
+            <p className="num mt-0.5 text-xs text-muted">Last {fmtDate(last.date)}</p>
           ) : (
             <p className="mt-0.5 text-xs text-muted">First time logging this</p>
           )}
@@ -145,7 +144,7 @@ export default function ExerciseBlock({
       </div>
 
       <div className="mt-2.5 flex flex-col gap-1.5">
-        <SetHeader type={exercise.type} />
+        <SetHeader type={exercise.type} showPrevious={!!last} />
         {(() => {
           // set numbers and the ghost comparison count working rows only, so a
           // drop between sets two and three does not shift everything after it
@@ -162,6 +161,8 @@ export default function ExerciseBlock({
                 index={i}
                 set={set}
                 type={exercise.type}
+                previous={lastWorking[i]}
+                showPrevious={!!last}
                 onChange={(patch) => patchSet(set.id, patch)}
                 onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((s) => s.id !== set.id) })}
               />
