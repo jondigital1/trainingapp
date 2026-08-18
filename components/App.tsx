@@ -13,6 +13,7 @@ import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
 import IntensitySheet from './IntensitySheet'
+import DoneSheet from './DoneSheet'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
 import SettingsSheet from './SettingsSheet'
@@ -28,6 +29,8 @@ import { customFor, registerCustoms } from '@/lib/custom'
 import { isLighter, prescribedSets } from '@/lib/prescribe'
 import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { durationOf, wantsScore } from '@/lib/session'
+import { summarise } from '@/lib/summary'
+import { scheduledDays } from '@/lib/schedule'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
   EMPTY_DATA,
@@ -39,7 +42,7 @@ import {
   type Workout,
 } from '@/lib/types'
 
-type SheetName = 'start' | 'picker' | 'builder' | 'settings' | 'profile' | 'help' | 'score' | null
+type SheetName = 'start' | 'picker' | 'builder' | 'settings' | 'profile' | 'help' | 'score' | 'done' | null
 
 // Supabase throws plain objects as often as Error instances, and an unreadable
 // failure would misclassify a dead connection as a real rejection.
@@ -635,6 +638,9 @@ export default function App({ userId, email }: { userId: string; email: string }
   const past = ordered.filter((w) => w.date !== now)
   const targetWorkout = data.workouts.find((w) => w.id === pickerTarget) ?? null
   const scoringWorkout = data.workouts.find((w) => w.id === scoring) ?? null
+  // Counting this session, which is why it is computed from the live data
+  // rather than from the copy the score was written into.
+  const weeklyTarget = scheduledDays(profile) || profile.days || 3
 
   // First sign in lands straight in the questionnaire. Nothing to tap through
   // first: the account is new, there is no history to look at, and the plan is
@@ -980,10 +986,20 @@ export default function App({ userId, email }: { userId: string; email: string }
           initial={scoringWorkout.intensity}
           onSave={(score) => {
             scoreWorkout(scoringWorkout.id, score)
-            setScoring(null)
-            setSheet(null)
+            setSheet('done')
           }}
-          onSkip={() => {
+          onSkip={() => setSheet('done')}
+        />
+      ) : null}
+
+      {/* What the session came to. Shown whether or not the dial was answered,
+          because finishing is the thing being acknowledged, not answering a
+          question about it. */}
+      {sheet === 'done' && scoringWorkout ? (
+        <DoneSheet
+          workout={scoringWorkout}
+          summary={summarise(data.workouts, scoringWorkout, data.settings.goal, weeklyTarget)}
+          onClose={() => {
             setScoring(null)
             setSheet(null)
           }}

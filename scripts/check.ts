@@ -9,6 +9,8 @@ import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../li
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import { buildPdf } from '../lib/pdf'
+// aliased: lib/body exports a summarise of its own, for bodyweight
+import { summarise as summariseSession } from '../lib/summary'
 import { workoutFilename, workoutLines, workoutText } from '../lib/share'
 import {
   buildDay,
@@ -1481,6 +1483,90 @@ check('the PDF it builds is a PDF', () => {
   const count = Number(/\/Count (\d+)/.exec(many)![1])
   assert.ok(count > 1, 'twenty movements do not fit on one page')
   assert.equal((many.match(/\/Type \/Page[^s]/g) ?? []).length, count, 'Count matches the pages')
+})
+
+function session(id: string, date: string, name: string, sets: { w: number; r: number }[]): Workout {
+  return {
+    id, date, title: 'Push',
+    exercises: [{ id: `${id}-e`, name, type: 'W', sets: sets.map((s, i) => ({ id: `${id}-${i}`, ...s })) }],
+  }
+}
+
+check('the end of a session says something that actually happened', () => {
+  // Nothing to compare against yet, so nothing is claimed beyond turning up.
+  const one = session('a', '2026-08-03', 'Machine Chest Press', [{ w: 180, r: 10 }])
+  const firstOut = summariseSession([one], one, 'muscle', 3)
+  assert.ok(firstOut.first)
+  assert.match(firstOut.headline, /first one/i)
+  assert.equal(firstOut.records.length, 0, 'a movement you have never done cannot be beaten')
+  assert.equal(firstOut.sets, 1)
+  assert.equal(firstOut.volume, 1800)
+
+  // Same load, same reps, a week later. No record, no fiction.
+  const flat = session('b', '2026-08-10', 'Machine Chest Press', [{ w: 180, r: 10 }])
+  const flatOut = summariseSession([one, flat], flat, 'muscle', 3)
+  assert.equal(flatOut.records.length, 0)
+  assert.equal(flatOut.beat, 0)
+  assert.match(flatOut.headline, /done and written down/i)
+  assert.match(flatOut.line, /most sessions/i)
+
+  // More reps at the same load is a record, and the headline moves to it.
+  const better = session('c', '2026-08-17', 'Machine Chest Press', [{ w: 180, r: 12 }])
+  const bestOut = summariseSession([one, flat, better], better, 'muscle', 3)
+  assert.equal(bestOut.records.length, 1)
+  assert.equal(bestOut.records[0].name, 'Machine Chest Press')
+  assert.ok(bestOut.records[0].kinds.includes('reps'))
+  assert.match(bestOut.headline, /new record/i)
+  assert.match(bestOut.line, /Machine Chest Press/)
+
+  // A bad week, then a better one that still does not reach the record. Up on
+  // last time is the honest thing to say, and it is not a record.
+  const dip = session('d', '2026-08-24', 'Machine Chest Press', [{ w: 180, r: 9 }])
+  const back = session('e', '2026-08-31', 'Machine Chest Press', [{ w: 180, r: 11 }])
+  const upOut = summariseSession([one, flat, better, dip, back], back, 'muscle', 3)
+  assert.equal(upOut.records.length, 0, 'twelve is still the record')
+  assert.equal(upOut.beat, 1)
+  assert.match(upOut.headline, /up on last time/i)
+})
+
+check('a round number is announced once, on the session that crossed it', () => {
+  // Nine sessions behind, the tenth crosses.
+  const history = Array.from({ length: 9 }, (_, i) =>
+    session(`h${i}`, `2026-06-0${i + 1}`, 'Cable Curl', [{ w: 40, r: 12 }]),
+  )
+  const tenth = session('t', '2026-06-10', 'Cable Curl', [{ w: 40, r: 12 }])
+  const all = [...history, tenth]
+  const out = summariseSession(all, tenth, 'muscle', 3)
+  assert.ok(out.milestones.some((m) => /10 sessions/.test(m.label)), 'the tenth is a landmark')
+
+  // The eleventh is not, even though the total is still above ten.
+  const eleventh = session('e', '2026-06-11', 'Cable Curl', [{ w: 40, r: 12 }])
+  const after = summariseSession([...all, eleventh], eleventh, 'muscle', 3)
+  assert.equal(after.milestones.length, 0, 'a rung is crossed once in a lifetime')
+})
+
+check('a session with nothing in it is told the truth', () => {
+  const empty: Workout = {
+    id: 'x', date: '2026-08-18', title: 'Push',
+    exercises: [{ id: 'e', name: 'Leg Press', type: 'W', sets: [{ id: '1' }] }],
+  }
+  const out = summariseSession([empty], empty, 'muscle', 3)
+  assert.equal(out.sets, 0)
+  assert.equal(out.exercises, 0)
+  assert.match(out.headline, /nothing logged/i)
+  assert.ok(!/record/i.test(out.line), 'and is not congratulated for it')
+})
+
+check('weeks in a row are counted, and never said twice', () => {
+  // Three weeks, one session each, against a target of one.
+  const weeks = ['2026-08-03', '2026-08-10', '2026-08-17'].map((d, i) =>
+    session(`w${i}`, d, 'Leg Press', [{ w: 300, r: 10 }]),
+  )
+  const out = summariseSession(weeks, weeks[2], 'muscle', 1)
+  assert.equal(out.streak, 3)
+  // A record outranks a streak in the headline, and the streak still survives
+  // in the summary for the screen to say underneath.
+  assert.match(out.headline, /new record|3 weeks/i)
 })
 
 console.log(`\n${checks} checks passed`)

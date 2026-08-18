@@ -194,6 +194,32 @@ the sort of contradiction that teaches people to stop reading the coach line.
 Everything is a starting point. Add set, delete a row, or write your own day,
 and nothing argues.
 
+## Finishing one
+
+End workout stops the clock and asks the one question, and then there is a
+screen for having finished. It leads with a headline, then the time, the sets,
+the weight moved and how hard it felt, then anything worth naming: records
+broken, movement by movement, with what kind of record each one was; a round
+number crossed; the weeks strung together; sets that beat the same set last
+time out.
+
+Everything on it is something that happened. There is no confetti and nothing
+that arrives whatever you did, because praise that turns up every time is not
+praise, it is wallpaper, and people stop seeing it inside a week. So the
+headline is chosen by what is actually true, in the order things deserve
+saying: a record beats a round number, which beats a streak, which beats being
+up on last time. When none of it applies the screen says so, that it is done and
+written down and most sessions are the ones that make the good ones possible,
+which is true and is not nothing.
+
+A round number is announced on the session that crossed it and never again,
+measured as the lifetime total before and after this one. And a session with no
+sets in it is told exactly that, rather than congratulated for closing an empty
+page.
+
+Share is on that screen too, next to Nice one, because the moment somebody
+wants to send a session is the moment they finished it.
+
 ## Sharing a session
 
 Share is in the header of every session, next to Delete. It hands the phone's
@@ -327,14 +353,14 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 97 assertions over everything that is pure logic: the movement
+`npm run check` is 101 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
 lifetime record, the redirect guard, the set row columns, session duration and
 scoring, the six week block, the prescriptions, the shared sheet and the PDF it
-is written into, and the knowledge base gate. Every program
+is written into, what the end of a session is allowed to claim, and the knowledge base gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
 point at a template day that does not exist. `npm run build` type checks the app.
 
