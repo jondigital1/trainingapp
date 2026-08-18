@@ -89,8 +89,8 @@ const TABLE: Record<Level, Record<number, string[]>> = {
 const SPLIT_NAME: Record<Level, Record<number, string>> = {
   Beginner: { 2: 'Full Body', 3: 'Full Body', 4: 'Upper Lower', 5: 'Upper Lower' },
   Returner: { 2: 'Full Body', 3: 'Full Body', 4: 'Full Body, building up', 5: 'Upper Lower' },
-  Intermediate: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Upper Lower', 5: '5 Day' },
-  Advanced: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Summer 4 Day', 5: '5 Day' },
+  Intermediate: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Upper Lower', 5: '5 Day Split' },
+  Advanced: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: '4 Day Split', 5: '5 Day Split' },
 }
 
 const ALL_DAYS: TemplateDay[] = SPLITS.flatMap((s) => s.days)

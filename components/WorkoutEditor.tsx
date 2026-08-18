@@ -79,8 +79,15 @@ export default function WorkoutEditor({
             className="flex-1 rounded-lg bg-card px-3 py-2 text-base outline-none ring-1 ring-accent"
           />
         ) : (
-          <button onClick={() => setRenaming(true)} className="min-w-0 flex-1 text-left">
-            <h2 className="truncate text-lg font-semibold tracking-tight">{workout.title}</h2>
+          <button
+            onClick={() => setRenaming(true)}
+            aria-label="Rename this workout"
+            className="min-w-0 flex-1 text-left"
+          >
+            <h2 className="flex items-baseline gap-1.5 text-lg font-semibold tracking-tight">
+              <span className="truncate">{workout.title}</span>
+              <span aria-hidden className="shrink-0 text-xs font-normal text-muted">&#9998;</span>
+            </h2>
             <p className="text-xs text-muted num">
               {fmtDate(workout.date)}
               {workout.exercises.length ? ` · ${workout.exercises.length} exercises` : ''}
