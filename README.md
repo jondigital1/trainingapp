@@ -26,16 +26,23 @@ the content, sourced from the beginner questions people actually ask.
 
 ## Getting around
 
-Five destinations on a bar across the bottom: Workout, History, Progress, Ask
-Lifty and Profile. Each one is a place you can be rather than a sheet that
-opens over where you were, because a nav bar whose items open modals is a menu
-in a nav bar's clothes. Ask Lifty and Profile carry the same content in either
-frame, and the card colour resolves from the frame rather than each card
-guessing what is behind it.
+Four destinations and one action across the bottom: Workout, Records, Start,
+Ask Lifty, Profile. Starting a workout is the reason the app is open, so it
+sits in the middle where the thumb already is, raised off the bar and in the
+accent colour: the one thing there that does something rather than takes you
+somewhere. Profile sits far right, where every phone puts it.
 
-The floating start button and the rest timer sit on a shelf just above the bar,
-off one measurement defined once so they cannot drift apart, and the bar itself
-carries the home indicator inset.
+Each destination is a place you can be rather than a sheet that opens over
+where you were, because a nav bar whose items open modals is a menu in a nav
+bar's clothes. Ask Lifty and Profile carry the same content in either frame,
+and the card colour resolves from the frame rather than each card guessing what
+is behind it.
+
+Workout is today's sessions with everything earlier underneath, since the log
+is the history and splitting them was a tab that need not have existed. Records
+answers how am I doing, in three views: this week, all time, and the charts.
+The rest timer sits on a shelf just above the bar, off one measurement defined
+once, and the bar itself carries the home indicator inset.
 
 ## Appearance
 
@@ -80,14 +87,16 @@ A one time code by text is the next thing here. It needs an SMS provider
 configured in Supabase, which is a paid account with Twilio or similar, so it
 is a decision to make rather than code to write.
 
-## Your record
+## Records
 
-A section on the profile for the numbers that only go up: sessions, sets, reps
+The all time view for the numbers that only go up: sessions, sets, reps
 and total pounds lifted, the week streak you are on, the longest one you have
 ever strung together, and the heaviest set you have put up on each of the
 movements you train most. A bad month does not delete the winter you strung
 twelve weeks together, which is the whole reason the longest streak sits next
-to the current one.
+to the current one. Beside it, this week carries the streak, the 28 day grid
+and the muscle coverage, and charts carries the progression lines and
+bodyweight.
 
 ## Bringing the artifact history over
 
@@ -103,6 +112,7 @@ Postgres wants uuids and the artifact did not use them.
     components/App.tsx    tabs, state, the debounced writer
     components/           editor, exercise block, set row, picker, builder, sheets
     components/Form.tsx   the form vocabulary the questionnaire and profile share
+    components/BottomNav.tsx   four destinations and the start button
     lib/exercises.ts      226 movements across 14 muscle groups, each typed
     lib/onboarding.ts     the questions, the scoring, the three programs, the swaps
     lib/units.ts          pounds in the database, kilos on the screen

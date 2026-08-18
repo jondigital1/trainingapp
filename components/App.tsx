@@ -9,8 +9,7 @@ import Onboarding from './Onboarding'
 import BottomNav, { type Tab } from './BottomNav'
 import HelpSheet from './HelpSheet'
 import ProfileSheet from './ProfileSheet'
-import ProgressTab from './ProgressTab'
-import StatsPanel from './StatsPanel'
+import RecordsTab from './RecordsTab'
 import WaveCard from './WaveCard'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
@@ -519,7 +518,7 @@ export default function App({ userId, email }: { userId: string; email: string }
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-nav">
       <header className="flex items-center justify-between pb-4 pt-5">
         <h1 className="text-xl font-semibold tracking-tight">
-          {tab === 'log' ? 'Training Log' : tab === 'history' ? 'History' : tab === 'progress' ? 'Progress' : ''}
+          {tab === 'log' ? 'Training Log' : ''}
         </h1>
         {tab === 'log' ? (
           <button
@@ -597,7 +596,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         <div className="flex flex-col gap-6">
           {todays.length === 0 ? (
             <p className="rounded-2xl bg-card p-4 text-sm text-muted ring-1 ring-edge">
-              Nothing logged today. Start a workout below.
+              Nothing logged today. Tap Start below.
             </p>
           ) : null}
           {todays.map((workout) => (
@@ -624,12 +623,14 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {!loading && tab === 'progress' ? (
-        <ProgressTab
+      {!loading && tab === 'records' ? (
+        <RecordsTab
           workouts={data.workouts}
           weights={data.bodyWeights}
           goalWeight={profile.goalWeight}
           unit={unitOf(profile)}
+          today={now}
+          target={profile.days ?? plan?.days ?? 3}
           onLogWeight={(lb) => void logWeight(lb)}
         />
       ) : null}
@@ -650,10 +651,10 @@ export default function App({ userId, email }: { userId: string; email: string }
         />
       ) : null}
 
-      {!loading && tab === 'history' ? (
-        <div className="flex flex-col gap-3">
-          <StatsPanel workouts={data.workouts} today={now} target={profile.days ?? plan?.days ?? 3} />
-          {past.length === 0 ? <p className="text-sm text-muted">No past sessions yet.</p> : null}
+      {!loading && tab === 'log' ? (
+        <div className="mt-8 flex flex-col gap-3">
+          <h2 className="text-xs uppercase tracking-wide text-muted">Earlier sessions</h2>
+          {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}
           {past.map((workout) =>
             openHistory === workout.id ? (
               <div key={workout.id} className="rounded-2xl bg-card p-3 ring-1 ring-accent">
@@ -716,27 +717,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {/* Sticky only when there is nothing to cover. Mid session the big orange
-          bar would sit on top of the set you are typing into. */}
-      {(tab === 'log' || tab === 'history') && (tab !== 'log' || todays.length === 0) && !rest.rest ? (
-        <div className="above-nav fixed inset-x-0 mx-auto max-w-lg px-4">
-          <button
-            onClick={() => setSheet('start')}
-            className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent shadow-lg"
-          >
-            Start a workout
-          </button>
-        </div>
-      ) : tab === 'log' ? (
-        <button
-          onClick={() => setSheet('start')}
-          className="mt-8 w-full rounded-2xl bg-card py-4 text-base text-muted ring-1 ring-edge"
-        >
-          Start another workout
-        </button>
-      ) : null}
-
-      <BottomNav tab={tab} onPick={setTab} />
+      <BottomNav tab={tab} onPick={setTab} onStart={() => setSheet('start')} />
 
       {rest.rest ? (
         <RestBar
