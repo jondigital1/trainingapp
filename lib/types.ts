@@ -61,6 +61,16 @@ export interface CustomExercise {
   id: string
   name: string
   type: SetType
+  // Which muscle group it trains, so it counts toward the weekly target and
+  // can be swapped for something else when a joint is sore. Optional, because
+  // custom exercises saved before the app asked have no answer.
+  group?: string | null
+  // How much it takes out of you, which sets the rest timer. The name based
+  // classifier has never heard of this movement, so it is worth asking rather
+  // than guessing.
+  tier?: import('./rest').RestTier | null
+  // How many sets to lay out when it goes into a session.
+  sets?: number | null
 }
 
 export interface CustomWorkoutItem {

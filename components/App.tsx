@@ -23,6 +23,7 @@ import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
 import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
+import { customFor, registerCustoms } from '@/lib/custom'
 import { durationOf, wantsScore } from '@/lib/session'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -366,8 +367,19 @@ export default function App({ userId, email }: { userId: string; email: string }
     if (!workout) return
     updateWorkout({
       ...workout,
-      exercises: [...workout.exercises, { id: uid(), name, type, superset, sets: [{ id: uid() }] }],
+      exercises: [
+        ...workout.exercises,
+        { id: uid(), name, type, superset, sets: seedSets(name) },
+      ],
     })
+  }
+
+  // A custom exercise can say how many sets it wants laid out. Anything else
+  // starts with one, and Add set does the rest.
+  function seedSets(name: string) {
+    const count = customFor(name)?.sets
+    const n = count && count > 0 ? Math.min(count, 10) : 1
+    return Array.from({ length: n }, () => ({ id: uid() }))
   }
 
   async function createCustomExercise(exercise: CustomExercise) {
@@ -514,6 +526,10 @@ export default function App({ userId, email }: { userId: string; email: string }
   const now = today()
   const profile = data.settings.profile
   const plan = data.settings.onboardedAt ? planFor(profile, data.settings.goal) : null
+  // The library lookups for muscle group and rest tier consult this, so it has
+  // to be current before anything reads them this render.
+  registerCustoms(data.custom)
+
   const week = blockWeek(profile, now)
   const blockNo = blockNumber(profile, now)
   const effort = effortFactor(week)

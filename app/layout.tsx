@@ -18,10 +18,9 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#0c0e12' },
-    { media: '(prefers-color-scheme: light)', color: '#f1f2f5' },
-  ],
+  // Light unless the app itself is in dark, which the browser cannot know, so
+  // the light value is the honest default for the chrome around the page.
+  themeColor: '#f1f2f5',
   width: 'device-width',
   initialScale: 1,
   // cover lets the page reach the bottom edge on a phone with a home
@@ -31,9 +30,11 @@ export const viewport: Viewport = {
   // mid set and stops anyone who needs to zoom, and the second cost is worse.
 }
 
-// Applies a hand-picked theme before first paint. System preference needs no
-// script at all: the stylesheet handles it.
-const themeInit = `try{var t=localStorage.getItem('training-log-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`
+// Applies the theme before first paint. Light is the default, so an unset
+// choice needs no attribute at all and the stylesheet is already right; only
+// dark and system have to be stamped on, and system is what lets the media
+// query follow the device.
+const themeInit = `try{var t=localStorage.getItem('training-log-theme');if(t==='dark'||t==='system')document.documentElement.dataset.theme=t}catch(e){}`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

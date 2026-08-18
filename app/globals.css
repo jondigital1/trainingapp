@@ -1,6 +1,22 @@
 @import 'tailwindcss';
 
+/* Light is the default, so a phone set to dark still opens this app light.
+   The accent darkens against white so small accent text keeps its contrast. */
 @theme {
+  --color-ink: #f1f2f5;
+  --color-card: #ffffff;
+  --color-edge: #dfe3e9;
+  --color-accent: #c2410c;
+  --color-on-accent: #ffffff;
+  --color-muted: #5c6572;
+  --color-bright: #14181f;
+}
+
+/* Dark applies two ways: chosen by hand, or System chosen and the device
+   asking for it. Following the device is now something you opt into rather
+   than the default, which is why the media query is scoped to that choice
+   rather than to the absence of one. */
+:root[data-theme='dark'] {
   --color-ink: #0c0e12;
   --color-card: #15181e;
   --color-edge: #232833;
@@ -10,30 +26,16 @@
   --color-bright: #eef1f6;
 }
 
-/* Dark is the default. The light palette applies two ways: the device asks for
-   it and nothing was chosen by hand, or light was chosen by hand, which beats
-   whatever the device says. The accent darkens in light mode so small accent
-   text keeps its contrast on white. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --color-ink: #f1f2f5;
-    --color-card: #ffffff;
-    --color-edge: #dfe3e9;
-    --color-accent: #c2410c;
-    --color-on-accent: #ffffff;
-    --color-muted: #5c6572;
-    --color-bright: #14181f;
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    --color-ink: #0c0e12;
+    --color-card: #15181e;
+    --color-edge: #232833;
+    --color-accent: #e8613c;
+    --color-on-accent: #0c0e12;
+    --color-muted: #8b93a3;
+    --color-bright: #eef1f6;
   }
-}
-
-:root[data-theme='light'] {
-  --color-ink: #f1f2f5;
-  --color-card: #ffffff;
-  --color-edge: #dfe3e9;
-  --color-accent: #c2410c;
-  --color-on-accent: #ffffff;
-  --color-muted: #5c6572;
-  --color-bright: #14181f;
 }
 
 html,

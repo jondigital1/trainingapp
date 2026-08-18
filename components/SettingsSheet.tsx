@@ -31,12 +31,15 @@ export default function SettingsSheet({
 }) {
   const [paste, setPaste] = useState('')
   const [status, setStatus] = useState('')
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system')
+  // Light is the default, so no stored choice means light rather than
+  // whatever the phone is set to. Following the device is something you opt
+  // into now.
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('light')
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('training-log-theme')
-      if (saved === 'light' || saved === 'dark') setTheme(saved)
+      if (saved === 'dark' || saved === 'system') setTheme(saved)
     } catch {
       // no storage, the choice just does not persist
     }
@@ -45,7 +48,7 @@ export default function SettingsSheet({
   function pickTheme(next: 'system' | 'light' | 'dark') {
     setTheme(next)
     try {
-      if (next === 'system') {
+      if (next === 'light') {
         localStorage.removeItem('training-log-theme')
         delete document.documentElement.dataset.theme
       } else {
@@ -53,7 +56,8 @@ export default function SettingsSheet({
         document.documentElement.dataset.theme = next
       }
     } catch {
-      document.documentElement.dataset.theme = next === 'system' ? undefined : next
+      if (next === 'light') delete document.documentElement.dataset.theme
+      else document.documentElement.dataset.theme = next
     }
   }
 
@@ -106,7 +110,7 @@ export default function SettingsSheet({
 
       <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Appearance</h3>
       <div className="mt-2 flex gap-2">
-        {(['system', 'light', 'dark'] as const).map((t) => (
+        {(['light', 'dark', 'system'] as const).map((t) => (
           <button
             key={t}
             onClick={() => pickTheme(t)}

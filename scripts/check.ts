@@ -1,7 +1,7 @@
 // Plain assertions over the pure logic: library, templates, coaching, the
 // artifact importer and CSV export. Run with npm run check.
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, lookupType } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, dropFrom, roundLoad } from '../lib/coach'
 import { fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
@@ -23,6 +23,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
+import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
 import {
@@ -1156,6 +1157,32 @@ check('the partner list offers everything except your own group', () => {
   assert.deepEqual(partnersFor(list, 'a').map((e) => e.id), ['c', 'd'], 'not b, already paired with a')
   assert.deepEqual(partnersFor(list, 'c').map((e) => e.id), ['a', 'b', 'd'])
   assert.deepEqual(partnersFor(list, 'zzz'), [])
+})
+
+check('a movement you typed in behaves like one from the library', () => {
+  resetCustoms()
+  // Unregistered, a custom exercise is a ghost: no group, and its rest guessed
+  // from the name by a classifier that has never heard of it.
+  assert.equal(groupOf('Jefferson Curl'), null)
+  assert.equal(restTier('Jefferson Curl', 'W'), 'isolation', 'guessed from the word curl')
+
+  registerCustoms([
+    { id: '1', name: 'Jefferson Curl', type: 'W', group: 'Back', tier: 'small', sets: 3 },
+    { id: '2', name: 'Reverse Nordic', type: 'R', group: 'Quads', tier: 'heavy', sets: 2 },
+  ])
+  assert.equal(groupOf('Jefferson Curl'), 'Back', 'so it counts toward the weekly target')
+  assert.equal(restTier('Jefferson Curl', 'W'), 'small', 'and you decide how hard it is')
+  assert.equal(restFor('Jefferson Curl', 'W', 'muscle'), 30)
+  assert.equal(restFor('Reverse Nordic', 'R', 'muscle'), 120)
+  // Matching ignores case and stray spaces, since it is typed by hand.
+  assert.equal(groupOf('  jefferson curl '), 'Back')
+  assert.equal(customFor('Reverse Nordic')?.sets, 2)
+  // The library still wins for movements that are actually in it.
+  assert.equal(groupOf('Back Squat'), 'Quads')
+  assert.equal(restTier('Back Squat', 'W'), 'heavy')
+
+  resetCustoms()
+  assert.equal(groupOf('Jefferson Curl'), null, 'and one test cannot leak into the next')
 })
 
 console.log(`\n${checks} checks passed`)

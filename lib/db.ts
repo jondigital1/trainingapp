@@ -61,7 +61,7 @@ function rowToWorkout(row: Row): Workout {
 export async function loadAll(sb: SupabaseClient, userId: string): Promise<TrainingData> {
   const [workouts, custom, customWorkouts, weights, settings] = await Promise.all([
     sb.from('workouts').select(WORKOUT_SELECT).order('date', { ascending: false }),
-    sb.from('custom_exercises').select('id,name,type').order('name'),
+    sb.from('custom_exercises').select('id,name,type,muscle_group,rest_tier,default_sets').order('name'),
     sb.from('custom_workouts').select('id,name,items').order('created_at'),
     sb.from('body_weights').select('date,weight').order('date'),
     sb.from('settings').select('goal,profile,onboarded_at').eq('user_id', userId).maybeSingle(),
@@ -73,7 +73,14 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
 
   return {
     workouts: (workouts.data ?? []).map(rowToWorkout),
-    custom: (custom.data ?? []) as CustomExercise[],
+    custom: (custom.data ?? []).map((r: Row) => ({
+      id: r.id as string,
+      name: r.name as string,
+      type: r.type as SetType,
+      group: (r.muscle_group as string) ?? null,
+      tier: (r.rest_tier as CustomExercise['tier']) ?? null,
+      sets: toNum(r.default_sets),
+    })) as CustomExercise[],
     customWorkouts: (customWorkouts.data ?? []).map((r: Row) => ({
       id: r.id as string,
       name: r.name as string,
@@ -132,7 +139,18 @@ export async function deleteWorkout(sb: SupabaseClient, id: string) {
 export async function saveCustomExercise(sb: SupabaseClient, userId: string, ex: CustomExercise) {
   const res = await sb
     .from('custom_exercises')
-    .upsert({ id: ex.id, user_id: userId, name: ex.name, type: ex.type }, { onConflict: 'user_id,name' })
+    .upsert(
+      {
+        id: ex.id,
+        user_id: userId,
+        name: ex.name,
+        type: ex.type,
+        muscle_group: ex.group ?? null,
+        rest_tier: ex.tier ?? null,
+        default_sets: ex.sets ?? null,
+      },
+      { onConflict: 'user_id,name' },
+    )
   if (res.error) throw res.error
 }
 

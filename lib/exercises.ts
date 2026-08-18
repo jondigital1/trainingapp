@@ -1,3 +1,4 @@
+import { customGroup } from './custom'
 import type { SetType } from './types'
 
 export interface LibraryExercise {
@@ -280,6 +281,8 @@ export function lookupType(name: string): SetType | null {
 }
 
 export function groupOf(name: string): string | null {
+  const own = customGroup(name)
+  if (own) return own
   return BY_NAME.get(name.trim().toLowerCase())?.group ?? null
 }
 

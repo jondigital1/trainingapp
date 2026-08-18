@@ -1,3 +1,4 @@
+import { customTier } from './custom'
 import { equipmentOf, groupOf } from './exercises'
 import type { Goal, SetEntry, SetType } from './types'
 
@@ -92,6 +93,10 @@ const SMALL_GROUPS = ['Core', 'Calves', 'Forearms']
 // supported compound even though "Press" also appears in the heavy list, and a
 // cable curl is cable work even though every curl is single joint.
 export function restTier(name: string, type: SetType): RestTier {
+  // Somebody who typed this movement in has already said how hard it is, and
+  // they know better than a classifier reading the name.
+  const own = customTier(name)
+  if (own) return own
   if (type === 'C') return 'small'
   if (SMALL_GROUPS.includes(groupOf(name) ?? '')) return 'small'
 
@@ -155,3 +160,15 @@ export interface RestState {
 }
 
 export const REST_KEY = 'training-log-rest'
+
+// What each tier means to somebody typing in a movement the library has never
+// heard of. Worded by effort rather than by mechanics, because they know how
+// hard the thing is and should not have to work out whether it counts as a
+// compound.
+export const TIER_LABELS: { tier: RestTier; label: string; hint: string }[] = [
+  { tier: 'heavy', label: 'Near max', hint: 'Barbell work, heavy machines, sleds' },
+  { tier: 'compound', label: 'Hard, supported', hint: 'Machine and dumbbell presses, rows, pulldowns' },
+  { tier: 'isolation', label: 'One joint', hint: 'Curls, raises, extensions, bodyweight work' },
+  { tier: 'cable', label: 'Cable or light', hint: 'Anything off a stack' },
+  { tier: 'small', label: 'Core or calves', hint: 'And any static hold' },
+]

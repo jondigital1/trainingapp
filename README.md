@@ -47,20 +47,23 @@ once, and the bar itself carries the home indicator inset.
 
 ## Appearance
 
-Light and dark, from one token set. The app follows the device by default, pure
-CSS, and Settings carries a System / Light / Dark choice that beats the device
-and survives reload without a flash. The accent darkens in light mode so small
-accent text keeps its contrast on white.
+Light and dark, from one token set. Light is the default, so a phone set to
+dark still opens this app light. Settings carries Light / Dark / System, and
+following the device is something you opt into rather than the default.
+Whatever is chosen survives reload without a flash, since the only thing the
+pre-paint script has to stamp on is a choice that is not the default. The
+accent darkens in light mode so small accent text keeps its contrast on white.
 
 ## Setup
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0007. Clear the editor before each paste: a partial paste fails in confusing
+   0008. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the seven tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
-   table, and the start, end and score on a session.
+   table, the start, end and score on a session, and what a custom exercise
+   knows about itself.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
@@ -133,6 +136,24 @@ Postgres wants uuids and the artifact did not use them.
     lib/csv.ts            one row per set out
     lib/db.ts             every read and write
     supabase/migrations/  schema and row level security
+
+## Your own movements
+
+Anything the library has never heard of can be typed in, and the create box
+asks four things rather than one: what you measure (weight and reps, reps,
+time, weight and distance, cardio), what it trains, how hard it is, and how
+many sets to lay out.
+
+The last three are not paperwork. Without a muscle group a custom movement is a
+ghost: it never counts toward the weekly target, cannot be swapped for
+something else when a joint is sore, and does not rank in the hardest first
+ordering. Without a difficulty its rest gets guessed by a classifier reading
+its name, which for a movement nobody has named before is a coin toss. The
+difficulty choices are worded by effort rather than mechanics, because you know
+how hard the thing is without having to decide whether it counts as a compound.
+
+`lib/custom.ts` is the register the library lookups consult first, so a
+movement you typed in behaves like one that shipped with the app.
 
 ## Set types
 
