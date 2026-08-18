@@ -32,10 +32,11 @@ accent text keeps its contrast on white.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0005. Clear the editor before each paste: a partial paste fails in confusing
-   places. They create the six tables, the indexes, one row level security policy
-   per table so every row is readable only by the user that owns it, the atomic
-   save function, and the superset and drop set columns.
+   0006. Clear the editor before each paste: a partial paste fails in confusing
+   places. They create the seven tables, the indexes, one row level security
+   policy per table so every row is readable only by the user that owns it, the
+   atomic save function, the superset and drop set columns, and the bodyweight
+   table.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. Sign in is a magic link, no password.
 4. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
@@ -58,8 +59,11 @@ Postgres wants uuids and the artifact did not use them.
     app/                  routes, the auth gate and the magic link callback
     components/App.tsx    tabs, state, the debounced writer
     components/           editor, exercise block, set row, picker, builder, sheets
+    components/Form.tsx   the form vocabulary the questionnaire and profile share
     lib/exercises.ts      226 movements across 14 muscle groups, each typed
-    lib/onboarding.ts     the questions, the scoring, the split table, the swaps
+    lib/onboarding.ts     the questions, the scoring, the three programs, the swaps
+    lib/units.ts          pounds in the database, kilos on the screen
+    lib/body.ts           bodyweight against day one, the goal, and a weekly average
     lib/gamify.ts         records, beat the ghost, coverage, the grid, the streak
     lib/wave.ts           the three week effort cycle and what it asks of a set
     lib/rest.ts           when a set counts as done and how long it earns
@@ -96,35 +100,90 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 57 assertions over everything that is pure logic: the movement
+`npm run check` is 68 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
-CSV, the onboarding score and split table, the joint substitutions, records, the
-wave, rest timing, supersets, drop sets, the charts, the ordering rules, the
-check-in gating and the knowledge base gate. `npm run build` type checks the app.
+CSV, the onboarding score and the three programs, the joint substitutions,
+records, the wave, rest timing, supersets, drop sets, the charts, the ordering
+rules, the check-in gating, unit conversion, the bodyweight summary and the
+knowledge base gate. `npm run build` type checks the app.
 
-The schema is checked differently, by running it. All five migrations have been
-executed against a real PostgreSQL 16, which creates the six tables, the indexes
-and the policies clean, and `save_workout` has been called with a payload
-carrying a superset tag and a drop set to confirm both survive the round trip.
+The schema is checked differently, by running it. All six migrations have been
+executed against a real PostgreSQL 16, which creates the seven tables, the
+indexes and the policies clean; `save_workout` has been called with a payload
+carrying a superset tag and a drop set to confirm both survive the round trip;
+and a bodyweight has been written twice on the same date to confirm the second
+reading edits the first rather than doubling it.
+
+The questionnaire is checked by driving it. A headless browser walks all five
+sections at phone size, fills every field, steps back through the rail to
+confirm the answers survive navigation, and reads what comes out the far end:
+the program, the split, the day it starts on, the weight in pounds and the
+height in inches.
 
 ## Onboarding
 
-First open asks two health questions and four real ones, then hands over a
-session. The answers pick a split from the 24 template days, decide how many
-movements fit the time available, swap movements around sore joints, filter to
-the equipment on hand, and keep the RPE box hidden until the number would mean
-something. Everything is skippable and skipping lands on Full Body three days a
-week.
+Five sections rather than a dozen full screen taps, because answers that belong
+together should be asked together: who you are, what you have done, what your
+week looks like, where your body is starting from, then the plan. Nothing is
+required, the rail at the top walks back to any section you have been through,
+and every answer is editable afterwards on the profile page using the same
+controls, so a question does not look like one thing on the way in and
+something else on the way back.
 
-Tier 2 questions arrive later, in context: how long you have got at the first
-session start, sore joints on a visit after a session is behind you, everything
-else in Settings. Four weeks in, if the last four weeks ran thin, the app offers
-the shorter plan exactly once: either answer is final, and the sore joints
-question is a quiet card on the log tab rather than anything that blocks a tap.
+The answers land you on one of three programs.
+
+    Foundation    Learn the movements, build the habit, add weight as it gets easy
+    Build         You know the lifts. Now add muscle and load, one session at a time
+    Performance   Long training age. Effort targets and the three week wave from day one
+
+Four questions score it: training age, whether you have trained seriously
+before, whether you could name the weight you last used, and barbell
+confidence. That last pair matters. The weights question is the most honest
+experience question there is, and asking about the barbell up front is what
+makes the top tier reachable at all, which the version this replaced never was.
+Landing on Performance turns RPE and the effort wave on from day one rather
+than making an experienced lifter go hunting for them in Settings.
+
+The program then picks a split from the 24 template days, decides how many
+movements fit the time available, swaps movements around sore joints, and
+filters to the equipment on hand. Somebody rebuilding after a layoff gets a
+note and a gentler first month, not a beginner course.
+
+Two health questions sit at the end of the body section, and a flagged answer
+is a lighter plan rather than a paragraph: fewer sets, no effort targets to
+chase and no wave, whatever the experience score said. The goal you pick is
+never quietly rewritten either. Leaning out runs as muscle work and staying
+capable runs as endurance work, and the plan screen says so in as many words.
+
+Tier 2 questions still arrive later, in context: how long you have got at the
+first session start, sore joints on a visit after a session is behind you.
+Four weeks in, if the last four weeks ran thin, the app offers the shorter plan
+exactly once: either answer is final, and the sore joints question is a quiet
+card on the log tab rather than anything that blocks a tap.
 
 `docs/onboarding-research.md` is the evidence and the tables.
 `docs/onboarding-prototype.html` is the clickable version of every screen.
 `lib/onboarding.ts` is the implementation.
+
+## Bodyweight
+
+Its own table, one reading per day, stored in pounds like every other load
+here. Weighing again the same morning replaces the number rather than adding a
+second point, because weighing twice before breakfast is noise.
+
+It sits on the Progress tab beside the lifts on purpose: strength climbing
+while bodyweight holds is a different story from both climbing together, and
+the two lines have to be in the same place to tell them apart. The card carries
+the current number, day one and the date it was taken, the change between them,
+and the road to a goal weight if you set one. The line is a seven day average
+rather than the raw readings, since day to day swings are water and a big
+dinner, and a chart of those tells a story that is not happening.
+
+## Units
+
+Pounds or kilos, set on the profile and applied at the edges. The database
+never changes: switching shows you the same history re-expressed rather than a
+different history.
 
 ## What the log gives back
 
@@ -172,7 +231,7 @@ actually tracks without asking which they are.
 The picker and the workout builder both carry a Superset toggle. Turn it on and
 everything you pick joins the same group until you turn it off, so two taps and
 two movements is a superset. Saved workouts keep their groups. Templates can
-carry them too: the core circuit in the summer and five day splits is one, and
+carry them too: the core circuit in the 4 day and 5 day splits is one, and
 the session time cap treats a group as atomic, whole or absent, never sliced.
 In a session, a Link button between any two neighbouring blocks joins them, and
 Unlink puts them back. Supersets render as one block, labelled A1 and A2, and
@@ -235,11 +294,10 @@ Offline boot. Unsaved work survives a dead connection and replays, but opening
 the app cold with no network still fails, because the app itself has to come down
 the wire. A service worker fixes it.
 
-A unit setting. Everything is pounds and feet, hardcoded. The first person who
-thinks in kilos has to read every number twice.
+A password. Sign in is still a magic link, which is too many steps and assumes
+the mail is on the phone you are standing in the gym with. Email and password
+first, then a one time code by text.
 
-A person. The app knows your training and nothing about you: no name, no
-bodyweight over time, no height. Bodyweight in particular deserves its own table
-rather than two fields, so it can sit on the Progress tab next to the lifts,
-where strength climbing while bodyweight holds is a different story from both
-climbing together.
+Accomplishments. The profile knows your answers and your bodyweight, but not
+the things worth being pleased about: lifetime totals, the longest streak, the
+PRs behind you.

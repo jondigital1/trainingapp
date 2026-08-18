@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Profile } from './onboarding'
 import type {
+  BodyWeight,
   CustomExercise,
   CustomWorkout,
   Goal,
@@ -50,14 +51,16 @@ function rowToWorkout(row: Row): Workout {
 }
 
 export async function loadAll(sb: SupabaseClient, userId: string): Promise<TrainingData> {
-  const [workouts, custom, customWorkouts, settings] = await Promise.all([
+  const [workouts, custom, customWorkouts, weights, settings] = await Promise.all([
     sb.from('workouts').select(WORKOUT_SELECT).order('date', { ascending: false }),
     sb.from('custom_exercises').select('id,name,type').order('name'),
     sb.from('custom_workouts').select('id,name,items').order('created_at'),
+    sb.from('body_weights').select('date,weight').order('date'),
     sb.from('settings').select('goal,profile,onboarded_at').eq('user_id', userId).maybeSingle(),
   ])
 
-  const err = workouts.error ?? custom.error ?? customWorkouts.error ?? settings.error
+  const err =
+    workouts.error ?? custom.error ?? customWorkouts.error ?? weights.error ?? settings.error
   if (err) throw err
 
   return {
@@ -68,6 +71,10 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
       name: r.name as string,
       items: Array.isArray(r.items) ? r.items : [],
     })) as CustomWorkout[],
+    bodyWeights: (weights.data ?? []).map((r: Row) => ({
+      date: r.date as string,
+      weight: Number(r.weight),
+    })) as BodyWeight[],
     settings: {
       goal: (settings.data?.goal as Goal) ?? 'muscle',
       profile: (settings.data?.profile as Profile) ?? {},
@@ -149,5 +156,23 @@ export async function saveProfile(
   const res = await sb
     .from('settings')
     .upsert({ user_id: userId, profile, onboarded_at: onboardedAt })
+  if (res.error) throw res.error
+}
+
+// One reading per day. Weighing again the same morning replaces the number
+// rather than adding a second point to the line.
+export async function saveBodyWeight(
+  sb: SupabaseClient,
+  userId: string,
+  entry: BodyWeight,
+) {
+  const res = await sb
+    .from('body_weights')
+    .upsert({ user_id: userId, date: entry.date, weight: entry.weight }, { onConflict: 'user_id,date' })
+  if (res.error) throw res.error
+}
+
+export async function deleteBodyWeight(sb: SupabaseClient, userId: string, date: string) {
+  const res = await sb.from('body_weights').delete().eq('user_id', userId).eq('date', date)
   if (res.error) throw res.error
 }

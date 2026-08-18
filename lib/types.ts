@@ -66,6 +66,12 @@ export interface CustomWorkout {
 
 export type Goal = 'strength' | 'muscle' | 'endurance'
 
+// One reading per day, stored in pounds. Kilos are a display choice.
+export interface BodyWeight {
+  date: string // YYYY-MM-DD
+  weight: number
+}
+
 export interface Settings {
   goal: Goal
   profile: import('./onboarding').Profile
@@ -76,6 +82,7 @@ export interface TrainingData {
   workouts: Workout[]
   custom: CustomExercise[]
   customWorkouts: CustomWorkout[]
+  bodyWeights: BodyWeight[]
   settings: Settings
 }
 
@@ -83,5 +90,6 @@ export const EMPTY_DATA: TrainingData = {
   workouts: [],
   custom: [],
   customWorkouts: [],
+  bodyWeights: [],
   settings: { goal: 'muscle', profile: {}, onboardedAt: null },
 }

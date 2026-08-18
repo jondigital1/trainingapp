@@ -7,7 +7,17 @@ import { coach, dropFrom, roundLoad } from '../lib/coach'
 import { fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
-import { buildDay, dayById, experienceScore, level, needsCheckin, planFor } from '../lib/onboarding'
+import {
+  buildDay,
+  dayById,
+  experienceScore,
+  needsCheckin,
+  planFor,
+  program,
+  returning,
+} from '../lib/onboarding'
+import { summarise, trend } from '../lib/body'
+import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
 import {
   beatsLast, bestsFor, e1rm, LADDERS, lifetime, nextLandmark, prsFor, trainingGrid, volumePr,
@@ -186,14 +196,61 @@ check('csv export is one row per set', () => {
   assert.match(lines[1], /^2026-08-11,"Push, hard",Incline Dumbbell Press,W,1,80,8,8,,,,$/)
 })
 
-check('experience score and level follow the bands', () => {
-  assert.equal(level({}), 'Beginner')
-  assert.equal(level({ years: 'never', before: 'no' }), 'Beginner')
-  assert.equal(level({ years: 'under6', before: 'thisYear' }), 'Returner')
-  assert.equal(level({ years: 'sixToTwo' }), 'Intermediate')
-  assert.equal(level({ years: 'overTwo' }), 'Intermediate')
-  assert.equal(level({ years: 'overTwo', barbell: 'confident' }), 'Advanced')
-  assert.equal(experienceScore({ years: 'overTwo', barbell: 'confident' }), 5)
+check('experience score puts people in one of three programs', () => {
+  assert.equal(program({}), 'Foundation')
+  assert.equal(program({ years: 'never', before: 'no', barbell: 'never', knows: 'no' }), 'Foundation')
+  assert.equal(program({ years: 'sixToTwo', barbell: 'rusty', knows: 'roughly' }), 'Build')
+  assert.equal(program({ years: 'overTwo', barbell: 'confident', knows: 'yes' }), 'Performance')
+  assert.equal(experienceScore({ years: 'overTwo', barbell: 'confident', knows: 'yes' }), 7)
+})
+
+check('the top program is reachable, which is the whole point of asking', () => {
+  // The old Advanced tier needed a barbell answer the first run never asked
+  // for, so nobody could ever land on it. Every question that scores is now
+  // asked up front.
+  const answered = { years: 'overTwo' as const, barbell: 'confident' as const, knows: 'yes' as const }
+  assert.equal(program(answered), 'Performance')
+  assert.equal(planFor({ ...answered, days: 4 }, 'muscle').splitName, '4 Day Split')
+  assert.equal(planFor({ ...answered, days: 4 }, 'muscle').wave, true)
+})
+
+check('profiles written before the weights question keep their program', () => {
+  // Scoring an unanswered question as a no would have quietly demoted
+  // everybody already using the app.
+  assert.equal(program({ years: 'sixToTwo' }), 'Build')
+  assert.equal(program({ years: 'overTwo' }), 'Build')
+  assert.equal(program({ years: 'overTwo', barbell: 'confident' }), 'Performance')
+})
+
+check('somebody rebuilding is a note, not a beginner course', () => {
+  assert.equal(returning({ years: 'under6', before: 'longAgo' }), true)
+  assert.equal(returning({ years: 'overTwo' }), false)
+  const plan = planFor({ years: 'under6', before: 'longAgo', days: 4 }, 'muscle')
+  assert.equal(plan.returning, true)
+  assert.equal(plan.splitName, 'Full Body, building up')
+})
+
+check('a flagged health answer changes the plan, not just the wording', () => {
+  const flagged = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'yes' }, 'muscle')
+  assert.equal(flagged.cleared, true)
+  assert.equal(flagged.showRpe, false, 'no effort targets to chase')
+  assert.equal(flagged.wave, false, 'no wave either')
+  assert.equal(flagged.sets, '2 to 3')
+  const clear = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'no' }, 'muscle')
+  assert.equal(clear.showRpe, true)
+})
+
+check('a stated goal is never quietly rewritten', () => {
+  assert.equal(planFor({ goalChoice: 'lean' }, 'muscle').reps, '8 to 15')
+  assert.ok(planFor({ goalChoice: 'lean' }, 'muscle').goalNote, 'lean says what it maps to')
+  assert.ok(planFor({ goalChoice: 'health' }, 'endurance').goalNote, 'health says what it maps to')
+  assert.equal(planFor({ goalChoice: 'muscle' }, 'muscle').goalNote, null)
+  assert.equal(planFor({ goalChoice: 'strength' }, 'strength').reps, '3 to 6')
+})
+
+check('age comes from the number when there is one', () => {
+  assert.equal(planFor({ ageYears: 64, years: 'overTwo', barbell: 'confident', knows: 'yes' }, 'muscle').sets, '2 to 3')
+  assert.equal(planFor({ ageYears: 35, years: 'overTwo', barbell: 'confident', knows: 'yes' }, 'muscle').sets, '3 to 4')
 })
 
 check('the plan points at template days that exist', () => {
@@ -201,6 +258,7 @@ check('the plan points at template days that exist', () => {
     { years: 'never' as const, days: 2 },
     { years: 'never' as const, days: 3 },
     { years: 'under6' as const, before: 'thisYear' as const, days: 4 },
+    { years: 'under6' as const, before: 'longAgo' as const, days: 4 },
     { years: 'sixToTwo' as const, days: 3 },
     { years: 'overTwo' as const, barbell: 'confident' as const, days: 4 },
     { years: 'overTwo' as const, barbell: 'confident' as const, days: 5 },
@@ -216,7 +274,7 @@ check('the plan points at template days that exist', () => {
 
 check('RPE stays hidden until the number means something', () => {
   assert.equal(planFor({ years: 'never' }, 'muscle').showRpe, false)
-  assert.equal(planFor({ years: 'under6', before: 'thisYear' }, 'muscle').showRpe, false)
+  assert.equal(planFor({ years: 'never', before: 'no', knows: 'no' }, 'muscle').showRpe, false)
   assert.equal(planFor({ years: 'sixToTwo' }, 'muscle').showRpe, true)
 })
 
@@ -729,6 +787,66 @@ check('the drop seed cuts about a fifth and lands on real plates', () => {
   assert.equal(dropFrom(12.5), 10)
   assert.equal(dropFrom(255), 205)
   assert.equal(dropFrom(50), 40)
+})
+
+check('pounds in, kilos out, and back again unchanged', () => {
+  assert.equal(Math.round(toDisplay(220.462, 'kg')), 100)
+  assert.equal(Math.round(toPounds(100, 'kg')), 220)
+  assert.equal(toDisplay(180, 'lb'), 180)
+  assert.equal(Math.round(toPounds(toDisplay(183.7, 'kg'), 'kg') * 10) / 10, 183.7)
+  assert.equal(fmtWeight(180, 'lb'), '180 lb')
+  assert.equal(fmtWeight(181.4, 'kg'), '82.3 kg')
+  assert.equal(fmtWeight(null, 'lb'), '--')
+})
+
+check('a weight change reads as a direction, and no change reads as neither', () => {
+  assert.equal(fmtDelta(-6.2, 'lb'), 'down 6.2 lb')
+  assert.equal(fmtDelta(4, 'lb'), 'up 4 lb')
+  assert.equal(fmtDelta(0, 'lb'), null)
+})
+
+check('bodyweight summarises against day one and the goal', () => {
+  const rows = [
+    { date: '2026-01-02', weight: 214 },
+    { date: '2026-04-01', weight: 208 },
+    { date: '2026-08-18', weight: 202 },
+  ]
+  const s = summarise(rows, 194)
+  assert.equal(s.first, 214)
+  assert.equal(s.current, 202)
+  assert.equal(s.firstDate, '2026-01-02')
+  assert.equal(s.change, -12)
+  assert.equal(s.reached, false)
+  assert.equal(Math.round((s.toGoal ?? 0) * 100), 60)
+  assert.equal(summarise(rows, 205).reached, true, 'past the goal counts as reached')
+  assert.equal(summarise([{ date: '2026-01-02', weight: 214 }], 194).change, null, 'one reading is not a direction')
+  assert.equal(summarise([], 194).current, null)
+})
+
+check('a goal above the starting weight runs the other way', () => {
+  const rows = [
+    { date: '2026-01-02', weight: 150 },
+    { date: '2026-06-01', weight: 158 },
+  ]
+  assert.equal(summarise(rows, 160).reached, false)
+  assert.equal(summarise(rows, 155).reached, true)
+  assert.equal(Math.round((summarise(rows, 160).toGoal ?? 0) * 100), 80)
+})
+
+check('the weight line is a weekly average, not a diary of water', () => {
+  const rows = [
+    { date: '2026-08-10', weight: 200 },
+    { date: '2026-08-11', weight: 204 },
+    { date: '2026-08-12', weight: 199 },
+  ]
+  const t = trend(rows)
+  assert.equal(t.length, 3)
+  assert.equal(t[0].weight, 200)
+  assert.equal(t[1].weight, 202)
+  assert.equal(t[2].weight, 201)
+  // A reading outside the window is outside the average.
+  const wide = trend([...rows, { date: '2026-09-30', weight: 190 }])
+  assert.equal(wide[3].weight, 190)
 })
 
 console.log(`\n${checks} checks passed`)

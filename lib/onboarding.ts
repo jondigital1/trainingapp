@@ -1,14 +1,27 @@
 import { LIBRARY, equipmentOf, groupOf, lookupType } from './exercises'
 import { dayItems, SPLITS, type TemplateDay } from './templates'
 import type { CustomWorkoutItem, Goal, SetType } from './types'
+import type { Unit } from './units'
 
 // Everything the first run asks, plus the questions that arrive later in
 // context. See docs/onboarding-research.md for why each one earns its place.
 export interface Profile {
+  // Who they are. Name is used on the profile page and nowhere else: this app
+  // has one user per account and does not need to address anybody by name to
+  // work.
+  name?: string
+  ageYears?: number
+  units?: Unit
+  heightIn?: number
+  goalWeight?: number
   condition?: 'no' | 'yes' | 'skip'
   symptoms?: 'no' | 'yes'
   years?: 'never' | 'under6' | 'sixToTwo' | 'overTwo'
   before?: 'no' | 'thisYear' | 'longAgo'
+  // The most honest experience question there is. Somebody who can name the
+  // load they last pressed has been paying attention to their training;
+  // somebody who cannot has not, whatever their years say.
+  knows?: 'yes' | 'roughly' | 'no'
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   minutes?: 30 | 45 | 60 | 75
@@ -16,6 +29,9 @@ export interface Profile {
   redFlag?: boolean
   barbell?: 'confident' | 'rusty' | 'never' | 'no'
   other?: string[]
+  // Kept as a band because that is what the plan actually reads. ageYears is
+  // the real answer and the band is derived from it; the band survives on its
+  // own for profiles written before the number was asked for.
   age?: 'under40' | '40to59' | 'over60'
   dislikes?: string[]
   goalChoice?: 'muscle' | 'strength' | 'lean' | 'health'
@@ -32,53 +48,84 @@ export const COMMON_DISLIKES = [
   'Burpees', 'Back Squat', 'Deadlift', 'Walking Lunge', 'Overhead Press', 'Plank', 'Run',
 ]
 
-export type Level = 'Beginner' | 'Returner' | 'Intermediate' | 'Advanced'
+export function ageBand(profile: Profile): Profile['age'] {
+  const n = profile.ageYears
+  if (n == null || !Number.isFinite(n)) return profile.age
+  if (n >= 60) return 'over60'
+  if (n >= 40) return '40to59'
+  return 'under40'
+}
+
+export function unitOf(profile: Profile): Unit {
+  return profile.units === 'kg' ? 'kg' : 'lb'
+}
+
+// Three programs, because a person can hold three in their head and choose
+// between them. The four internal tiers this replaced were a scoring artefact,
+// not something anybody was ever shown.
+export type Program = 'Foundation' | 'Build' | 'Performance'
+
+export const PROGRAMS: { id: Program; blurb: string }[] = [
+  { id: 'Foundation', blurb: 'Learn the movements, build the habit, add weight as it gets easy.' },
+  { id: 'Build', blurb: 'You know the lifts. Now add muscle and load, one session at a time.' },
+  { id: 'Performance', blurb: 'Long training age. Effort targets and the three week wave from day one.' },
+]
 
 const YEARS_SCORE = { never: 0, under6: 1, sixToTwo: 2, overTwo: 3 }
 const BEFORE_SCORE = { no: 0, longAgo: 1, thisYear: 2 }
 const BARBELL_SCORE = { never: 0, no: 0, rusty: 1, confident: 2 }
+const KNOWS_SCORE = { no: 0, roughly: 1, yes: 2 }
+
+// Profiles written before the weights question existed get a value inferred
+// from training age rather than being scored as if they had answered no, which
+// would demote people who have been using the app for months.
+function knowsScore(p: Profile): number {
+  if (p.knows) return KNOWS_SCORE[p.knows]
+  return p.years === 'sixToTwo' || p.years === 'overTwo' ? 1 : 0
+}
 
 export function experienceScore(p: Profile): number {
   return (
     (p.years ? YEARS_SCORE[p.years] : 0) +
     (p.before ? BEFORE_SCORE[p.before] : 0) +
-    (p.barbell ? BARBELL_SCORE[p.barbell] : 0)
+    (p.barbell ? BARBELL_SCORE[p.barbell] : 0) +
+    knowsScore(p)
   )
 }
 
-// Max reachable score is 5: the returner question is only asked of people who
+// Max reachable score is 7: the returner question is only asked of people who
 // said never or under 6 months, so it never stacks on top of two years.
-export function level(p: Profile): Level {
+export function program(p: Profile): Program {
   const s = experienceScore(p)
-  const green = p.years === 'never' || p.years === 'under6' || !p.years
-  if (s <= 1) return 'Beginner'
-  if (s <= 3) return green ? 'Returner' : 'Intermediate'
-  if (s <= 4) return 'Intermediate'
-  return 'Advanced'
+  if (s <= 2) return 'Foundation'
+  if (s <= 4) return 'Build'
+  return 'Performance'
 }
 
-// Level by days, over the template days that already exist. Beginners run full
-// body because a missed session still leaves every muscle trained that week.
-const TABLE: Record<Level, Record<number, string[]>> = {
-  Beginner: {
+// Somebody rebuilding is not a beginner and should not be told they are. It is
+// a note and a slightly different first four weeks, not a fourth program.
+export function returning(p: Profile): boolean {
+  const green = p.years === 'never' || p.years === 'under6'
+  return green && (p.before === 'thisYear' || p.before === 'longAgo')
+}
+
+// Program by days, over the template days that already exist. Foundation runs
+// full body because a missed session still leaves every muscle trained that
+// week.
+const TABLE: Record<Program, Record<number, string[]>> = {
+  Foundation: {
     2: ['fb-a', 'fb-b'],
     3: ['fb-a', 'fb-b', 'fb-c'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-c'],
   },
-  Returner: {
-    2: ['fb-a', 'fb-b'],
-    3: ['fb-a', 'fb-b', 'fb-c'],
-    4: ['fb-a', 'fb-b', 'fb-c', 'ul-upper-a'],
-    5: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b', 'fb-c'],
-  },
-  Intermediate: {
+  Build: {
     2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
     5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
   },
-  Advanced: {
+  Performance: {
     2: ['ul-upper-a', 'ul-lower-a'],
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
@@ -86,11 +133,17 @@ const TABLE: Record<Level, Record<number, string[]>> = {
   },
 }
 
-const SPLIT_NAME: Record<Level, Record<number, string>> = {
-  Beginner: { 2: 'Full Body', 3: 'Full Body', 4: 'Upper Lower', 5: 'Upper Lower' },
-  Returner: { 2: 'Full Body', 3: 'Full Body', 4: 'Full Body, building up', 5: 'Upper Lower' },
-  Intermediate: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Upper Lower', 5: '5 Day Split' },
-  Advanced: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: '4 Day Split', 5: '5 Day Split' },
+// A returner on Foundation gets full body four days rather than an upper lower
+// split, because the first month back is about frequency on the patterns, not
+// carving the week into halves.
+const RETURNER_DAYS: Record<number, string[]> = {
+  4: ['fb-a', 'fb-b', 'fb-c', 'ul-upper-a'],
+}
+
+const SPLIT_NAME: Record<Program, Record<number, string>> = {
+  Foundation: { 2: 'Full Body', 3: 'Full Body', 4: 'Upper Lower', 5: 'Upper Lower' },
+  Build: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: 'Upper Lower', 5: '5 Day Split' },
+  Performance: { 2: 'Upper Lower', 3: 'Push Pull Legs', 4: '4 Day Split', 5: '5 Day Split' },
 }
 
 const ALL_DAYS: TemplateDay[] = SPLITS.flatMap((s) => s.days)
@@ -277,7 +330,8 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
 }
 
 export interface Plan {
-  level: Level
+  program: Program
+  returning: boolean
   days: number
   capped: boolean
   splitName: string
@@ -287,25 +341,64 @@ export interface Plan {
   reps: string
   sets: string
   showRpe: boolean
+  wave: boolean
   cleared: boolean
+  // What the stated goal was turned into, and why, so nothing is quietly
+  // rewritten behind the person who chose it.
+  goalNote: string | null
+}
+
+// The goal a person picks and the goal the coach can act on are not the same
+// list. Leaning out and staying capable are both built on muscle work; saying
+// so beats mapping them to something else without a word.
+export const GOAL_FROM_CHOICE: Record<NonNullable<Profile['goalChoice']>, Goal> = {
+  muscle: 'muscle',
+  strength: 'strength',
+  lean: 'muscle',
+  health: 'endurance',
+}
+
+const GOAL_NOTE: Record<NonNullable<Profile['goalChoice']>, string | null> = {
+  muscle: null,
+  strength: null,
+  lean: 'Leaning out runs as muscle work: this holds and builds what you have, the kitchen takes the weight off. Nothing here is a fat burning workout, because that is not a thing a workout does.',
+  health: 'Staying capable runs as endurance work: lighter loads, more reps, kinder joints, and a coach line that stops asking you to grind.',
+}
+
+const REPS: Record<NonNullable<Profile['goalChoice']>, string> = {
+  strength: '3 to 6',
+  muscle: '6 to 12',
+  lean: '8 to 15',
+  health: '12 to 20',
 }
 
 export function planFor(profile: Profile, goal: Goal): Plan {
-  const lv = level(profile)
+  const prog = program(profile)
+  const back = returning(profile)
   const asked = profile.days ?? 3
   const days = Math.min(Math.max(asked, 2), 5)
+  // A flagged health answer is not a note, it is a lighter plan: fewer sets,
+  // no effort targets to chase and no wave, whatever the experience score says.
+  const cleared = profile.condition === 'yes' || profile.symptoms === 'yes'
+  const choice = profile.goalChoice
+  const dayIds =
+    back && prog === 'Foundation' && RETURNER_DAYS[days] ? RETURNER_DAYS[days] : TABLE[prog][days]
+
   return {
-    level: lv,
+    program: prog,
+    returning: back,
     days,
     capped: asked > 5,
-    splitName: SPLIT_NAME[lv][days],
-    dayIds: TABLE[lv][days],
+    splitName: back && prog === 'Foundation' && days === 4 ? 'Full Body, building up' : SPLIT_NAME[prog][days],
+    dayIds,
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : '2 to 3',
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
-    reps: goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
-    sets: lv === 'Beginner' || profile.age === 'over60' ? '2 to 3' : '3 to 4',
-    showRpe: lv === 'Intermediate' || lv === 'Advanced',
-    cleared: profile.condition === 'yes' || profile.symptoms === 'yes',
+    reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
+    sets: cleared || prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
+    showRpe: !cleared && prog !== 'Foundation',
+    wave: !cleared && prog === 'Performance',
+    cleared,
+    goalNote: choice ? GOAL_NOTE[choice] : null,
   }
 }
 

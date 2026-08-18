@@ -17,7 +17,8 @@ import SettingsSheet from './SettingsSheet'
 import StartSheet from './StartSheet'
 import WorkoutEditor from './WorkoutEditor'
 import type { LastSession } from './ExerciseBlock'
-import { buildDay, dayById, needsCheckin, planFor, type Profile } from '@/lib/onboarding'
+import { buildDay, dayById, needsCheckin, planFor, unitOf, type Profile } from '@/lib/onboarding'
+import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
 import { waveWeek } from '@/lib/wave'
@@ -395,7 +396,24 @@ export default function App({ userId, email }: { userId: string; email: string }
     }
   }
 
-  async function finishOnboarding(profile: Profile, goal: Goal, startDayId: string | null) {
+  // Day one bodyweight is a real reading on a real date, not a profile field,
+  // so it goes in beside every reading that follows it.
+  async function logWeight(pounds: number, date = today()) {
+    const entry = { date, weight: pounds }
+    setData((prev) => ({
+      ...prev,
+      bodyWeights: [...prev.bodyWeights.filter((w) => w.date !== date), entry].sort((a, b) =>
+        a.date.localeCompare(b.date),
+      ),
+    }))
+    try {
+      await db.saveBodyWeight(sb, userId, entry)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save your weight')
+    }
+  }
+
+  async function finishOnboarding({ profile, goal, startDayId, weight }: OnboardingResult) {
     const stamp = new Date().toISOString()
     setData((prev) => ({ ...prev, settings: { goal, profile, onboardedAt: stamp } }))
     try {
@@ -404,6 +422,7 @@ export default function App({ userId, email }: { userId: string; email: string }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your answers')
     }
+    if (weight != null) await logWeight(weight)
     const day = startDayId ? dayById(startDayId) : null
     if (day) reallyStart(day.name, buildDay(day, profile), true)
   }
@@ -479,7 +498,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const targetWorkout = data.workouts.find((w) => w.id === pickerTarget) ?? null
 
   if (!loading && !data.settings.onboardedAt) {
-    return <Onboarding onFinish={(p, g, day) => void finishOnboarding(p, g, day)} />
+    return <Onboarding onFinish={(result) => void finishOnboarding(result)} />
   }
 
   return (
@@ -608,7 +627,15 @@ export default function App({ userId, email }: { userId: string; email: string }
         </div>
       ) : null}
 
-      {!loading && tab === 'progress' ? <ProgressTab workouts={data.workouts} /> : null}
+      {!loading && tab === 'progress' ? (
+        <ProgressTab
+          workouts={data.workouts}
+          weights={data.bodyWeights}
+          goalWeight={profile.goalWeight}
+          unit={unitOf(profile)}
+          onLogWeight={(lb) => void logWeight(lb)}
+        />
+      ) : null}
 
       {!loading && tab === 'history' ? (
         <div className="flex flex-col gap-3">
@@ -741,6 +768,8 @@ export default function App({ userId, email }: { userId: string; email: string }
         <ProfileSheet
           profile={profile}
           focus={profileFocus}
+          weights={data.bodyWeights}
+          onLogWeight={(lb) => void logWeight(lb)}
           onSave={(next) => {
             void saveProfile(next)
             setSheet(null)
