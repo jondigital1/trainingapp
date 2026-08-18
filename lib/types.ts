@@ -23,6 +23,10 @@ export interface SetEntry {
   t?: number | null
   d?: number | null
   raw?: string | null
+  // A drop set: this row continues the set above it at a lighter weight, with
+  // no rest between. Excluded from records, since near failure at a lighter
+  // load is a technique, not a best.
+  drop?: boolean | null
 }
 
 export interface Exercise {
@@ -30,6 +34,8 @@ export interface Exercise {
   name: string
   type: SetType
   sets: SetEntry[]
+  // Exercises sharing a tag run together with no rest between them.
+  superset?: string | null
 }
 
 export interface Workout {
@@ -48,6 +54,8 @@ export interface CustomExercise {
 export interface CustomWorkoutItem {
   name: string
   type: SetType
+  // Items sharing a tag run together as a superset when the workout starts.
+  superset?: string | null
 }
 
 export interface CustomWorkout {
@@ -60,6 +68,8 @@ export type Goal = 'strength' | 'muscle' | 'endurance'
 
 export interface Settings {
   goal: Goal
+  profile: import('./onboarding').Profile
+  onboardedAt: string | null
 }
 
 export interface TrainingData {
@@ -73,5 +83,5 @@ export const EMPTY_DATA: TrainingData = {
   workouts: [],
   custom: [],
   customWorkouts: [],
-  settings: { goal: 'muscle' },
+  settings: { goal: 'muscle', profile: {}, onboardedAt: null },
 }
