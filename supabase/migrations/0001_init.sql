@@ -36,9 +36,14 @@ create table if not exists public.custom_exercises (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   type text not null check (type in ('W', 'R', 'T', 'WD', 'C', 'X')),
-  created_at timestamptz not null default now(),
-  unique (user_id, name)
+  created_at timestamptz not null default now()
 );
+
+-- Its own statement rather than a unique constraint inside the table body. The
+-- upsert in lib/db.ts targets (user_id, name), and on conflict is happy with a
+-- unique index.
+create unique index if not exists custom_exercises_user_name_key
+  on public.custom_exercises (user_id, name);
 
 create table if not exists public.custom_workouts (
   id uuid primary key default gen_random_uuid(),

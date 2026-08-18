@@ -55,20 +55,26 @@ export default function SetRow({
   index,
   set,
   type,
+  showRpe: rpeEnabled,
   onChange,
   onRemove,
 }: {
   index: number
   set: SetEntry
   type: SetType
+  showRpe: boolean
   onChange: (patch: Partial<SetEntry>) => void
   onRemove: () => void
 }) {
-  const showRpe = type === 'W' || type === 'R'
+  const showRpe = rpeEnabled && (type === 'W' || type === 'R') && !set.drop
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-4 shrink-0 text-xs text-muted num">{index + 1}</span>
+      {set.drop ? (
+        <span className="w-8 shrink-0 text-right text-[10px] uppercase tracking-wide text-accent">drop</span>
+      ) : (
+        <span className="w-4 shrink-0 text-xs text-muted num">{index + 1}</span>
+      )}
       <div className="flex flex-1 items-center gap-2">
         {type === 'W' ? (
           <>
