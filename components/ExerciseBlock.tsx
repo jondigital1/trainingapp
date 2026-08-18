@@ -44,6 +44,7 @@ export default function ExerciseBlock({
   restOnComplete = true,
   onMove,
   onSuperset,
+  onSwap,
   onChange,
   onRemove,
 }: {
@@ -60,6 +61,7 @@ export default function ExerciseBlock({
   restOnComplete?: boolean
   onMove: (direction: -1 | 1) => void
   onSuperset?: () => void
+  onSwap?: () => void
   onChange: (next: Exercise) => void
   onRemove: () => void
 }) {
@@ -183,7 +185,7 @@ export default function ExerciseBlock({
         </p>
       ) : null}
 
-      <div className="mt-2.5 flex gap-2">
+      <div className="mt-2.5 flex flex-wrap gap-2">
         <button
           onClick={() => onChange({ ...exercise, sets: [...exercise.sets, seedSet(exercise, last)] })}
           className="flex-1 rounded-lg bg-ink py-1.5 text-xs text-muted ring-1 ring-edge"
@@ -201,6 +203,15 @@ export default function ExerciseBlock({
             className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
           >
             Drop
+          </button>
+        ) : null}
+        {onSwap ? (
+          <button
+            onClick={onSwap}
+            aria-label={`Swap out ${exercise.name}`}
+            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+          >
+            Swap
           </button>
         ) : null}
         {onSuperset ? (

@@ -1,7 +1,7 @@
 // Plain assertions over the pure logic: library, templates, coaching, the
 // artifact importer and CSV export. Run with npm run check.
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, dropFrom, roundLoad } from '../lib/coach'
 import { fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
@@ -1183,6 +1183,32 @@ check('a movement you typed in behaves like one from the library', () => {
 
   resetCustoms()
   assert.equal(groupOf('Jefferson Curl'), null, 'and one test cannot leak into the next')
+})
+
+check('a substitute is the same muscle first, then the closest swap', () => {
+  const same = similarTo('Barbell Bench Press')
+  assert.ok(same.length > 5)
+  assert.ok(same.every((e) => e.group === 'Chest'), 'a substitute has to train the same thing')
+  assert.ok(!same.some((e) => e.name === 'Barbell Bench Press'), 'and it is not itself')
+  // Closeness is mostly how much effort it takes, which is a better proxy for
+  // the pattern than equipment: pressing before flying, and a dumbbell press
+  // before a cable one.
+  const at = (needle: string) => same.findIndex((e) => e.name.includes(needle))
+  assert.ok(at('Barbell Bench Press') < at('Dumbbell Bench Press'), 'the nearest variant first')
+  assert.ok(at('Dumbbell Bench Press') < at('Cable Fly'), 'a press before a fly')
+  // The one that matters most: swapping a squat should offer other squats and
+  // the leg press, not a leg extension.
+  const squat = similarTo('Back Squat').slice(0, 4).map((e) => e.name)
+  assert.ok(squat.includes('Front Squat'), `expected a squat, got ${squat.join(', ')}`)
+  assert.ok(squat.includes('Leg Press'), `expected the leg press, got ${squat.join(', ')}`)
+  assert.ok(!squat.includes('Leg Extension'), 'and not a leg extension')
+  // Nothing to offer for a movement the app has never heard of.
+  assert.deepEqual(similarTo('Jefferson Curl'), [])
+  // A custom movement joins the list once it says what it trains.
+  registerCustoms([{ id: '1', name: 'Jefferson Curl', type: 'W', group: 'Back', tier: 'small', sets: 3 }])
+  const back = similarTo('Barbell Row', [{ name: 'Jefferson Curl', type: 'W', group: 'Back' }])
+  assert.ok(back.some((e) => e.name === 'Jefferson Curl'), 'your own movements are substitutes too')
+  resetCustoms()
 })
 
 console.log(`\n${checks} checks passed`)

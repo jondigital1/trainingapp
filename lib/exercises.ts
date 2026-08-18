@@ -1,4 +1,5 @@
 import { customGroup } from './custom'
+import { restTier, type RestTier } from './rest'
 import type { SetType } from './types'
 
 export interface LibraryExercise {
@@ -353,4 +354,38 @@ export function equipmentOf(name: string): Equipment {
   if (BODYWEIGHT_WORDS.some((w) => n.includes(w))) return 'bodyweight'
   if (/Sled|Cycling/i.test(n)) return 'other'
   return 'dumbbell'
+}
+
+// Movements worth offering instead of this one. Same muscle group, because
+// that is what a substitute has to be, ordered by how close the swap is.
+//
+// Closeness is mostly how much effort the movement takes, which is a better
+// proxy for the pattern than equipment: swapping a bench press, a dumbbell
+// press should be offered before a cable fly, and both of those train the
+// chest with the same set type off different kit. So the rest tiers are
+// treated as a scale and scored on the distance between them, with the same
+// set type and the same equipment as tie breakers.
+const TIER_ORDER: RestTier[] = ['heavy', 'compound', 'isolation', 'cable', 'small']
+
+export function similarTo(name: string, extra: LibraryExercise[] = []): LibraryExercise[] {
+  const group = groupOf(name)
+  if (!group) return []
+  const type = lookupType(name)
+  const kit = equipmentOf(name)
+  const tier = TIER_ORDER.indexOf(restTier(name, type ?? 'W'))
+
+  return [...extra, ...LIBRARY]
+    .filter((e) => e.group === group && e.name !== name)
+    .map((e) => {
+      const distance = Math.abs(TIER_ORDER.indexOf(restTier(e.name, e.type)) - tier)
+      return {
+        e,
+        score:
+          Math.max(0, 4 - distance) * 4 +
+          (lookupType(e.name) === type ? 2 : 0) +
+          (equipmentOf(e.name) === kit ? 1 : 0),
+      }
+    })
+    .sort((a, b) => b.score - a.score || a.e.name.localeCompare(b.e.name))
+    .map((x) => x.e)
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MUSCLE_GROUPS } from '@/lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, groupOf, similarTo } from '@/lib/exercises'
 import { uid } from '@/lib/format'
 import Sheet from './Sheet'
 import { TIER_LABELS, type RestTier } from '@/lib/rest'
@@ -10,11 +10,15 @@ import { SET_TYPES, type CustomExercise, type SetType } from '@/lib/types'
 
 export default function ExercisePicker({
   customs,
+  replacing,
   onPick,
   onCreate,
   onClose,
 }: {
   customs: CustomExercise[]
+  // The movement being swapped out, when this was opened to substitute rather
+  // than to add. Picking replaces it in place instead of appending.
+  replacing?: string | null
   onPick: (name: string, type: SetType, superset: string | null) => void
   onCreate: (exercise: CustomExercise) => void
   onClose: () => void
@@ -35,14 +39,29 @@ export default function ExercisePicker({
     [customs],
   )
 
+  // Swapping something out opens on movements that train the same thing,
+  // closest swap first, which is the answer nine times out of ten. Typing or
+  // picking another group goes back to searching everything.
+  const suggestions = useMemo(
+    () =>
+      replacing
+        ? similarTo(
+            replacing,
+            customs.map((c) => ({ name: c.name, type: c.type, group: c.group ?? '' })),
+          )
+        : [],
+    [replacing, customs],
+  )
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
+    if (replacing && !q && !group) return suggestions
     return all.filter((e) => {
       if (group && e.group !== group) return false
       if (!q) return true
       return e.name.toLowerCase().includes(q)
     })
-  }, [all, query, group])
+  }, [all, query, group, replacing, suggestions])
 
   const exact = all.some((e) => e.name.toLowerCase() === query.trim().toLowerCase())
 
@@ -54,7 +73,14 @@ export default function ExercisePicker({
   const groups = customs.length ? ['My exercises', ...MUSCLE_GROUPS] : MUSCLE_GROUPS
 
   return (
-    <Sheet title="Add exercise" onClose={onClose}>
+    <Sheet title={replacing ? `Swap out ${replacing}` : 'Add exercise'} onClose={onClose}>
+      {replacing ? (
+        <p className="mb-3 text-sm text-muted">
+          {suggestions.length
+            ? `Movements that train the same thing, closest first. Or search for anything.`
+            : `Nothing in the library trains the same thing. Search for a replacement.`}
+        </p>
+      ) : null}
       <input
         autoFocus
         value={query}

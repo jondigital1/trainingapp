@@ -91,6 +91,9 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [tab, setTab] = useState<Tab>('log')
   const [sheet, setSheet] = useState<SheetName>(null)
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
+  // The exercise being swapped out, when the picker was opened to substitute
+  // rather than to add.
+  const [swapping, setSwapping] = useState<{ id: string; name: string } | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
   const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
@@ -382,6 +385,27 @@ export default function App({ userId, email }: { userId: string; email: string }
     const count = customFor(name)?.sets
     const n = count && count > 0 ? Math.min(count, 10) : 1
     return Array.from({ length: n }, () => ({ id: uid() }))
+  }
+
+  // A substitute takes the place of the one it replaces: same position, same
+  // superset, same number of sets laid out. The numbers do not carry over,
+  // because they were for a different movement.
+  function swapExercise(workoutId: string, exerciseId: string, name: string, type: SetType) {
+    const workout = latest.current.workouts.find((w) => w.id === workoutId)
+    if (!workout) return
+    updateWorkout({
+      ...workout,
+      exercises: workout.exercises.map((e) =>
+        e.id === exerciseId
+          ? {
+              ...e,
+              name,
+              type,
+              sets: e.sets.filter((set) => !set.drop).map(() => ({ id: uid() })),
+            }
+          : e,
+      ),
+    })
   }
 
   async function createCustomExercise(exercise: CustomExercise) {
@@ -686,6 +710,12 @@ export default function App({ userId, email }: { userId: string; email: string }
               onChange={updateWorkout}
               onDelete={() => void removeWorkout(workout.id)}
               onAddExercise={() => {
+                setSwapping(null)
+                setPickerTarget(workout.id)
+                setSheet('picker')
+              }}
+              onSwapExercise={(exerciseId, name) => {
+                setSwapping({ id: exerciseId, name })
                 setPickerTarget(workout.id)
                 setSheet('picker')
               }}
@@ -743,6 +773,12 @@ export default function App({ userId, email }: { userId: string; email: string }
                     void removeWorkout(workout.id)
                   }}
                   onAddExercise={() => {
+                    setSwapping(null)
+                    setPickerTarget(workout.id)
+                    setSheet('picker')
+                  }}
+                  onSwapExercise={(exerciseId, name) => {
+                    setSwapping({ id: exerciseId, name })
                     setPickerTarget(workout.id)
                     setSheet('picker')
                   }}
@@ -840,11 +876,22 @@ export default function App({ userId, email }: { userId: string; email: string }
       {sheet === 'picker' && targetWorkout ? (
         <ExercisePicker
           customs={data.custom}
-          onPick={(name, type, superset) => addExercise(targetWorkout.id, name, type, superset)}
+          replacing={swapping?.name ?? null}
+          onPick={(name, type, superset) => {
+            if (swapping) {
+              swapExercise(targetWorkout.id, swapping.id, name, type)
+              setSwapping(null)
+              setPickerTarget(null)
+              setSheet(null)
+              return
+            }
+            addExercise(targetWorkout.id, name, type, superset)
+          }}
           onCreate={(exercise) => void createCustomExercise(exercise)}
           onClose={() => {
             setSheet(null)
             setPickerTarget(null)
+            setSwapping(null)
           }}
         />
       ) : null}

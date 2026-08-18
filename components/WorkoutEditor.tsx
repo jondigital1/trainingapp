@@ -30,6 +30,7 @@ export default function WorkoutEditor({
   onChange,
   onDelete,
   onAddExercise,
+  onSwapExercise,
   onEnd,
   showDate = false,
 }: {
@@ -46,6 +47,7 @@ export default function WorkoutEditor({
   onChange: (next: Workout) => void
   onDelete: () => void
   onAddExercise: () => void
+  onSwapExercise?: (exerciseId: string, name: string) => void
   onEnd?: () => void
   showDate?: boolean
 }) {
@@ -168,6 +170,9 @@ export default function WorkoutEditor({
             onMove={(direction) => move(exercise.id, direction)}
             onSuperset={
               workout.exercises.length > 1 ? () => setPairing(exercise.id) : undefined
+            }
+            onSwap={
+              onSwapExercise ? () => onSwapExercise(exercise.id, exercise.name) : undefined
             }
             onChange={patchExercise}
             onRemove={() =>

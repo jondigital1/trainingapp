@@ -102,6 +102,23 @@ to the current one. Beside it, this week carries the streak, the 28 day grid
 and the muscle coverage, and charts carries the progression lines and
 bodyweight.
 
+## Substitutions
+
+A Swap button on every exercise, for the movement you do not like, cannot get
+to, or whose machine is taken. It opens the picker on things that train the
+same muscle, closest swap first, and typing searches everything as usual.
+
+Closeness is mostly how much effort a movement takes, which is a better proxy
+for the pattern than equipment: swapping a back squat offers the front squat,
+the belt squat, the hack squat and the leg press before it offers a leg
+extension. The substitute takes the place of the one it replaced, keeping its
+position, its superset and the number of sets laid out. The numbers do not
+carry over, because they were for a different movement.
+
+The plan does this on its own too, around a sore joint, which is a different
+question with the same answer: `lib/onboarding.ts` swaps at plan time,
+`similarTo` in `lib/exercises.ts` offers the list mid-session.
+
 ## Your own workouts
 
 Build one from scratch in the Start sheet, or take a copy of any template day
