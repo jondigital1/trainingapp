@@ -149,6 +149,23 @@ The plan does this on its own too, around a sore joint, which is a different
 question with the same answer: `lib/onboarding.ts` swaps at plan time,
 `similarTo` in `lib/exercises.ts` offers the list mid-session.
 
+## Starting one
+
+The Start sheet leads with your plan, and each day says what is in it and
+roughly what it will cost you: how many movements, the first three by name, and
+an estimate in minutes. A choice made before you commit rather than after.
+
+The estimate is forty seconds of work a set, plus the rest the movement earns,
+plus the time it takes to find the machine and set the seat. A superset rests
+once at the end of the group rather than after each movement, so a supersetted
+day genuinely reads shorter, which is the honest answer and the reason people
+superset. It rounds to five minutes, because a session claiming to take 47 is
+claiming to know something it does not.
+
+There is no empty workout. Starting a workout with nothing in it is a screen
+asking you to do the work it exists to save you, and Build one is there for a
+session you want to write yourself.
+
 ## Your own workouts
 
 Build one from scratch in the Start sheet, or take a copy of any template day

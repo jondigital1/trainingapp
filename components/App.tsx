@@ -881,6 +881,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         <StartSheet
           plan={plan}
           profile={profile}
+          goal={data.settings.goal}
           customWorkouts={data.customWorkouts}
           onStart={startWorkout}
           onBuild={() => {

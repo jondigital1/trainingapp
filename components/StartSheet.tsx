@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import { SPLITS, dayItems, dayNames } from '@/lib/templates'
 import { buildDay, dayById, type Plan, type Profile } from '@/lib/onboarding'
+import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import Sheet from './Sheet'
-import type { CustomWorkout, CustomWorkoutItem } from '@/lib/types'
+import type { CustomWorkout, CustomWorkoutItem, Goal } from '@/lib/types'
 
 export default function StartSheet({
   plan,
   profile,
+  goal,
   customWorkouts,
   onStart,
   onBuild,
@@ -19,6 +21,7 @@ export default function StartSheet({
 }: {
   plan: Plan | null
   profile: Profile
+  goal: Goal
   customWorkouts: CustomWorkout[]
   onStart: (title: string, items: CustomWorkoutItem[], sort?: boolean, dayId?: string) => void
   onBuild: () => void
@@ -46,31 +49,39 @@ export default function StartSheet({
             Your plan &middot; {plan!.splitName}
           </h3>
           <div className="mt-2 flex flex-col gap-2">
-            {planDays.map((day, i) => (
-              <button
-                key={`${day!.id}-${i}`}
-                onClick={() => onStart(day!.name, buildDay(day!, profile), true, day!.id)}
-                className="flex items-center justify-between rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
-              >
-                <span className="text-sm">{day!.name}</span>
-                <span className="text-xs text-muted num">day {i + 1}</span>
-              </button>
-            ))}
+            {planDays.map((day, i) => {
+              // What is actually in it and what it will cost you, so the choice
+              // is made before you commit rather than after.
+              const items = buildDay(day!, profile)
+              const est = fmtEstimate(estimateSeconds(items, goal))
+              return (
+                <button
+                  key={`${day!.id}-${i}`}
+                  onClick={() => onStart(day!.name, items, true, day!.id)}
+                  className="rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm">{day!.name}</span>
+                    <span className="num shrink-0 text-xs text-muted">
+                      {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-muted">
+                    {items.slice(0, 3).map((it) => it.name).join(', ')}
+                  </p>
+                </button>
+              )
+            })}
           </div>
         </div>
       ) : null}
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => onStart('Workout', [])}
-          className="flex-1 rounded-xl bg-ink py-3 text-sm ring-1 ring-edge"
-        >
-          Empty workout
-        </button>
-        <button onClick={onBuild} className="flex-1 rounded-xl bg-ink py-3 text-sm ring-1 ring-edge">
-          Build one
-        </button>
-      </div>
+      <button
+        onClick={onBuild}
+        className="w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge"
+      >
+        Build one from scratch
+      </button>
 
       {customWorkouts.length ? (
         <div className="mt-5">

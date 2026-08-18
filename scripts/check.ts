@@ -23,6 +23,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
+import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
@@ -1262,6 +1263,28 @@ check('the streak counts against the week you set yourself', () => {
   assert.equal(trainedOn(rows, '2026-08-17'), true)
   assert.equal(trainedOn(rows, '2026-08-18'), false)
   assert.equal(trainedOn([{ id: 'x', date: '2026-08-18', title: 'S', exercises: [] }], '2026-08-18'), false)
+})
+
+check('a workout says what it will cost you before you commit', () => {
+  const item = (name: string, superset: string | null = null) => ({ name, type: 'W' as const, superset })
+  // Three sets of work plus the rest after each, minus the rest you do not
+  // take at the end.
+  const one = estimateSeconds([item('Back Squat')], 'muscle')
+  assert.equal(one, 3 * (40 + 120) + 45 - 120, 'work, rest and setup, less the rest you walk away from')
+  // A superset rests once at the end of the group, which is the point of one,
+  // so two movements paired take less than the same two apart.
+  const apart = estimateSeconds([item('Cable Curl'), item('Rope Pushdown')], 'muscle')
+  const paired = estimateSeconds([item('Cable Curl', 'a'), item('Rope Pushdown', 'a')], 'muscle')
+  assert.ok(paired < apart, `pairing should be quicker, got ${paired} against ${apart}`)
+  // Heavier work takes longer than the same number of cable movements.
+  assert.ok(estimateSeconds([item('Back Squat')], 'muscle') > estimateSeconds([item('Cable Curl')], 'muscle'))
+  assert.equal(estimateSeconds([], 'muscle'), 0)
+  // It reads like an estimate rather than claiming to know the minute.
+  assert.equal(fmtEstimate(0), null)
+  assert.equal(fmtEstimate(360), 'about 5 min')
+  assert.equal(fmtEstimate(47 * 60), 'about 45 min')
+  assert.equal(fmtEstimate(60 * 60), 'about 1h')
+  assert.equal(fmtEstimate(85 * 60), 'about 1h 25m')
 })
 
 console.log(`\n${checks} checks passed`)
