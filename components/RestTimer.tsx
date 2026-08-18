@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtTime } from '@/lib/format'
 import { askToNotify, restDone } from '@/lib/notify'
+import { cancelAlert, scheduleAlert } from '@/lib/push'
 import { REST_KEY, type RestState } from '@/lib/rest'
 
 // One timer at a time, keyed to an end timestamp rather than a countdown, so a
@@ -35,6 +36,9 @@ export function useRest() {
   const stop = useCallback(() => {
     setRest(null)
     rang.current = false
+    // Skipping the rest has to stop the alert that is already waiting on the
+    // server, or it arrives in the middle of the next set.
+    cancelAlert()
     try {
       localStorage.removeItem(REST_KEY)
     } catch {
@@ -53,6 +57,9 @@ export function useRest() {
     } catch {
       // ignore
     }
+    // And one from outside the device, for the phone that goes in a pocket.
+    // Does nothing unless it has been turned on.
+    void scheduleAlert(name, seconds)
   }, [])
 
   const extend = useCallback((seconds: number) => {
@@ -60,6 +67,9 @@ export function useRest() {
       if (!prev) return prev
       const next = { ...prev, endsAt: prev.endsAt + seconds * 1000, total: prev.total + seconds }
       rang.current = false
+      // The waiting alert is for the old end time, so it is replaced rather
+      // than left to fire early.
+      void scheduleAlert(prev.name, Math.max(1, Math.round((next.endsAt - Date.now()) / 1000)))
       try {
         localStorage.setItem(REST_KEY, JSON.stringify(next))
       } catch {
@@ -109,6 +119,9 @@ export function useRest() {
     // And a notification for the times the screen is not what you are looking
     // at. It says nothing when the app is in front of you.
     void restDone(rest.name)
+    // The page was awake after all, so the alert waiting on the server has
+    // nothing left to tell anybody.
+    cancelAlert()
   }, [rest, remaining])
 
   return { rest, remaining, start, stop, extend }

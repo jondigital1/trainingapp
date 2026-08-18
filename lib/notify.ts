@@ -3,10 +3,9 @@
 // What works and what does not, plainly. Switching to another app leaves this
 // page alive in the background for a while, and a notification posted from
 // there reaches you. A phone locked in your pocket suspends the page entirely,
-// and nothing running in it can fire; getting through to a locked phone needs
-// a push server sending the message from outside the device, which this app
-// does not have. So this covers checking a message between sets, and not
-// putting the phone away for two minutes.
+// and nothing running in it can fire. That case is covered separately, by a
+// message sent from outside the device: see lib/push.ts and the rest alert
+// route. This is the half that needs nothing but the page.
 //
 // Permission is asked for on the first rest timer rather than at startup,
 // because a prompt before you have seen the timer is a prompt about nothing.

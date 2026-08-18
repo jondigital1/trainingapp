@@ -5,6 +5,7 @@ import { GOALS } from '@/lib/coach'
 import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
+import { disablePush, enablePush, pushState, type PushState } from '@/lib/push'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
 
@@ -39,6 +40,18 @@ export default function SettingsSheet({
   // whatever the phone is set to. Following the device is something you opt
   // into now.
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('light')
+  // Read after mount: permission and localStorage do not exist on the server,
+  // and guessing either produces a toggle that flips under you on hydration.
+  const [alerts, setAlerts] = useState<PushState>('unsupported')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => setAlerts(pushState()), [])
+
+  async function toggleAlerts() {
+    setBusy(true)
+    setAlerts(alerts === 'on' ? await disablePush() : await enablePush())
+    setBusy(false)
+  }
 
   useEffect(() => {
     try {
@@ -126,6 +139,37 @@ export default function SettingsSheet({
           </button>
         ))}
       </div>
+
+      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Rest alerts</h3>
+      {alerts === 'unsupported' ? (
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          This browser cannot receive alerts. On an iPhone it works once the app is added to the
+          home screen and opened from there.
+        </p>
+      ) : alerts === 'denied' ? (
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Notifications are blocked for this site. Turn them back on in the browser settings and
+          this becomes available again.
+        </p>
+      ) : (
+        <>
+          <button
+            onClick={() => void toggleAlerts()}
+            disabled={busy}
+            aria-pressed={alerts === 'on'}
+            className={`mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ${
+              alerts === 'on' ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
+            }`}
+          >
+            <span>Alert me when rest is up</span>
+            <span className="text-xs">{alerts === 'on' ? 'On' : 'Off'}</span>
+          </button>
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            The buzz and the beep need the app awake. This one is sent from outside the phone, so it
+            reaches you with the screen locked and the phone in your pocket. On for this phone only.
+          </p>
+        </>
+      )}
 
       <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">You</h3>
       <button

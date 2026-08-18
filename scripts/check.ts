@@ -9,6 +9,7 @@ import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../li
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import { buildPdf } from '../lib/pdf'
+import { MAX_WAIT, alertRequest, parseAlert, pushConfigured, wait } from '../lib/alert'
 // aliased: lib/body exports a summarise of its own, for bodyweight
 import { summarise as summariseSession } from '../lib/summary'
 import { workoutFilename, workoutLines, workoutText } from '../lib/share'
@@ -52,6 +53,18 @@ function check(name: string, fn: () => void) {
   fn()
   checks += 1
   console.log('ok', name)
+}
+
+// A few things can only be checked by waiting for them: a timer that has to be
+// cancellable is not a timer if you assert on it synchronously. These queue up
+// and run in order after everything else, so the output stays readable.
+const later: (() => Promise<void>)[] = []
+function checkAsync(name: string, fn: () => Promise<void>) {
+  later.push(async () => {
+    await fn()
+    checks += 1
+    console.log('ok', name)
+  })
 }
 
 check('library has 14 groups and 200 plus movements', () => {
@@ -1569,4 +1582,121 @@ check('weeks in a row are counted, and never said twice', () => {
   assert.match(out.headline, /new record|3 weeks/i)
 })
 
-console.log(`\n${checks} checks passed`)
+const SUB = {
+  // A real, valid pair. web-push refuses anything that is not a P-256 point,
+  // so these cannot be invented.
+  p256dh: 'BOlecETwKkb42OIH-Wcssh4T3VFdFN9wCilwDwQos5ED1mXo34dQkX5BcazFkpGF9HOui6Aibpk9I5V1c-42gQc',
+  auth: 'k8JV6sjdbhAi1n3_LDBLvA',
+  endpoint: 'https://fcm.googleapis.com/fcm/send/abc123',
+}
+
+check('an alert request has to look like one', () => {
+  const good = parseAlert({
+    subscription: { endpoint: SUB.endpoint, keys: { p256dh: SUB.p256dh, auth: SUB.auth } },
+    seconds: 90,
+    name: 'Machine Chest Press',
+  })
+  assert.ok(good.ok)
+  assert.equal(good.alert.seconds, 90)
+  assert.equal(good.alert.name, 'Machine Chest Press')
+
+  const withEndpoint = (endpoint: unknown) => ({
+    subscription: { endpoint, keys: { p256dh: SUB.p256dh, auth: SUB.auth } },
+    seconds: 60,
+  })
+
+  // The endpoint is the one field that says where the server will make a
+  // request to, so it does not get to be anything but a push service over TLS.
+  for (const endpoint of ['http://fcm.googleapis.com/x', 'file:///etc/passwd', 'ftp://x', '', 7]) {
+    assert.ok(!parseAlert(withEndpoint(endpoint)).ok, String(endpoint))
+  }
+  assert.ok(!parseAlert({ subscription: { endpoint: SUB.endpoint }, seconds: 60 }).ok, 'no keys')
+  assert.ok(!parseAlert({}).ok, 'nothing at all')
+  assert.ok(!parseAlert(null).ok, 'no body at all')
+
+  // A wait has to be a real number of seconds inside what one invocation can
+  // hold, so nothing can park a connection for an hour.
+  const withSeconds = (seconds: unknown) => ({
+    subscription: { endpoint: SUB.endpoint, keys: { p256dh: SUB.p256dh, auth: SUB.auth } },
+    seconds,
+  })
+  for (const seconds of [0, -30, 99_999, MAX_WAIT + 1, Number.NaN, 'soon', null]) {
+    assert.ok(!parseAlert(withSeconds(seconds)).ok, String(seconds))
+  }
+  assert.ok(parseAlert(withSeconds(MAX_WAIT)).ok, 'the ceiling itself is fine')
+
+  // A name goes into a notification, so it is trimmed and bounded, and an
+  // empty one is simply no name.
+  const long = parseAlert({ ...withSeconds(60), name: 'x'.repeat(500) })
+  assert.ok(long.ok && long.alert.name!.length === 80)
+  const blank = parseAlert({ ...withSeconds(60), name: '   ' })
+  assert.ok(blank.ok && blank.alert.name === null)
+})
+
+check('what goes on the wire is a signed, encrypted web push', () => {
+  process.env.VAPID_SUBJECT = 'mailto:test@example.com'
+  process.env.VAPID_PUBLIC_KEY = SUB.p256dh
+  process.env.VAPID_PRIVATE_KEY = 'CjFBramzuM4lkVmuHQYb73R-O6A0JekardX8eEBmGL0'
+  assert.ok(pushConfigured())
+
+  // Built exactly as it would be sent, without sending it, so the request can
+  // be read rather than assumed.
+  const request = alertRequest({
+    endpoint: SUB.endpoint, p256dh: SUB.p256dh, auth: SUB.auth,
+    seconds: 90, name: 'Leg Press',
+  })
+
+  assert.equal(request.method, 'POST')
+  assert.equal(request.endpoint, SUB.endpoint)
+  assert.equal(request.headers['Content-Encoding'], 'aes128gcm', 'RFC 8291 content encoding')
+  assert.equal(request.headers.TTL, 60, 'an alert that cannot go now is already wrong')
+  assert.equal(request.headers.Urgency, 'high')
+
+  // VAPID: a JWT signed for this push service, alongside the public key it can
+  // be checked with.
+  const authorization = request.headers.Authorization as string
+  const token = /vapid t=([^,]+), k=(.+)/.exec(authorization)
+  assert.ok(token, `unexpected Authorization: ${authorization}`)
+  assert.equal(token![2], SUB.p256dh, 'the key sent is the key configured')
+
+  const [head, claims] = token![1].split('.')
+  const json = (part: string) => JSON.parse(Buffer.from(part, 'base64url').toString())
+  assert.equal(json(head).alg, 'ES256')
+  assert.equal(json(claims).aud, 'https://fcm.googleapis.com', 'signed for this service only')
+  assert.equal(json(claims).sub, 'mailto:test@example.com')
+  assert.ok(json(claims).exp > Math.floor(Date.now() / 1000), 'and not already expired')
+
+  // And the payload is genuinely encrypted, not merely posted.
+  const body = request.body as Buffer
+  assert.ok(Buffer.isBuffer(body))
+  assert.ok(!body.includes('Leg Press'), 'the movement name is not readable on the wire')
+  assert.ok(!body.includes('Rest is up'))
+  assert.ok(body.length > 86, 'salt, record size, key id and a ciphertext')
+})
+
+checkAsync('skipping the rest stops the alert, it does not just hang up', async () => {
+  const controller = new AbortController()
+  const started = Date.now()
+  const pending = wait(60_000, controller.signal)
+  controller.abort()
+  assert.equal(await pending, true, 'an aborted wait reports that it was cancelled')
+  assert.ok(Date.now() - started < 1000, 'and gives up now, not in a minute')
+
+  // Already aborted before it starts, which is what a fast double tap looks
+  // like from here.
+  const already = new AbortController()
+  already.abort()
+  assert.equal(await wait(60_000, already.signal), true)
+
+  // A wait that runs its course reports that it was not cancelled, which is
+  // what tells the route to send.
+  assert.equal(await wait(10, new AbortController().signal), false)
+})
+
+void (async () => {
+  for (const run of later) await run()
+  console.log(`\n${checks} checks passed`)
+})().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

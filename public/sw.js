@@ -11,7 +11,7 @@
 // What this does not do is make the data offline. That is the app's job, and
 // it keeps its own copy of the last load in localStorage.
 
-const VERSION = 'v1'
+const VERSION = 'v2'
 const SHELL = `shell-${VERSION}`
 const ASSETS = `assets-${VERSION}`
 
@@ -91,6 +91,29 @@ self.addEventListener('message', (event) => {
   event.waitUntil(
     self.registration.showNotification('Rest is up', {
       body: data.name ? `Next set of ${data.name}` : 'Next set',
+      tag: 'training-log-rest',
+      renotify: true,
+      silent: false,
+    }),
+  )
+})
+
+// A message sent from the server, which is the only kind that reaches a phone
+// locked in a pocket. The page that started the rest is asleep by then; this
+// worker is woken by the push service to show it.
+self.addEventListener('push', (event) => {
+  let payload = {}
+  try {
+    payload = event.data ? event.data.json() : {}
+  } catch {
+    // A push with an unreadable body still has to show something, because
+    // every browser requires a visible notification for every push.
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'Rest is up', {
+      body: payload.body || 'Next set',
+      // Same tag as the on-device one, so a phone that woke up and fired both
+      // shows one notification rather than two.
       tag: 'training-log-rest',
       renotify: true,
       silent: false,

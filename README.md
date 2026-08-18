@@ -98,10 +98,15 @@ accent darkens in light mode so small accent text keeps its contrast on white.
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
 4. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
-5. `npm install` then `npm run dev`.
+5. For rest alerts on a locked phone, generate a VAPID pair with
+   `npx web-push generate-vapid-keys` and fill in the four push variables. The
+   public key goes in twice, once for the browser and once for the server.
+   Leaving them blank turns the feature off cleanly rather than breaking
+   anything.
+6. `npm install` then `npm run dev`.
 
 Deploying to Vercel: import the repo, leave the root directory alone since the
-app is the repo, add the same two environment variables, done. Set the framework
+app is the repo, add the same environment variables, done. Set the framework
 preset to Next.js if Vercel has not worked it out.
 
 ## Signing in
@@ -353,14 +358,16 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 101 assertions over everything that is pure logic: the movement
+`npm run check` is 104 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
 lifetime record, the redirect guard, the set row columns, session duration and
 scoring, the six week block, the prescriptions, the shared sheet and the PDF it
-is written into, what the end of a session is allowed to claim, and the knowledge base gate. Every program
+is written into, what the end of a session is allowed to claim,
+what a rest alert request is allowed to contain and what the push it sends puts
+on the wire, and the knowledge base gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
 point at a template day that does not exist. `npm run build` type checks the app.
 
@@ -662,21 +669,50 @@ through the same save queue as always and lands when the connection returns.
 The rest timer buzzes and beeps at zero, and posts a notification when you are
 not looking at the screen. Permission is asked for on the first timer rather
 than at startup, because a prompt before you have seen the timer is a prompt
-about nothing.
+about nothing. All three need the page to be awake, which covers checking a
+message between sets.
 
-What it cannot do, plainly: a phone locked in your pocket suspends the page,
-and nothing running inside it can fire. Getting through to a locked phone needs
-a push server sending from outside the device, which this app does not have. So
-this covers checking a message between sets, not putting the phone away for two
-minutes.
+A phone locked in your pocket is a different problem. It suspends the page
+entirely, so nothing running inside it can fire, and the only way through is a
+message sent from somewhere other than the phone. Rest alerts, in Settings and
+off until you ask for it, do that: the browser hands over a push subscription
+the moment a set is logged, the server holds the request open for the length of
+the rest, and then sends one alert. On for the phone you turned it on, not for
+the account, because alerts belong on the phone you train with and not on your
+laptop.
+
+Holding a request open is a strange looking way to run a timer, and it is
+deliberate. A cron job cannot be more precise than a minute, which turns a 45
+second rest into anything from 45 to 105. A queue service is a second account to
+sign up for and a second thing to go down. Rest tops out at two minutes, so the
+wait fits inside one function invocation with room to spare, and one person
+resting is one invocation.
+
+Skipping the rest, starting the next one, or the timer ringing on the phone
+because it was awake after all, all abort that request, and the server stops
+without sending. This is why the alert never arrives in the middle of your next
+set.
+
+Nothing is stored. The subscription arrives with the request, is used once and
+goes when the function returns, so there is no table of endpoints to leak and
+nothing to clean up when you change phone. The endpoint is signed in only, and
+the only address it will make a request to is an https push service.
+
+The encryption and the signature, RFC 8291 and RFC 8292, are the one part of
+this app that is not hand written. The PDF writer was written by hand because a
+library would have had to come down the wire to a phone on gym wifi before
+anything could be shared. This runs on a server where nothing comes down the
+wire, and content encryption that is subtly wrong fails silently, which is the
+worst way for anything to fail.
+
+On an iPhone this only works once the app is added to the home screen and opened
+from there. That is Apple's rule for web push, not a choice made here.
 
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half
 that needs an SMS provider on the Supabase project before there is anything to
 write.
-
-Rest alerts on a locked phone, which needs the push server above.
 
 Mail that works. Password resets go through Supabase's built in sender, which
 is capped near two an hour and is not meant for real use. Custom SMTP fixes it.
