@@ -31,7 +31,7 @@ import {
 } from '../lib/gamify'
 import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, mondayOf, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
-import { isCompound, isFullSet, restFor } from '../lib/rest'
+import { isCompound, isFullSet, restFor, restTier } from '../lib/rest'
 import { groupRuns, isSuperset, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { seriesFor, trackedNames } from '../lib/progress'
@@ -560,18 +560,69 @@ check('a set is only a set once the fields that matter are filled', () => {
   assert.equal(isFullSet({ id: 'a', w: 70, d: 50 }, 'WD'), true)
 })
 
-check('rest is longer for the big movements and the heavier goal', () => {
-  assert.equal(isCompound('Back Squat'), true)
-  assert.equal(isCompound('Barbell Row'), true)
-  assert.equal(isCompound('Lateral Raise'), false)
-  assert.equal(isCompound('Leg Extension'), false, 'extension is not a press')
-  assert.equal(isCompound('Cable Curl'), false)
-
+check('rest is set by what the movement actually costs you', () => {
+  // The two anchors: a supported compound at 90 seconds, cable isolation at 45.
+  assert.equal(restFor('Machine Shoulder Press', 'W', 'muscle'), 90)
+  assert.equal(restFor('Cable Curl', 'W', 'muscle'), 45)
+  assert.equal(restFor('Rope Pushdown', 'W', 'muscle'), 45)
+  // Two minutes at the top rather than the three the studies use, because a
+  // three minute stand around is not the shape of a session somebody trains
+  // most days. Nothing on the muscle goal rests longer than two minutes.
+  assert.equal(restFor('Back Squat', 'W', 'muscle'), 120)
+  assert.equal(restFor('Deadlift', 'W', 'muscle'), 120)
+  assert.equal(restFor('Barbell Bench Press', 'W', 'muscle'), 120)
+  // Single joint free weight sits between the two.
+  assert.equal(restFor('Lateral Raise', 'W', 'muscle'), 60)
+  assert.equal(restFor('Leg Extension', 'W', 'muscle'), 60)
+  // Core and calves are recovered before you have put the weight down.
+  assert.equal(restFor('Plank', 'T', 'muscle'), 30)
+  assert.equal(restFor('Standing Calf Raise', 'W', 'muscle'), 30)
+  // Cardio never starts a clock.
+  assert.equal(restFor('Treadmill', 'C', 'muscle'), 0)
+  // Strength is the top of every band, endurance the bottom.
   assert.ok(restFor('Back Squat', 'W', 'strength') > restFor('Back Squat', 'W', 'muscle'))
-  assert.ok(restFor('Back Squat', 'W', 'muscle') > restFor('Lateral Raise', 'W', 'muscle'))
-  assert.ok(restFor('Lateral Raise', 'W', 'muscle') > restFor('Cable Curl', 'W', 'muscle'))
-  assert.ok(restFor('Back Squat', 'W', 'endurance') <= 60)
-  assert.equal(restFor('Run', 'C', 'muscle'), 0, 'cardio does not rest between sets')
+  assert.ok(restFor('Back Squat', 'W', 'endurance') < restFor('Back Squat', 'W', 'muscle'))
+})
+
+check('a dumbbell or one limb is not the barbell version', () => {
+  // These all match the heavy patterns by name and must not be scored as if
+  // they were: half the load is half the recovery.
+  assert.equal(restTier('Dumbbell Bench Press', 'W'), 'compound')
+  assert.equal(restTier('Dumbbell Romanian Deadlift', 'W'), 'compound')
+  assert.equal(restTier('Single Leg Romanian Deadlift', 'W'), 'compound')
+  assert.equal(restTier('Single Leg Hip Thrust', 'W'), 'compound')
+  assert.equal(restTier('Goblet Squat', 'W'), 'compound')
+  assert.equal(restTier('Walking Lunge', 'W'), 'compound')
+  // And the barbell versions still are.
+  assert.equal(restTier('Romanian Deadlift', 'W'), 'heavy')
+  assert.equal(restTier('Hip Thrust', 'W'), 'heavy')
+  assert.equal(restTier('Back Squat', 'W'), 'heavy')
+})
+
+check('a machine press is supported work, whatever the word press implies', () => {
+  // Order matters in the classifier: supported is checked before heavy, so a
+  // machine or Smith version never inherits the barbell clock.
+  assert.equal(restTier('Machine Shoulder Press', 'W'), 'compound')
+  assert.equal(restTier('Smith Machine Bench Press', 'W'), 'compound')
+  assert.equal(restTier('Hammer Strength Chest Press', 'W'), 'compound')
+  assert.equal(restTier('Chest Supported Row', 'W'), 'compound')
+  // And a machine or cable version of single joint work is the shortest rest.
+  assert.equal(restTier('Pec Deck', 'W'), 'cable')
+  assert.equal(restTier('Cable Fly', 'W'), 'cable')
+  assert.equal(restTier('Face Pull', 'W'), 'cable')
+  assert.equal(restTier('Barbell Curl', 'W'), 'isolation', 'a free weight curl is not cable work')
+})
+
+check('every movement in the library lands on a rest tier', () => {
+  const seen = new Set<string>()
+  for (const e of LIBRARY) {
+    const tier = restTier(e.name, e.type)
+    seen.add(tier)
+    const seconds = restFor(e.name, e.type, 'muscle')
+    if (e.type === 'C') assert.equal(seconds, 0, `${e.name} is cardio and starts no clock`)
+    else assert.ok(seconds >= 30 && seconds <= 120, `${e.name} rests ${seconds}s on the muscle goal`)
+  }
+  assert.equal(seen.size, 5, 'all five tiers are actually used')
 })
 
 check('consecutive exercises sharing a tag are one superset', () => {

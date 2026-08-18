@@ -350,36 +350,47 @@ days too, so a pasted `130x15 110x15` becomes a working set with a drop attached
 
 Starts itself the moment a set becomes a set, which is the moment you want it,
 and not before: a load with no reps beside it is half a set and starts nothing.
-The suggested length comes from the movement and the goal, longer for the big
-lifts, shorter for the arms and calves, none at all for cardio. There is a manual
-button on every exercise for the times it guesses wrong.
 
-The bar counts to an end timestamp rather than ticking a number down, so locking
-the phone or reloading the page gives back the right number. It buzzes and beeps
-once at zero. Editing a past session never starts anything.
+The length comes from what the movement actually costs you, on five tiers
+rather than the compound or not it used to be, which put a plate loaded
+shoulder press and a barbell squat on the same clock.
 
-## Sessions
+    heavy       120s   barbell and loaded bodyweight: squat, deadlift, bench, weighted dip
+    compound     90s   supported and machine multi joint: leg press, machine press, pulldown
+    isolation    60s   single joint on free weights: curl, lateral raise, leg extension
+    cable        45s   single joint on a stack: cable curl, pushdown, fly, face pull
+    small        30s   core, calves, forearms
+    cardio         0   never starts a clock
 
-A workout has a start and an end, so it has a duration. Starting one stamps the
-clock; a bar at the top of the live session counts up from that timestamp
-rather than ticking a counter, so locking the phone gives back the right
-number. End workout closes it.
+Three things decide the tier: how much muscle the movement asks for, how many
+joints it crosses, and whether you are also holding yourself up under the load.
+A dumbbell or single leg version of a heavy lift drops a tier, because half the
+load is half the recovery, and a machine or Smith version of a barbell lift is
+supported work whatever the word press implies.
 
-Then one question, once: **how was that, 1 to 10**, on a dial that names every
-number rather than leaving you to guess what a 7 is. 1 is easy peasy and 10 is
-what was I thinking. Skipping is fine, and the question stays available on the
-session afterwards rather than being lost.
+The evidence behind the shape of it: the ACSM position stand on progression
+models puts core exercises under heavier loads at 2 to 3 minutes and assistance
+work at 1 to 2; Schoenfeld et al. (2016) ran trained men at 1 versus 3 minutes
+for 8 weeks and the 3 minute group gained more strength and more muscle
+thickness, which buried the idea that short rest buys hypertrophy through
+metabolic stress; Grgic et al. (2017) found longer intervals favour people with
+training experience; and single joint work is widely put at 60 to 90 seconds
+because one joint moving leaves far less behind it.
 
-That one number replaced per-set RPE, which is gone. RPE asked you to estimate
-reps in reserve while out of breath, between sets, ten times a session, and
-beginners are wrong about it by 4 to 5 reps. One honest answer after the fact
-beats ten guesses during. The set row is down to weight and reps, and the coach
-line runs double progression on the reps you actually did: one more rep at the
-same load until you clear the top of the range, then about 5 percent more
-weight and back to the bottom of it.
+Where this departs from the studies, and why: they chase the most one session
+can give and pay for it in minutes. Somebody training most days and
+supersetting the accessories is buying the same weekly volume a different way,
+and standing about for three minutes is not the shape of that session. So the
+top of the ladder is two minutes rather than three. The distances between the
+tiers are the part worth keeping.
 
-Sessions logged before any of this existed carry no start, no end and no score.
-That is the honest answer for them rather than a number invented afterwards.
+Every number here is a suggestion. There is a manual button on every exercise
+for the times it guesses wrong, and inside a superset the clock waits for the
+last movement in the group, since not resting between them is the point.
+
+The bar counts to an end timestamp rather than ticking a number down, so
+locking the phone or reloading the page gives back the right number. It buzzes
+and beeps once at zero. Editing a past session never starts anything.
 
 ## Training blocks
 
