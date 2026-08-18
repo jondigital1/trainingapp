@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { coach } from '@/lib/coach'
+import { fmtPrescription, prescribe } from '@/lib/prescribe'
 import { fmtDate, isEmptySet, topSet, uid } from '@/lib/format'
 import { beatsLast, PR_LABEL, prsFor, volumePr, type Bests } from '@/lib/gamify'
 import { isFullSet, restFor } from '@/lib/rest'
@@ -41,6 +42,7 @@ export default function ExerciseBlock({
   nested,
   restSeconds,
   effort = 1,
+  lighter = false,
   restOnComplete = true,
   onMove,
   onSuperset,
@@ -58,6 +60,8 @@ export default function ExerciseBlock({
   nested?: boolean
   restSeconds?: number
   effort?: number
+  // The plan's lighter version: one set fewer on everything.
+  lighter?: boolean
   restOnComplete?: boolean
   onMove: (direction: -1 | 1) => void
   onSuperset?: () => void
@@ -76,7 +80,8 @@ export default function ExerciseBlock({
   const working = exercise.sets.filter((s) => !s.drop)
   const filled = working.filter((s) => !isEmptySet(s, exercise.type))
   const basis = filled.length ? filled[filled.length - 1] : last ? topSet(last.exercise) ?? undefined : undefined
-  const advice = coach(basis, exercise.type, goal)
+  const asked = prescribe(exercise.name, exercise.type, goal, lighter)
+  const advice = coach(basis, exercise.type, goal, asked?.reps)
   const fromLast = filled.length === 0 && !!basis
 
   const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal, effort)
@@ -115,14 +120,14 @@ export default function ExerciseBlock({
               </span>
             ) : null}
           </h3>
-          {/* Just the date. What you did is on the rows themselves now, where
-              set three sits beside set three instead of being summarised into
-              a line you have to parse. */}
-          {last ? (
-            <p className="num mt-0.5 text-xs text-muted">Last {fmtDate(last.date)}</p>
-          ) : (
-            <p className="mt-0.5 text-xs text-muted">First time logging this</p>
-          )}
+          {/* What the plan asks for, then the date. What you did is on the
+              rows themselves now, where set three sits beside set three
+              instead of being summarised into a line you have to parse. */}
+          <p className="num mt-0.5 text-xs text-muted">
+            {asked ? <span className="text-accent">{fmtPrescription(asked)}</span> : null}
+            {asked && last ? ' \u00b7 ' : ''}
+            {last ? `Last ${fmtDate(last.date)}` : asked ? '' : 'First time logging this'}
+          </p>
         </div>
         <div className="flex shrink-0 items-center">
           <button onClick={() => onMove(-1)} aria-label="Move up" className="px-1.5 py-1 text-sm text-muted">

@@ -25,6 +25,7 @@ import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
 import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
 import { customFor, registerCustoms } from '@/lib/custom'
+import { isLighter, prescribedSets } from '@/lib/prescribe'
 import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { durationOf, wantsScore } from '@/lib/session'
 import { hardestFirst, topLoads } from '@/lib/order'
@@ -349,17 +350,25 @@ export default function App({ userId, email }: { userId: string; email: string }
     const { title, items, sort, dayId } = pendingStart
     setPendingStart(null)
     const day = dayId ? dayById(dayId) : null
-    reallyStart(title, day ? buildDay(day, next) : items, sort)
+    reallyStart(title, day ? buildDay(day, next) : items, sort, next)
   }
 
-  function reallyStart(title: string, items: CustomWorkoutItem[], sort = false) {
+  function reallyStart(title: string, items: CustomWorkoutItem[], sort = false, who?: Profile) {
+    // The plan decides how many rows a movement gets, so a templated session
+    // opens already saying what it wants: four rows on the press, three on the
+    // pushdowns. Read off the profile that is current at this moment, because
+    // the minutes question can have rewritten it between tapping Start and
+    // getting here.
+    const settings = latest.current.settings
+    const light = isLighter(planFor(who ?? settings.profile, settings.goal).sets)
+
     // Superset tags flow straight through from templates and saved workouts.
     let exercises: Workout['exercises'] = items.map((item) => ({
       id: uid(),
       name: item.name,
       type: item.type,
       superset: item.superset ?? null,
-      sets: [{ id: uid() }],
+      sets: seedSets(item.name, item.type, settings.goal, light),
     }))
 
     // Hardest first applies only to sessions the app generated from the plan.
@@ -392,17 +401,18 @@ export default function App({ userId, email }: { userId: string; email: string }
       ...workout,
       exercises: [
         ...workout.exercises,
-        { id: uid(), name, type, superset, sets: seedSets(name) },
+        { id: uid(), name, type, superset, sets: seedSets(name, type, data.settings.goal, lighter) },
       ],
     })
   }
 
-  // A custom exercise can say how many sets it wants laid out. Anything else
-  // starts with one, and Add set does the rest.
-  function seedSets(name: string) {
-    const count = customFor(name)?.sets
-    const n = count && count > 0 ? Math.min(count, 10) : 1
-    return Array.from({ length: n }, () => ({ id: uid() }))
+  // A custom exercise can say how many sets it wants laid out, and somebody who
+  // wrote the movement down themselves outranks anything derived. Otherwise the
+  // plan's prescription decides, and Add set covers the rest.
+  function seedSets(name: string, type: SetType, goal: Goal, light: boolean) {
+    const own = customFor(name)?.sets
+    const count = own && own > 0 ? own : prescribedSets(name, type, goal, light)
+    return Array.from({ length: Math.min(Math.max(count, 1), 10) }, () => ({ id: uid() }))
   }
 
   // A substitute takes the place of the one it replaces: same position, same
@@ -599,6 +609,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const now = today()
   const profile = data.settings.profile
   const plan = data.settings.onboardedAt ? planFor(profile, data.settings.goal) : null
+  const lighter = isLighter(plan?.sets)
   // The library lookups for muscle group and rest tier consult this, so it has
   // to be current before anything reads them this render.
   registerCustoms(data.custom)
@@ -755,6 +766,7 @@ export default function App({ userId, email }: { userId: string; email: string }
               workout={workout}
               goal={data.settings.goal}
               effort={effort}
+              lighter={lighter}
               lastFor={lastFor}
               bestsFor={bestsFor}
               live
@@ -806,6 +818,7 @@ export default function App({ userId, email }: { userId: string; email: string }
                 <WorkoutEditor
                   workout={workout}
                   goal={data.settings.goal}
+                  lighter={lighter}
                   lastFor={lastFor}
                   bestsFor={bestsFor}
                   live={workout.date === now}

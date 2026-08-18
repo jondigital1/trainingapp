@@ -6,6 +6,7 @@ import { durationOf, fmtDuration, intensityLabel, isRunning, wantsScore } from '
 import RunningClock from './RunningClock'
 import SupersetSheet from './SupersetSheet'
 import ExerciseBlock, { type LastSession } from './ExerciseBlock'
+import { shareWorkout } from '@/lib/share'
 import type { Bests } from '@/lib/gamify'
 import { groupRuns, isSuperset, linkWith, supersetLetter, supersetRest } from '@/lib/superset'
 import { hardestFirst, isHardestFirst, moveRun } from '@/lib/order'
@@ -21,6 +22,7 @@ export default function WorkoutEditor({
   workout,
   goal,
   effort = 1,
+  lighter = false,
   lastFor,
   bestsFor,
   live,
@@ -38,6 +40,8 @@ export default function WorkoutEditor({
   goal: Goal
   // What the block week does to the rest timer. 1 when no block is running.
   effort?: number
+  // The plan's lighter version: one set fewer on every prescription.
+  lighter?: boolean
   lastFor: (name: string, workout: Workout) => LastSession | null
   bestsFor: (name: string, workout: Workout) => Bests
   live: boolean
@@ -55,6 +59,13 @@ export default function WorkoutEditor({
   const [renaming, setRenaming] = useState(false)
   const [pairing, setPairing] = useState<string | null>(null)
   const [noting, setNoting] = useState(false)
+  const [shared, setShared] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!shared) return
+    const timer = setTimeout(() => setShared(null), 3000)
+    return () => clearTimeout(timer)
+  }, [shared])
 
   useEffect(() => {
     if (!confirm) return
@@ -109,13 +120,29 @@ export default function WorkoutEditor({
             {score ? <p className="mt-0.5 text-xs text-accent">Felt like {workout.intensity} of 10, {score.toLowerCase()}</p> : null}
           </button>
         )}
-        <button
-          onClick={() => (confirm ? onDelete() : setConfirm(true))}
-          className={`shrink-0 rounded-lg px-3 py-2 text-xs ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
-        >
-          {confirm ? 'Sure?' : 'Delete'}
-        </button>
+        <div className="flex shrink-0 items-center">
+          {/* Hands the session to the phone's own share sheet as a PDF, so it
+              goes wherever the person already sends things. */}
+          <button
+            onClick={async () => {
+              const result = await shareWorkout(workout)
+              if (result === 'saved') setShared('Saved the PDF')
+            }}
+            aria-label={`Share ${workout.title}`}
+            className="rounded-lg px-3 py-2 text-xs text-muted"
+          >
+            Share
+          </button>
+          <button
+            onClick={() => (confirm ? onDelete() : setConfirm(true))}
+            className={`rounded-lg px-3 py-2 text-xs ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
+          >
+            {confirm ? 'Sure?' : 'Delete'}
+          </button>
+        </div>
       </div>
+
+      {shared ? <p className="text-xs text-muted">{shared}</p> : null}
 
       {onEnd && (running || unscored) ? (
         <div className="flex items-center justify-between gap-2 rounded-2xl bg-card px-3 py-2 ring-1 ring-edge">
@@ -162,6 +189,7 @@ export default function WorkoutEditor({
             exercise={exercise}
             goal={goal}
             effort={effort}
+            lighter={lighter}
             last={lastFor(exercise.name, workout)}
             bests={bestsFor(exercise.name, workout)}
             live={live}

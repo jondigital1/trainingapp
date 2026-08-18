@@ -166,6 +166,65 @@ There is no empty workout. Starting a workout with nothing in it is a screen
 asking you to do the work it exists to save you, and Build one is there for a
 session you want to write yourself.
 
+## What it asks you for
+
+A templated session opens with the sets already laid out and the target written
+under the movement: four by five to eight on the press, three by twelve to
+fifteen on the pushdowns. A plan that does not say how much is not a plan, it is
+a list of names.
+
+Nothing is hand written into the templates, because a table of a hundred and
+ninety numbers is a hundred and ninety chances to disagree with itself, and it
+could not have known what you told the questionnaire. Two things decide it. The
+goal you picked sets the rep window, so strength runs low and heavy where the
+movement can carry it and staying capable runs long and light. What the movement
+costs you sets the number of sets, using the same five tiers the rest timer
+already works out: the barbell bench earns four, the cable pushdown earns three,
+and nothing earns five sets of anything that is not near maximal.
+
+If the plan put you on the lighter version, because it is your first program or
+because of a health answer, every prescription loses a set and keeps its reps.
+Fewer sets is easing in. Fewer reps is just a worse set.
+
+The coach then argues with the number you were actually shown. Prescribed ten to
+fifteen on a cable curl, twelve reps is mid range and the next step is thirteen.
+The goal-wide range would have called the same set far over the top, which is
+the sort of contradiction that teaches people to stop reading the coach line.
+
+Everything is a starting point. Add set, delete a row, or write your own day,
+and nothing argues.
+
+## Sharing a session
+
+Share is in the header of every session, next to Delete. It hands the phone's
+own share sheet a PDF, so it goes wherever you already send things: Messages,
+Mail, WhatsApp, AirDrop, a notes app, whatever is on that sheet. The person on
+the other end gets a file they can open and keep, rather than a screenshot or a
+link into an app they do not have.
+
+The sheet is written again from scratch rather than being a picture of the
+screen. The screen is built for one hand in a gym, which means abbreviations,
+colour and rows you tap; none of that survives being sent to somebody who was
+not there. So it comes out in full words, in the order the session ran: the
+title, the date, how long it took, how much was moved, how hard it felt, then
+every movement with its sets numbered, supersets labelled and marked as running
+straight through, drops written as drops rather than taking a set number, and
+the note at the end.
+
+The PDF is written by hand, in about two hundred lines, rather than by pulling
+in a library. Every PDF library worth using is larger than this entire app and
+would have to come down the wire before a share could happen, which breaks the
+one moment that matters: standing in a gym on a bad connection having just
+finished. Text set in Helvetica, which every reader has built in, needs no font
+embedding and no compression, so what is left is object plumbing, a cross
+reference table and real Helvetica metrics so that long movement names wrap
+where they should. Pages break before a movement rather than after it, so no
+page ever opens with a set whose name is on the one before.
+
+Two fallbacks, in order. A browser that shares but refuses files gets the same
+session as text. A browser with no share sheet saves the PDF, and says so, so it
+can be attached by hand.
+
 ## Your own workouts
 
 Build one from scratch in the Start sheet, or take a copy of any template day
@@ -268,13 +327,14 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 91 assertions over everything that is pure logic: the movement
+`npm run check` is 97 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
 lifetime record, the redirect guard, the set row columns, session duration and
-scoring, the six week block, and the knowledge base gate. Every program
+scoring, the six week block, the prescriptions, the shared sheet and the PDF it
+is written into, and the knowledge base gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
 point at a template day that does not exist. `npm run build` type checks the app.
 

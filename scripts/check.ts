@@ -4,9 +4,12 @@ import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
+import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
 import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
+import { buildPdf } from '../lib/pdf'
+import { workoutFilename, workoutLines, workoutText } from '../lib/share'
 import {
   buildDay,
   dayById,
@@ -1321,6 +1324,163 @@ check('history keeps its drop rows even though nothing new is tagged', () => {
     parseSetStrings('130x12 110x15', 'W').map((x) => ({ w: x.w, r: x.r, drop: x.drop ?? false })),
     [{ w: 130, r: 12, drop: false }, { w: 110, r: 15, drop: true }],
   )
+})
+
+check('the plan prescribes sets and reps, by goal and by what the movement costs', () => {
+  // A barbell bench is not a cable pushdown, and the sheet should not pretend
+  // otherwise. More sets and fewer reps at the top of the ladder, the reverse
+  // at the bottom.
+  const bench = prescribe('Barbell Bench Press', 'W', 'muscle')!
+  const rope = prescribe('Rope Pushdown', 'W', 'muscle')!
+  assert.ok(bench.sets > rope.sets, 'the heavy lift earns more sets')
+  assert.ok(bench.reps[1] < rope.reps[1], 'and fewer reps')
+
+  // The goal moves the whole window, in the direction it says on the tin.
+  assert.ok(prescribe('Barbell Bench Press', 'W', 'strength')!.reps[1] < bench.reps[1])
+  assert.ok(prescribe('Barbell Bench Press', 'W', 'endurance')!.reps[0] > bench.reps[0])
+
+  // Every movement in every template day gets an answer or is exempt for a
+  // reason, and no answer is silly.
+  for (const split of SPLITS) {
+    for (const day of split.days) {
+      for (const name of dayNames(day)) {
+        const type = lookupType(name) ?? 'W'
+        const p = prescribe(name, type, 'muscle')
+        if (type !== 'W' && type !== 'R') {
+          assert.equal(p, null, `${name} is timed work and gets no rep window`)
+          assert.equal(prescribedSets(name, type, 'muscle'), 1, `${name} lays out one row`)
+          continue
+        }
+        assert.ok(p, `${name} has no prescription`)
+        assert.ok(p!.sets >= 2 && p!.sets <= 5, `${name} asks for ${p!.sets} sets`)
+        assert.ok(p!.reps[0] < p!.reps[1], `${name} has a backwards rep window`)
+        assert.ok(p!.reps[0] >= 3 && p!.reps[1] <= 30, `${name} is outside anything sane`)
+      }
+    }
+  }
+})
+
+check('the lighter plan takes a set off, never a rep', () => {
+  assert.ok(isLighter('2 to 3'), 'the Foundation and cleared plans are the lighter ones')
+  assert.ok(!isLighter('3 to 4'))
+  assert.ok(!isLighter(undefined), 'nobody is on a lighter plan by accident')
+
+  for (const name of ['Barbell Bench Press', 'Machine Chest Press', 'Cable Curl', 'Plank']) {
+    const type = lookupType(name) ?? 'W'
+    const full = prescribe(name, type, 'muscle', false)
+    const light = prescribe(name, type, 'muscle', true)
+    if (!full) {
+      assert.equal(light, null)
+      continue
+    }
+    assert.deepEqual(light!.reps, full.reps, `${name} keeps its rep window`)
+    assert.ok(light!.sets < full.sets || full.sets === 2, `${name} loses a set`)
+    assert.ok(light!.sets >= 2, `${name} never drops below two`)
+  }
+
+  // And the plan is where that flag comes from, not a separate setting.
+  const foundation = planFor({ days: 3, minutes: 60, years: 'never', knows: 'no' }, 'muscle')
+  assert.ok(isLighter(foundation.sets), 'Foundation runs light')
+})
+
+check('a prescription reads like a trainer wrote it', () => {
+  assert.equal(fmtPrescription({ sets: 4, reps: [8, 12] }), '4 \u00d7 8 to 12')
+  assert.equal(fmtPrescription(null), null)
+})
+
+check('the coach argues with the prescribed window, not the goal-wide one', () => {
+  // Strength on a cable curl is prescribed 10 to 15, well outside the 3 to 6
+  // the goal alone would have asked for. Twelve reps is mid range, so the next
+  // step is one more rep rather than a shout to add weight.
+  const asked = prescribe('Cable Curl', 'W', 'strength')!
+  assert.deepEqual(asked.reps, [10, 15])
+  const said = coach({ id: 's', w: 40, r: 12 }, 'W', 'strength', asked.reps)
+  assert.match(said!, /go for 13/i)
+  // Without the band it would read the same set as far over the top.
+  assert.match(coach({ id: 's', w: 40, r: 12 }, 'W', 'strength')!, /top of the range/i)
+})
+
+const SHARED: Workout = {
+  id: 'w', date: '2026-08-18', title: 'Push',
+  startedAt: '2026-08-18T17:02:00.000Z', endedAt: '2026-08-18T18:09:00.000Z',
+  intensity: 8, note: 'Shoulder felt off, dropped the load.',
+  exercises: [
+    { id: 'a', name: 'Incline Dumbbell Press', type: 'W', sets: [
+      { id: '1', w: 80, r: 9 }, { id: '2', w: 80, r: 8 }, { id: '3', w: 60, r: 12, drop: true },
+    ] },
+    { id: 'b', name: 'Hanging Leg Raise', type: 'R', superset: 'core', sets: [{ id: '1', r: 15 }] },
+    { id: 'c', name: 'Plank', type: 'T', superset: 'core', sets: [{ id: '1', t: 60 }] },
+    { id: 'd', name: 'Never Touched', type: 'W', sets: [{ id: '1' }] },
+  ],
+}
+
+check('a shared session reads as the session, in the order it ran', () => {
+  const text = workoutText(SHARED)
+  assert.match(text, /^Push/, 'the title leads')
+  assert.match(text, /1h 07m/, 'and the time it took')
+  assert.match(text, /8 out of 10/, 'and how hard it felt')
+
+  // Set numbers count working rows only, and a drop says what it is rather
+  // than taking the next number.
+  assert.match(text, /Set 1 +80 x 9/)
+  assert.match(text, /Set 2 +80 x 8/)
+  assert.match(text, /drop to 60 x 12/)
+  assert.ok(!/Set 3/.test(text), 'the drop is not set three')
+
+  // Supersets survive being written down: labelled, and in their run order.
+  assert.match(text, /Superset A/)
+  assert.ok(text.indexOf('A1. Hanging Leg Raise') < text.indexOf('A2. Plank'))
+
+  // A movement with nothing in it is still on the sheet, saying so.
+  assert.match(text, /Never Touched\n {2}Not logged/)
+  assert.match(text, /Shoulder felt off/, 'and the note comes with it')
+
+  assert.equal(workoutFilename(SHARED), '2026-08-18-push.pdf')
+  assert.equal(
+    workoutFilename({ ...SHARED, title: 'Legs & Core!! ' }),
+    '2026-08-18-legs-core.pdf',
+    'a filename survives whatever the session was called',
+  )
+})
+
+check('the PDF it builds is a PDF', () => {
+  const bytes = buildPdf(workoutLines(SHARED))
+  const file = Buffer.from(bytes).toString('latin1')
+  assert.match(file, /^%PDF-1\.4\n/, 'header')
+  assert.match(file, /%%EOF\n$/, 'trailer')
+  assert.match(file, /\/Type \/Catalog/)
+  assert.match(file, /\/BaseFont \/Helvetica-Bold/)
+
+  // The cross reference table is the part that silently corrupts a file, so
+  // every offset in it is followed back to the object it claims to point at.
+  // lastIndexOf('xref') would find the one inside startxref, which is the
+  // pointer rather than the table.
+  const table = file.slice(file.lastIndexOf('\nxref\n'))
+  const offsets = [...table.matchAll(/^(\d{10}) 00000 n $/gm)].map((m) => Number(m[1]))
+  assert.ok(offsets.length >= 6, 'catalog, pages, two fonts, a page and its stream')
+  offsets.forEach((offset, i) => {
+    assert.ok(file.startsWith(`${i + 1} 0 obj`, offset), `object ${i + 1} is not at ${offset}`)
+  })
+  const size = Number(/\/Size (\d+)/.exec(file)![1])
+  assert.equal(size, offsets.length + 1, 'Size counts the free object too')
+
+  // And every stream says how long it is, in bytes, or a reader stops early.
+  for (const [, length, body] of file.matchAll(/<< \/Length (\d+) >>\nstream\n([\s\S]*?)endstream/g)) {
+    assert.equal(body.length, Number(length), 'a stream length is wrong')
+  }
+
+  // Long sessions run onto more pages, and the count has to follow.
+  const long = buildPdf(workoutLines({
+    ...SHARED,
+    exercises: Array.from({ length: 20 }, (_, i) => ({
+      id: String(i), name: `Movement ${i + 1}`, type: 'W' as const,
+      sets: [{ id: 'a', w: 100, r: 10 }, { id: 'b', w: 100, r: 9 }, { id: 'c', w: 100, r: 8 }],
+    })),
+  }))
+  const many = Buffer.from(long).toString('latin1')
+  const count = Number(/\/Count (\d+)/.exec(many)![1])
+  assert.ok(count > 1, 'twenty movements do not fit on one page')
+  assert.equal((many.match(/\/Type \/Page[^s]/g) ?? []).length, count, 'Count matches the pages')
 })
 
 console.log(`\n${checks} checks passed`)

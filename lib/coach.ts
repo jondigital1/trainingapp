@@ -34,11 +34,21 @@ const DOWN = 0.925
 // This used to read RPE. It no longer does, because a number guessed between
 // sets while out of breath was never the honest input it looked like, and the
 // reps you actually did are.
-export function coach(set: SetEntry | undefined, type: SetType, goal: Goal): string | null {
+//
+// The band is the rep window to judge against. When the plan has prescribed one
+// for this movement it is passed in, so the coach argues with the number that
+// is printed on the session rather than a wider goal-wide range that the person
+// was never shown.
+export function coach(
+  set: SetEntry | undefined,
+  type: SetType,
+  goal: Goal,
+  band?: [number, number],
+): string | null {
   if (!set) return null
   if (type !== 'W' && type !== 'R') return null
 
-  const [repLo, repHi] = goalSpec(goal).reps
+  const [repLo, repHi] = band ?? goalSpec(goal).reps
   const reps = set.r ?? null
   const weight = set.w ?? null
   if (reps == null) return null
