@@ -10,7 +10,7 @@ import {
   SORE_JOINTS,
   type Profile,
 } from '@/lib/onboarding'
-import { fmtWeight, toPounds, unitLabel, type Unit } from '@/lib/units'
+import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import type { Goal } from '@/lib/types'
 
@@ -33,17 +33,41 @@ export interface OnboardingResult {
   weight: number | null
 }
 
-export default function Onboarding({ onFinish }: { onFinish: (result: OnboardingResult) => void }) {
-  const [step, setStep] = useState(-1)
-  const [profile, setProfile] = useState<Profile>({ units: 'lb' })
+// A number in pounds, back into the box in whatever unit is on screen.
+function inputFor(lb: number | undefined, unit: Unit): string {
+  if (lb == null) return ''
+  const n = Math.round(toDisplay(lb, unit) * 10) / 10
+  return String(n)
+}
+
+export default function Onboarding({
+  onFinish,
+  initial,
+  again,
+}: {
+  onFinish: (result: OnboardingResult) => void
+  // Running it a second time starts from the answers already given rather
+  // than from nothing. Changing your mind about one of them should not mean
+  // typing the other twelve again.
+  initial?: Profile
+  again?: boolean
+}) {
+  const seed = initial ?? {}
+  const seedUnit: Unit = seed.units === 'kg' ? 'kg' : 'lb'
+  const [step, setStep] = useState(0)
+  const [profile, setProfile] = useState<Profile>({ units: seedUnit, ...seed })
   // Typed numbers stay strings until they are saved, so a half typed "18." is
   // not repeatedly parsed out from under the person typing it.
-  const [name, setName] = useState('')
-  const [age, setAge] = useState('')
+  const [name, setName] = useState(seed.name ?? '')
+  const [age, setAge] = useState(seed.ageYears != null ? String(seed.ageYears) : '')
   const [weight, setWeight] = useState('')
-  const [goalWeight, setGoalWeight] = useState('')
-  const [heightFt, setHeightFt] = useState('')
-  const [heightIn, setHeightIn] = useState('')
+  const [goalWeight, setGoalWeight] = useState(inputFor(seed.goalWeight, seedUnit))
+  const [heightFt, setHeightFt] = useState(
+    seed.heightIn != null ? String(Math.floor(seed.heightIn / 12)) : '',
+  )
+  const [heightIn, setHeightIn] = useState(
+    seed.heightIn != null ? String(Math.round(seed.heightIn % 12)) : '',
+  )
 
   const unit: Unit = profile.units === 'kg' ? 'kg' : 'lb'
   const set = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }))
@@ -90,8 +114,6 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
     })
   }
 
-  if (step === -1) return <Welcome onStart={() => setStep(0)} onSkip={() => finish(null)} />
-
   const current = STEPS[Math.min(step, STEPS.length - 1)]
   const last = step >= STEPS.length - 1
 
@@ -99,7 +121,7 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
     <Frame>
       <Header
         index={Math.min(step, STEPS.length - 1)}
-        onBack={() => setStep((s) => s - 1)}
+        onBack={() => setStep((s) => Math.max(0, s - 1))}
         onJump={(i) => setStep(i)}
       />
 
@@ -110,6 +132,12 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
         <div className="mt-6">
           {current.id === 'you' ? (
             <>
+              {!again ? (
+                <p className="mb-5 text-sm leading-relaxed text-muted">
+                  Log every set. See what you did last time on the line above the inputs. Know what to do
+                  next. Five short sections and you have a plan and a session to start.
+                </p>
+              ) : null}
               <Field label="What should we call you?" optional>
                 <TextInput value={name} onChange={setName} placeholder="Name" autoComplete="given-name" />
               </Field>
@@ -251,7 +279,11 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
             <>
               <Field
                 label="Where are you today?"
-                hint="Day one. Everything after it is measured from here, and you can log it as often or as rarely as you like."
+                hint={
+                  again
+                    ? 'A fresh reading, if you want one. Leaving it blank changes nothing you have already logged.'
+                    : 'Day one. Everything after it is measured from here, and you can log it as often or as rarely as you like.'
+                }
                 optional
               >
                 <NumberInput
@@ -334,41 +366,20 @@ export default function Onboarding({ onFinish }: { onFinish: (result: Onboarding
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setStep((s) => s + 1)}
-            className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent"
-          >
-            Continue
-          </button>
+          <>
+            <button
+              onClick={() => setStep((s) => s + 1)}
+              className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent"
+            >
+              Continue
+            </button>
+            {step === 0 && !again ? (
+              <button onClick={() => finish(null)} className="mt-1 w-full py-2 text-sm text-muted">
+                Skip and pick something sensible
+              </button>
+            ) : null}
+          </>
         )}
-      </div>
-    </Frame>
-  )
-}
-
-function Welcome({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
-  return (
-    <Frame>
-      <div className="flex-1" />
-      <h1 className="text-3xl font-semibold tracking-tight">Training Log</h1>
-      <p className="mt-3 text-sm text-muted">
-        Log every set. See what you did last time on the line above the inputs. Know what to do next.
-      </p>
-      <p className="mt-4 text-sm text-muted">
-        Five short sections and you have a plan and a session to start. Every answer is optional and every
-        one of them is editable later.
-      </p>
-      <div className="flex-1" />
-      <div className="flex gap-2 pb-2">
-        <button
-          onClick={onStart}
-          className="flex-1 rounded-2xl bg-accent py-4 text-base font-medium text-on-accent"
-        >
-          Set me up
-        </button>
-        <button onClick={onSkip} className="rounded-2xl px-5 py-4 text-base text-muted">
-          Skip
-        </button>
       </div>
     </Frame>
   )
@@ -388,9 +399,11 @@ function Header({
   return (
     <div className="sticky top-0 z-10 bg-ink pb-4 pt-1">
       <div className="flex items-center gap-2">
-        <button onClick={onBack} className="-ml-2 rounded-lg px-2 py-1 text-sm text-muted" aria-label="Back">
-          &larr;
-        </button>
+        {index > 0 ? (
+          <button onClick={onBack} className="-ml-2 rounded-lg px-2 py-1 text-sm text-muted" aria-label="Back">
+            &larr;
+          </button>
+        ) : null}
         <p className="text-xs uppercase tracking-wide text-muted">
           Step {index + 1} of {STEPS.length}
         </p>

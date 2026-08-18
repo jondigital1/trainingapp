@@ -14,6 +14,7 @@ export default function SettingsSheet({
   onGoal,
   onImport,
   onEditProfile,
+  onRerunQuestionnaire,
   onHelp,
   onSignOut,
   onClose,
@@ -22,6 +23,7 @@ export default function SettingsSheet({
   email: string
   onGoal: (goal: Goal) => void
   onEditProfile: () => void
+  onRerunQuestionnaire: () => void
   onHelp: () => void
   onImport: (data: TrainingData) => Promise<void>
   onSignOut: () => void
@@ -122,8 +124,20 @@ export default function SettingsSheet({
         onClick={onEditProfile}
         className="mt-2 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
       >
-        Experience, sore joints, time, dislikes
-        <span className="mt-0.5 block text-xs text-muted">What we use to pick your sessions</span>
+        Your profile
+        <span className="mt-0.5 block text-xs text-muted">
+          Name, age, units, experience, your week, bodyweight and your record
+        </span>
+      </button>
+      <button
+        onClick={onRerunQuestionnaire}
+        className="mt-2 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
+      >
+        Run the questionnaire again
+        <span className="mt-0.5 block text-xs text-muted">
+          Walks the five sections with your answers already in them, and picks a plan at the end.
+          Nothing you have logged is touched.
+        </span>
       </button>
 
       <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Data</h3>

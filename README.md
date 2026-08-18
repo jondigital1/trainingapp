@@ -154,6 +154,11 @@ the profile page saving a weigh in.
 
 ## Onboarding
 
+First sign in lands straight in the first question. There is no splash to tap
+through: the account is new, there is no history to look at, and the plan is
+the reason they are here. Skipping is still one line away at the bottom of the
+first screen.
+
 Five sections rather than a dozen full screen taps, because answers that belong
 together should be asked together: who you are, what you have done, what your
 week looks like, where your body is starting from, then the plan. Nothing is
@@ -161,6 +166,11 @@ required, the rail at the top walks back to any section you have been through,
 and every answer is editable afterwards on the profile page using the same
 controls, so a question does not look like one thing on the way in and
 something else on the way back.
+
+Settings carries a row to run it again, which starts from the answers already
+given rather than from nothing: changing your mind about one of them should not
+mean typing the other twelve a second time. Nothing logged is touched, and the
+weigh in box on a rerun is a fresh reading rather than a new day one.
 
 The answers land you on one of three programs.
 

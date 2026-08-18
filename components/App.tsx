@@ -90,6 +90,7 @@ export default function App({ userId, email }: { userId: string; email: string }
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
   const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
+  const [rerun, setRerun] = useState(false)
   const [pendingStart, setPendingStart] = useState<{
     title: string
     items: CustomWorkoutItem[]
@@ -497,8 +498,20 @@ export default function App({ userId, email }: { userId: string; email: string }
   const past = ordered.filter((w) => w.date !== now)
   const targetWorkout = data.workouts.find((w) => w.id === pickerTarget) ?? null
 
-  if (!loading && !data.settings.onboardedAt) {
-    return <Onboarding onFinish={(result) => void finishOnboarding(result)} />
+  // First sign in lands straight in the questionnaire. Nothing to tap through
+  // first: the account is new, there is no history to look at, and the plan is
+  // the reason they are here.
+  if (!loading && (!data.settings.onboardedAt || rerun)) {
+    return (
+      <Onboarding
+        again={rerun}
+        initial={rerun ? profile : undefined}
+        onFinish={(result) => {
+          setRerun(false)
+          void finishOnboarding(result)
+        }}
+      />
+    )
   }
 
   return (
@@ -791,6 +804,10 @@ export default function App({ userId, email }: { userId: string; email: string }
           email={email}
           onGoal={(goal) => void setGoal(goal)}
           onImport={importAll}
+          onRerunQuestionnaire={() => {
+            setSheet(null)
+            setRerun(true)
+          }}
           onEditProfile={() => {
             setProfileFocus('all')
             setSheet('profile')
