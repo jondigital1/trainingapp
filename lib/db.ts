@@ -14,7 +14,7 @@ import type {
 type Row = Record<string, any>
 
 const WORKOUT_SELECT =
-  'id,date,title,started_at,ended_at,intensity,exercises(id,name,type,position,superset,sets(id,position,w,r,rpe,t,d,raw,dropset))'
+  'id,date,title,started_at,ended_at,intensity,note,exercises(id,name,type,position,superset,sets(id,position,w,r,rpe,t,d,raw,dropset))'
 
 function toNum(v: unknown): number | null {
   if (v == null || v === '') return null
@@ -54,6 +54,7 @@ function rowToWorkout(row: Row): Workout {
     startedAt: (row.started_at as string) ?? null,
     endedAt: (row.ended_at as string) ?? null,
     intensity: toNum(row.intensity),
+    note: (row.note as string) ?? null,
     exercises,
   }
 }
@@ -110,6 +111,7 @@ export async function saveWorkout(sb: SupabaseClient, _userId: string, workout: 
       startedAt: workout.startedAt ?? null,
       endedAt: workout.endedAt ?? null,
       intensity: workout.intensity ?? null,
+      note: workout.note?.trim() ? workout.note.trim() : null,
       exercises: workout.exercises.map((ex) => ({
         id: ex.id,
         name: ex.name,
@@ -203,5 +205,13 @@ export async function saveBodyWeight(
 
 export async function deleteBodyWeight(sb: SupabaseClient, userId: string, date: string) {
   const res = await sb.from('body_weights').delete().eq('user_id', userId).eq('date', date)
+  if (res.error) throw res.error
+}
+
+// Takes everything away: every row this app owns, then the account itself.
+// The user id comes from the session inside the function rather than from
+// here, so it can only ever delete the caller.
+export async function deleteAccount(sb: SupabaseClient) {
+  const res = await sb.rpc('delete_me')
   if (res.error) throw res.error
 }

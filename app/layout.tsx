@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import ServiceWorker from '@/components/ServiceWorker'
 
 export const metadata: Metadata = {
   title: 'Training Log',
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-ink text-bright antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <ServiceWorker />
         {children}
       </body>
     </html>

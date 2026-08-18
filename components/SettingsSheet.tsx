@@ -17,6 +17,7 @@ export default function SettingsSheet({
   onRerunQuestionnaire,
   onHelp,
   onSignOut,
+  onDeleteAccount,
   onClose,
 }: {
   data: TrainingData
@@ -27,9 +28,12 @@ export default function SettingsSheet({
   onHelp: () => void
   onImport: (data: TrainingData) => Promise<void>
   onSignOut: () => void
+  onDeleteAccount: () => void
   onClose: () => void
 }) {
   const [paste, setPaste] = useState('')
+  const [killing, setKilling] = useState(false)
+  const [typed, setTyped] = useState('')
   const [status, setStatus] = useState('')
   // Light is the default, so no stored choice means light rather than
   // whatever the phone is set to. Following the device is something you opt
@@ -184,6 +188,49 @@ export default function SettingsSheet({
       <button onClick={onSignOut} className="mt-2 w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge">
         Sign out
       </button>
+
+      {/* Two taps and a typed word, because this one does not come back. */}
+      <h3 className="mt-8 text-xs uppercase tracking-wide text-muted">Delete your account</h3>
+      <p className="mt-2 text-xs leading-relaxed text-muted">
+        Every session, every set, your bodyweight and your profile, gone for good. Export a CSV
+        first if you want to keep any of it.
+      </p>
+      {killing ? (
+        <div className="mt-2">
+          <input
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            aria-label="Type DELETE to confirm"
+            className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              disabled={typed.trim().toUpperCase() !== 'DELETE'}
+              onClick={onDeleteAccount}
+              className="flex-1 rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
+            >
+              Delete everything
+            </button>
+            <button
+              onClick={() => {
+                setKilling(false)
+                setTyped('')
+              }}
+              className="rounded-xl px-4 py-3 text-sm text-muted"
+            >
+              Keep it
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setKilling(true)}
+          className="mt-2 w-full rounded-xl bg-ink py-3 text-sm text-muted ring-1 ring-edge"
+        >
+          Delete my account
+        </button>
+      )}
     </Sheet>
   )
 }

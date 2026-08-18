@@ -24,6 +24,7 @@ import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
 import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
 import { customFor, registerCustoms } from '@/lib/custom'
+import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { durationOf, wantsScore } from '@/lib/session'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -94,6 +95,9 @@ export default function App({ userId, email }: { userId: string; email: string }
   // The exercise being swapped out, when the picker was opened to substitute
   // rather than to add.
   const [swapping, setSwapping] = useState<{ id: string; name: string } | null>(null)
+  // When the last load failed and this is the copy from the device, the time
+  // that copy was taken. Null when the data is live.
+  const [offline, setOffline] = useState<string | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
   const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
@@ -265,8 +269,21 @@ export default function App({ userId, email }: { userId: string; email: string }
         }
 
         setData(loaded)
+        // Keep a copy so the next cold open with no signal has something to
+        // show. Written after the replay, so it includes unsaved work.
+        saveSnapshot(userId, loaded)
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Could not load'))
+      .catch((e) => {
+        // A dead connection falls back to the last copy on this device rather
+        // than to an empty screen. A real rejection is shown as itself.
+        const snapshot = looksOffline(e) ? readSnapshot(userId) : null
+        if (snapshot) {
+          setData(snapshot.data)
+          setOffline(snapshot.at)
+          return
+        }
+        setError(e instanceof Error ? e.message : 'Could not load')
+      })
       .finally(() => {
         if (alive) setLoading(false)
       })
@@ -514,6 +531,24 @@ export default function App({ userId, email }: { userId: string; email: string }
     queueSave(scored)
   }
 
+  // Everything, gone. The rows go first and the account last, inside one
+  // function that reads the user id from the session, so it can only ever
+  // delete the person asking.
+  async function deleteAccount() {
+    try {
+      await db.deleteAccount(sb)
+      try {
+        localStorage.clear()
+      } catch {
+        // nothing stored, nothing to clear
+      }
+      await sb.auth.signOut()
+      window.location.href = '/login'
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete your account')
+    }
+  }
+
   async function setGoal(goal: Goal) {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, goal } }))
     try {
@@ -620,6 +655,13 @@ export default function App({ userId, email }: { userId: string; email: string }
           </button>
         ) : null}
       </header>
+
+      {offline ? (
+        <p className="mb-3 rounded-xl bg-card p-3 text-xs leading-relaxed text-muted ring-1 ring-edge">
+          No connection. This is your copy from {fmtDate(offline.slice(0, 10))}, and anything you log
+          now is saved on this device and sent when you are back.
+        </p>
+      ) : null}
 
       {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
@@ -949,6 +991,7 @@ export default function App({ userId, email }: { userId: string; email: string }
             setSheet('profile')
           }}
           onHelp={() => setSheet('help')}
+          onDeleteAccount={() => void deleteAccount()}
           onSignOut={async () => {
             await flush()
             await sb.auth.signOut()

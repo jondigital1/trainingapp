@@ -58,12 +58,13 @@ accent darkens in light mode so small accent text keeps its contrast on white.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0008. Clear the editor before each paste: a partial paste fails in confusing
+   0009. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the seven tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
    table, the start, end and score on a session, and what a custom exercise
-   knows about itself.
+   knows about itself, the note on a session, and the function that deletes
+   your account.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
@@ -498,18 +499,40 @@ Total lifted, sessions and sets, each with the next round number to chase, plus
 reps and time under holds. The only numbers here that never go down, which is
 what makes them worth having on a bad week.
 
+## Offline
+
+A service worker holds the app itself, so a cold open in a basement gym shows
+your training log rather than the browser's error page. Build output is hashed
+and immutable so it is served straight from the cache; everything else goes to
+the network first and falls back, which means you get the current version
+whenever there is a signal and the last one when there is not.
+
+The data has its own copy. Every successful load is written to the device, and
+a load that fails on a dead connection falls back to it with a line saying when
+it was taken. A real rejection is still shown as itself, because a broken query
+and a missing signal deserve different answers. Anything logged offline goes
+through the same save queue as always and lands when the connection returns.
+
+## Notifications
+
+The rest timer buzzes and beeps at zero, and posts a notification when you are
+not looking at the screen. Permission is asked for on the first timer rather
+than at startup, because a prompt before you have seen the timer is a prompt
+about nothing.
+
+What it cannot do, plainly: a phone locked in your pocket suspends the page,
+and nothing running inside it can fire. Getting through to a locked phone needs
+a push server sending from outside the device, which this app does not have. So
+this covers checking a message between sets, not putting the phone away for two
+minutes.
+
 ## Not built yet
-
-Everything on the original backlog is built, the migrations have run, and the app
-is deployed. What is genuinely missing:
-
-Offline boot. Unsaved work survives a dead connection and replays, but opening
-the app cold with no network still fails, because the app itself has to come down
-the wire. A service worker fixes it.
 
 A one time code by text. The password is in, and the code by text is the half
 that needs an SMS provider on the Supabase project before there is anything to
 write.
 
-Deleting your account. Everything can leave as CSV, but there is no button that
-takes it all away.
+Rest alerts on a locked phone, which needs the push server above.
+
+Mail that works. Password resets go through Supabase's built in sender, which
+is capped near two an hour and is not meant for real use. Custom SMTP fixes it.

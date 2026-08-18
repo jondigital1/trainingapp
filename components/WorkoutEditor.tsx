@@ -54,6 +54,7 @@ export default function WorkoutEditor({
   const [confirm, setConfirm] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [pairing, setPairing] = useState<string | null>(null)
+  const [noting, setNoting] = useState(false)
 
   useEffect(() => {
     if (!confirm) return
@@ -233,6 +234,27 @@ export default function WorkoutEditor({
       >
         Add exercise
       </button>
+
+      {/* Why, not what. Folded away until there is something to say, so it is
+          never in the way of the numbers. */}
+      {noting || workout.note ? (
+        <textarea
+          value={workout.note ?? ''}
+          onChange={(e) => onChange({ ...workout, note: e.target.value })}
+          onBlur={() => setNoting(false)}
+          placeholder="Slept badly, shoulder felt off, gym was heaving"
+          aria-label="Note about this session"
+          rows={2}
+          className="w-full resize-none rounded-xl bg-card px-3 py-2.5 text-base leading-snug outline-none ring-1 ring-edge focus:ring-accent"
+        />
+      ) : (
+        <button
+          onClick={() => setNoting(true)}
+          className="self-start rounded-lg px-1 py-1 text-xs text-muted"
+        >
+          + Add a note
+        </button>
+      )}
 
       {pairing ? (
         <SupersetSheet

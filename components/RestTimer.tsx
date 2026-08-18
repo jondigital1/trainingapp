@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtTime } from '@/lib/format'
+import { askToNotify, restDone } from '@/lib/notify'
 import { REST_KEY, type RestState } from '@/lib/rest'
 
 // One timer at a time, keyed to an end timestamp rather than a countdown, so a
@@ -11,6 +12,7 @@ export function useRest() {
   const [rest, setRest] = useState<RestState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const rang = useRef(false)
+  const asked = useRef(false)
 
   useEffect(() => {
     try {
@@ -69,6 +71,14 @@ export function useRest() {
 
   const remaining = rest ? Math.max(0, Math.round((rest.endsAt - now) / 1000)) : 0
 
+  // Asked the first time a timer runs, which is the first moment the question
+  // means anything. Asking at startup is asking about nothing.
+  useEffect(() => {
+    if (!rest || asked.current) return
+    asked.current = true
+    void askToNotify()
+  }, [rest])
+
   // Buzz and beep once, at zero. The tap that started the timer is the gesture
   // that lets audio play later, so this works without asking for anything.
   useEffect(() => {
@@ -96,6 +106,9 @@ export function useRest() {
     } catch {
       // no audio, the number on screen still counts down
     }
+    // And a notification for the times the screen is not what you are looking
+    // at. It says nothing when the app is in front of you.
+    void restDone(rest.name)
   }, [rest, remaining])
 
   return { rest, remaining, start, stop, extend }

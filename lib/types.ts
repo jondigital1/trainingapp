@@ -55,6 +55,9 @@ export interface Workout {
   // per-set RPE: one honest number after the fact beats ten guesses taken
   // while out of breath.
   intensity?: number | null
+  // Why, rather than what. The log has every number and none of the reasons,
+  // and "slept four hours" is what explains a bad week a month later.
+  note?: string | null
 }
 
 export interface CustomExercise {
