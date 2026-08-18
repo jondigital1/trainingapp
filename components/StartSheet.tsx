@@ -113,7 +113,7 @@ export default function StartSheet({
                   {split.days.map((day) => (
                     <button
                       key={day.id}
-                      onClick={() => onStart(`${split.name} ${day.name}`, dayItems(day))}
+                      onClick={() => onStart(day.name, dayItems(day))}
                       className="flex items-center justify-between px-3 py-3 text-left"
                     >
                       <span className="text-sm text-bright">{day.name}</span>

@@ -18,17 +18,17 @@ export interface TemplateSplit {
   days: TemplateDay[]
 }
 
-// Baked into every day of the summer and five day splits. It is a circuit by
+// Baked into every day of the 4 and 5 day splits. It is a circuit by
 // name, so it is a superset by structure: straight through, then rest.
 const CORE: TemplateEntry = ['Hanging Leg Raise', 'Cable Crunch', 'Pallof Press', 'Plank']
 
-// Knee note: the summer and five day splits carry no barbell back squat and no
+// Knee note: the 4 and 5 day splits carry no barbell back squat and no
 // heavy hinge. Quad and hamstring work runs through machines and split stance.
 export const SPLITS: TemplateSplit[] = [
   {
     id: 'summer4',
-    name: 'Summer 4 Day',
-    note: 'Four days, core circuit on every day',
+    name: '4 Day Split',
+    note: 'Push, pull, legs and an upper mix, core circuit every day',
     days: [
       {
         id: 'summer4-push',
@@ -89,8 +89,8 @@ export const SPLITS: TemplateSplit[] = [
   },
   {
     id: 'five',
-    name: '5 Day',
-    note: 'Rest of year, core circuit on every day',
+    name: '5 Day Split',
+    note: 'A muscle group a day, core circuit every day',
     days: [
       {
         id: 'five-chest',
