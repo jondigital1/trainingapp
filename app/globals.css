@@ -65,3 +65,18 @@ input[type='number'] {
 input::placeholder {
   color: var(--color-muted);
 }
+
+/* Anything pinned to an edge has to clear the home indicator and, sideways, the
+   notch. env() is zero on hardware without them, so these are safe everywhere. */
+.pb-safe {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.pb-safe-lg {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+
+.px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}

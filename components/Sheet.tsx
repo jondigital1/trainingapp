@@ -22,7 +22,7 @@ export default function Sheet({
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60" onClick={onClose}>
       <div
-        className="max-h-[88vh] overflow-y-auto rounded-t-3xl bg-card px-4 pb-8 pt-3 ring-1 ring-edge"
+        className="max-h-[88vh] overflow-y-auto rounded-t-3xl bg-card px-4 pb-safe-lg pt-3 ring-1 ring-edge"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 -mx-4 mb-3 flex items-center justify-between bg-card px-4 pb-3 pt-1">
