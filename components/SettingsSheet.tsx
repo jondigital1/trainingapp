@@ -6,6 +6,7 @@ import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
 import { disablePush, enablePush, pushState, type PushState } from '@/lib/push'
+import PasswordChange from './PasswordChange'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
 
@@ -229,6 +230,7 @@ export default function SettingsSheet({
 
       <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Account</h3>
       <p className="mt-2 text-sm text-muted">{email}</p>
+      <PasswordChange />
       <button onClick={onSignOut} className="mt-2 w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge">
         Sign out
       </button>

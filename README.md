@@ -117,6 +117,12 @@ still here, one tap away under the password box, but it is no longer the only
 door. Forgotten passwords go out as a reset link that lands on a page to set a
 new one.
 
+Changing a password you already know is in Settings, under Account, folded away
+behind one line. It used to only be possible through the recovery mail, which is
+a strange thing to need while signed in, and worse, a recovery link sent from
+anywhere other than the app's own forgotten-password button lands on the app
+rather than on a form, so the one path that existed could fail quietly.
+
 Every mail flow lands on `/auth/callback`, which trades the code for a session
 cookie and forwards on. Where it forwards is checked: a path on this site and
 nothing else, since `//evil.example` is a valid relative URL that a browser
