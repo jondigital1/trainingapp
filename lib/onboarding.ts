@@ -29,6 +29,11 @@ export interface Profile {
   // load they last pressed has been paying attention to their training;
   // somebody who cannot has not, whatever their years say.
   knows?: 'yes' | 'roughly' | 'no'
+  // Whether they already write their own sessions. Somebody who does should be
+  // handed the builder rather than pushed onto a split they did not ask for,
+  // which is the single most common thing new people said was missing: they
+  // could not find the door marked "I know what I want to do".
+  writesOwn?: 'no' | 'sometimes' | 'yes'
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still
@@ -85,7 +90,7 @@ export type Program = 'Foundation' | 'Build' | 'Performance'
 export const PROGRAMS: { id: Program; blurb: string }[] = [
   { id: 'Foundation', blurb: 'Learn the movements, build the habit, add weight as it gets easy.' },
   { id: 'Build', blurb: 'You know the lifts. Now add muscle and load, one session at a time.' },
-  { id: 'Performance', blurb: 'Long training age. Effort targets and the three week wave from day one.' },
+  { id: 'Performance', blurb: 'Long training age. Effort targets and six week blocks from day one.' },
 ]
 
 const YEARS_SCORE = { never: 0, under6: 1, sixToTwo: 2, overTwo: 3 }
@@ -388,6 +393,15 @@ export interface Plan {
   // What the stated goal was turned into, and why, so nothing is quietly
   // rewritten behind the person who chose it.
   goalNote: string | null
+  // They write their own. The plan is still built and still there, it just
+  // stops being the thing the app leads with.
+  selfDirected: boolean
+}
+
+// One answer, read in three places: the last step of the questionnaire, the
+// Start sheet, and what happens when the questionnaire ends.
+export function selfDirected(p: Profile): boolean {
+  return p.writesOwn === 'yes'
 }
 
 // The goal a person picks and the goal the coach can act on are not the same
@@ -444,6 +458,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
         ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done, and the seventh is a rest day on purpose.'
         : null,
     goalNote: choice ? GOAL_NOTE[choice] : null,
+    selfDirected: selfDirected(profile),
   }
 }
 

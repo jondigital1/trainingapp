@@ -8,6 +8,7 @@ import {
   LONG_SESSION,
   planFor,
   PROGRAMS,
+  selfDirected,
   SORE_JOINTS,
   type Profile,
 } from '@/lib/onboarding'
@@ -33,6 +34,9 @@ export interface OnboardingResult {
   profile: Profile
   goal: Goal
   startDayId: string | null
+  // Open the builder instead of starting a session. What somebody who writes
+  // their own workouts wanted from the beginning.
+  build?: boolean
   // Day one bodyweight, in pounds, or null if they did not give one.
   weight: number | null
 }
@@ -104,7 +108,7 @@ export default function Onboarding({
 
   const goal: Goal = GOAL_FROM_CHOICE[profile.goalChoice ?? 'muscle'] ?? 'muscle'
 
-  function finish(startDayId: string | null) {
+  function finish(startDayId: string | null, build?: boolean) {
     const w = num(weight)
     const plan = planFor(full, goal)
     onFinish({
@@ -115,12 +119,14 @@ export default function Onboarding({
       profile: plan.block ? { ...full, block: true, blockStart: mondayOf(todayIso()) } : full,
       goal,
       startDayId,
+      build,
       weight: w != null ? toPounds(w, unit) : null,
     })
   }
 
   const current = STEPS[Math.min(step, STEPS.length - 1)]
   const last = step >= STEPS.length - 1
+  const own = selfDirected(full)
 
   return (
     <Frame>
@@ -221,6 +227,21 @@ export default function Onboarding({
                     { v: 'yes' as const, label: 'Yes, to the plate' },
                     { v: 'roughly' as const, label: 'Roughly' },
                     { v: 'no' as const, label: 'No idea' },
+                  ]}
+                />
+              </Field>
+
+              <Field
+                label="Do you write your own workouts?"
+                hint="There is a plan either way. This decides whether it is the first thing you see."
+              >
+                <Options
+                  value={profile.writesOwn}
+                  onPick={(v) => set({ writesOwn: v })}
+                  options={[
+                    { v: 'no' as const, label: 'No, give me a plan' },
+                    { v: 'sometimes' as const, label: 'Sometimes', note: 'A plan to start from, changed when you feel like it' },
+                    { v: 'yes' as const, label: 'Yes, I know what I want to do', note: 'Straight to the builder' },
                   ]}
                 />
               </Field>
@@ -369,17 +390,33 @@ export default function Onboarding({
 
       <div className="sticky bottom-0 bg-ink pb-2 pt-2">
         {last ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => finish(planFor(full, goal).dayIds[0])}
-              className="flex-1 rounded-2xl bg-accent py-4 font-display text-base font-bold text-on-accent"
-            >
-              Start day 1
-            </button>
-            <button onClick={() => finish(null)} className="rounded-2xl px-5 py-4 text-base text-muted">
-              Later
-            </button>
-          </div>
+          own ? (
+            // They said they write their own, so the builder is the button and
+            // the plan is the quiet one. It is still made and still there.
+            <div className="flex gap-2">
+              <button
+                onClick={() => finish(null, true)}
+                className="flex-1 rounded-2xl bg-accent py-4 font-display text-base font-bold text-on-accent"
+              >
+                Build my first workout
+              </button>
+              <button onClick={() => finish(null)} className="px-5 py-4 text-base font-extrabold text-muted">
+                Later
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => finish(planFor(full, goal).dayIds[0])}
+                className="flex-1 rounded-2xl bg-accent py-4 font-display text-base font-bold text-on-accent"
+              >
+                Start day 1
+              </button>
+              <button onClick={() => finish(null)} className="px-5 py-4 text-base font-extrabold text-muted">
+                Later
+              </button>
+            </div>
+          )
         ) : (
           <>
             <button
@@ -448,6 +485,11 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
   const notes: string[] = []
+  // Said first, because it changes what everything under it is for.
+  if (plan.selfDirected)
+    notes.push(
+      'You write your own, so that is where this ends: the builder, with the whole movement library in it. The plan above still exists and is sitting in Start whenever you want a day handed to you.',
+    )
   if (plan.restNote) notes.push(plan.restNote)
   if (plan.cleared)
     notes.push(
@@ -468,8 +510,10 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   return (
     <>
       <div className="rounded-2xl bg-card p-4 ring-1 ring-edge">
-        <p className="text-xs uppercase tracking-wide text-accent-ink">{plan.program}</p>
-        <h2 className="mt-1 text-xl font-semibold tracking-tight">
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-accent-ink">
+          {plan.selfDirected ? `${plan.program} · plan kept aside` : plan.program}
+        </p>
+        <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
           {plan.splitName}, {plan.days} days a week
         </h2>
         <p className="mt-1 text-sm text-muted">{blurb}</p>

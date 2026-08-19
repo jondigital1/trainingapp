@@ -380,6 +380,24 @@ Two fallbacks, in order. A browser that shares but refuses files gets the same
 session as text. A browser with no share sheet saves the PDF, and says so, so it
 can be attached by hand.
 
+## If you already write your own
+
+The questionnaire asks. Somebody who says yes lands in the builder at the end of
+it rather than on day one of a split they never asked for, and the Start sheet
+puts Build a workout at the top with the plan demoted underneath it, under a
+heading that says it is there if you want one handed to you.
+
+The plan is still built and still saved either way. That is the point: it is not
+withheld from anybody, it just stops being the thing the app leads with for
+people who arrived knowing what they wanted to do.
+
+Sometimes is not yes. Somebody who occasionally writes their own still gets a
+starting point, because that is what occasionally means.
+
+This came from new users, more than one of them, saying they could not find the
+door. It was always there, in the Start sheet, as a dashed pill under a plan
+that looked like the whole app.
+
 ## Your own workouts
 
 Build one from scratch in the Start sheet, or take a copy of any template day
@@ -513,7 +531,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 110 assertions over everything that is pure logic: the movement
+`npm run check` is 112 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering

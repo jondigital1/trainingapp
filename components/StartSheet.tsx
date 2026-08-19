@@ -45,11 +45,36 @@ export default function StartSheet({
 
   const planDays = (plan?.dayIds ?? []).map((id) => dayById(id)).filter(Boolean)
 
+  const own = !!plan?.selfDirected
+
+  // Build one is the first thing and the loud thing for somebody who writes
+  // their own, and the quiet fallback under the plan for everybody else. Same
+  // button, two positions, because which one is the primary action genuinely
+  // depends on who is looking.
+  const build = own ? (
+    <button
+      onClick={onBuild}
+      className="mb-5 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
+    >
+      Build a workout
+    </button>
+  ) : (
+    <button
+      onClick={onBuild}
+      className="w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted"
+    >
+      Build one from scratch
+    </button>
+  )
+
   return (
     <Sheet title="Start a workout" onClose={onClose}>
+      {own ? build : null}
       {planDays.length ? (
         <div className="mb-5">
-          <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Your plan &middot; {plan!.splitName}</h3>
+          <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            {own ? 'If you want one handed to you' : 'Your plan'} &middot; {plan!.splitName}
+          </h3>
           <div className="mt-2 flex flex-col gap-2">
             {planDays.map((day, i) => {
               // What is actually in it and what it will cost you, so the choice
@@ -78,12 +103,7 @@ export default function StartSheet({
         </div>
       ) : null}
 
-      <button
-        onClick={onBuild}
-        className="w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted"
-      >
-        Build one from scratch
-      </button>
+      {own ? null : build}
 
       {customWorkouts.length ? (
         <div className="mt-5">

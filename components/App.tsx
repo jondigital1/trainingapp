@@ -533,7 +533,7 @@ export default function App({
     }
   }
 
-  async function finishOnboarding({ profile, goal, startDayId, weight }: OnboardingResult) {
+  async function finishOnboarding({ profile, goal, startDayId, build, weight }: OnboardingResult) {
     const stamp = new Date().toISOString()
     setData((prev) => ({ ...prev, settings: { goal, profile, onboardedAt: stamp } }))
     try {
@@ -543,6 +543,14 @@ export default function App({
       setError(e instanceof Error ? e.message : 'Could not save your answers')
     }
     if (weight != null) await logWeight(weight)
+    // Somebody who said they write their own lands in the builder, not in a
+    // session the app picked for them.
+    if (build) {
+      setSeedWorkout(null)
+      setEditingWorkout(null)
+      setSheet('builder')
+      return
+    }
     const day = startDayId ? dayById(startDayId) : null
     if (day) reallyStart(day.name, buildDay(day, profile), true)
   }

@@ -25,6 +25,7 @@ import {
   planFor,
   program,
   returning,
+  selfDirected,
 } from '../lib/onboarding'
 import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
@@ -1707,6 +1708,29 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('somebody who writes their own workouts is not pushed onto a plan', () => {
+  const base = { days: 4, minutes: 60 as const, years: 'overTwo' as const, knows: 'yes' as const }
+
+  // The plan is still built either way. That is the point: it exists, it is
+  // just not the thing the app leads with.
+  const handed = planFor({ ...base, writesOwn: 'no' }, 'muscle')
+  const own = planFor({ ...base, writesOwn: 'yes' }, 'muscle')
+  assert.equal(own.selfDirected, true)
+  assert.equal(handed.selfDirected, false)
+  assert.deepEqual(own.dayIds, handed.dayIds, 'the same plan, differently offered')
+  assert.equal(own.splitName, handed.splitName)
+  assert.ok(own.dayIds.length > 0, 'and it is a real plan, not an empty one')
+
+  // Sometimes is not yes. Somebody who occasionally writes their own still
+  // wants a starting point.
+  assert.equal(planFor({ ...base, writesOwn: 'sometimes' }, 'muscle').selfDirected, false)
+  assert.equal(planFor(base, 'muscle').selfDirected, false, 'and not answering is not yes either')
+
+  assert.ok(selfDirected({ writesOwn: 'yes' }))
+  assert.ok(!selfDirected({ writesOwn: 'sometimes' }))
+  assert.ok(!selfDirected({}))
+})
 
 check('a short session says it was short, not that it was nothing', () => {
   assert.equal(fmtDuration(null), null)
