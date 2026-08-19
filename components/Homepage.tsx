@@ -57,8 +57,9 @@ export default function Homepage() {
               Lift heavier.
             </h1>
             <p className="mt-4 max-w-[460px] text-[17px] leading-relaxed text-muted sm:text-[18px]">
-              LiftyBot builds your program, puts sets and reps on every movement, and argues with
-              the numbers you log. A lifting buddy with a very visible brain.
+              LiftyBot builds your program, puts sets and reps on every movement, and reads what
+              you log so it knows when you are ready for more. A lifting buddy with a very
+              visible brain.
             </p>
             <div className="mt-7 flex flex-wrap gap-3.5">
               <Link href="/login?mode=signup" className={`${LIME} px-[30px] py-3.5 text-[17px]`}>
