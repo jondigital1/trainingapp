@@ -16,6 +16,7 @@ import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
+import ExerciseSheet from './ExerciseSheet'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
 import SettingsSheet from './SettingsSheet'
@@ -114,6 +115,8 @@ export default function App({
   // The exercise being swapped out, when the picker was opened to substitute
   // rather than to add.
   const [swapping, setSwapping] = useState<{ id: string; name: string } | null>(null)
+  // The movement whose own screen is open, by name.
+  const [openExercise, setOpenExercise] = useState<string | null>(null)
   // When the last load failed and this is the copy from the device, the time
   // that copy was taken. Null when the data is live.
   const [offline, setOffline] = useState<string | null>(null)
@@ -603,6 +606,22 @@ export default function App({
     }
   }
 
+  // The movement whose own screen is open, by name.
+  async function saveExerciseNote(name: string, note: string) {
+    const key = name.toLowerCase()
+    setData((prev) => {
+      const next = { ...prev.exerciseNotes }
+      if (note.trim()) next[key] = note.trim()
+      else delete next[key]
+      return { ...prev, exerciseNotes: next }
+    })
+    try {
+      await db.saveExerciseNote(sb, userId, name, note)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save your note')
+    }
+  }
+
   async function setGoal(goal: Goal) {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, goal } }))
     try {
@@ -857,6 +876,7 @@ export default function App({
                 setPickerTarget(workout.id)
                 setSheet('picker')
               }}
+              onOpenExercise={setOpenExercise}
             />
           ))}
         </div>
@@ -912,6 +932,7 @@ export default function App({
                     setPickerTarget(workout.id)
                     setSheet('picker')
                   }}
+                  onOpenExercise={setOpenExercise}
                   showDate
                 />
                 <button
@@ -1063,6 +1084,20 @@ export default function App({
             setSheet('done')
           }}
           onSkip={() => setSheet('done')}
+        />
+      ) : null}
+
+      {/* One movement, everything known about it. Opened from its name inside a
+          session, and layered over whatever was there, because looking up how
+          the seat was set is not leaving the session. */}
+      {openExercise ? (
+        <ExerciseSheet
+          name={openExercise}
+          workouts={data.workouts}
+          goal={data.settings.goal}
+          note={data.exerciseNotes[openExercise.toLowerCase()] ?? ''}
+          onNote={(note) => void saveExerciseNote(openExercise, note)}
+          onClose={() => setOpenExercise(null)}
         />
       ) : null}
 

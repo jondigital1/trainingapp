@@ -92,3 +92,28 @@ export function trackedNames(workouts: Workout[]): string[] {
     .sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]))
     .map(([name]) => name)
 }
+
+export interface Outing {
+  date: string
+  sets: string[]
+}
+
+// Every time you have done this movement, most recent first. The sets are
+// formatted the way they are formatted everywhere else rather than summarised,
+// because "3 x 8 at 60" is a different claim from what four sets actually
+// were, and this screen exists to show what actually happened.
+export function historyFor(workouts: Workout[], name: string, limit = 12): Outing[] {
+  const out: Outing[] = []
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      if (ex.name !== name) continue
+      const sets = ex.sets.filter((s) => !isEmptySet(s, ex.type)).map((s) => fmtSet(s, ex.type))
+      if (!sets.length) continue
+      out.push({ date: w.date, sets })
+    }
+  }
+  // Newest first. Two sessions on the same day both appear, because they both
+  // happened; the chart is the thing that takes one point a day.
+  out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  return out.slice(0, limit)
+}

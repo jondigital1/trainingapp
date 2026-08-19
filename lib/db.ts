@@ -60,11 +60,12 @@ function rowToWorkout(row: Row): Workout {
 }
 
 export async function loadAll(sb: SupabaseClient, userId: string): Promise<TrainingData> {
-  const [workouts, custom, customWorkouts, weights, settings] = await Promise.all([
+  const [workouts, custom, customWorkouts, weights, notes, settings] = await Promise.all([
     sb.from('workouts').select(WORKOUT_SELECT).order('date', { ascending: false }),
     sb.from('custom_exercises').select('id,name,type,muscle_group,rest_tier,default_sets').order('name'),
     sb.from('custom_workouts').select('id,name,items').order('created_at'),
     sb.from('body_weights').select('date,weight').order('date'),
+    sb.from('exercise_notes').select('name,note'),
     sb
       .from('settings')
       .select('goal,profile,onboarded_at,nudge_day,nudge_hour')
@@ -73,11 +74,14 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
   ])
 
   const err =
-    workouts.error ?? custom.error ?? customWorkouts.error ?? weights.error ?? settings.error
+    workouts.error ?? custom.error ?? customWorkouts.error ?? weights.error ?? notes.error ?? settings.error
   if (err) throw err
 
   return {
     workouts: (workouts.data ?? []).map(rowToWorkout),
+    exerciseNotes: Object.fromEntries(
+      (notes.data ?? []).map((r: Row) => [(r.name as string).toLowerCase(), r.note as string]),
+    ),
     custom: (custom.data ?? []).map((r: Row) => ({
       id: r.id as string,
       name: r.name as string,
@@ -224,6 +228,28 @@ export async function saveNudge(
   const res = await sb
     .from('settings')
     .upsert({ user_id: userId, nudge_day: nudge.day, nudge_hour: nudge.hour })
+  if (res.error) throw res.error
+}
+
+// A note against a movement. Emptying it deletes the row rather than storing a
+// blank, so a note nobody wants leaves no trace.
+export async function saveExerciseNote(
+  sb: SupabaseClient,
+  userId: string,
+  name: string,
+  note: string,
+) {
+  if (!note.trim()) {
+    const gone = await sb.from('exercise_notes').delete().eq('user_id', userId).eq('name', name)
+    if (gone.error) throw gone.error
+    return
+  }
+  const res = await sb
+    .from('exercise_notes')
+    .upsert(
+      { user_id: userId, name, note: note.trim(), updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,name' },
+    )
   if (res.error) throw res.error
 }
 

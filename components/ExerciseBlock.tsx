@@ -46,6 +46,7 @@ export default function ExerciseBlock({
   lighter = false,
   restOnComplete = true,
   onMove,
+  onOpen,
   onSuperset,
   onSwap,
   onChange,
@@ -67,6 +68,9 @@ export default function ExerciseBlock({
   lighter?: boolean
   restOnComplete?: boolean
   onMove: (direction: -1 | 1) => void
+  // Opens everything the app knows about this movement: the note kept against
+  // it, the chart, and every time it has been done.
+  onOpen?: () => void
   onSuperset?: () => void
   onSwap?: () => void
   onChange: (next: Exercise) => void
@@ -124,7 +128,20 @@ export default function ExerciseBlock({
                 {label}
               </span>
             ) : null}
-            {exercise.name}
+            {onOpen ? (
+              // The name is the way in, because it is the thing somebody is
+              // already looking at when they want to know about the movement.
+              <button
+                type="button"
+                onClick={onOpen}
+                aria-label={`About ${exercise.name}`}
+                className="text-left underline decoration-edge decoration-2 underline-offset-4"
+              >
+                {exercise.name}
+              </button>
+            ) : (
+              exercise.name
+            )}
             {volumePr(exercise, bests) ? (
               <span className="ml-2 align-middle rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold text-on-accent">
                 Best session

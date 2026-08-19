@@ -42,6 +42,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
+import { historyFor } from '../lib/progress'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
@@ -2318,6 +2319,57 @@ check('the two kinds of push cannot replace each other in the tray', () => {
   assert.equal(rest.tag, 'training-log-rest')
   assert.equal(weekly.tag, 'training-log-nudge')
   assert.notEqual(rest.tag, weekly.tag)
+})
+
+check('a movement has a screen of its own, and it says what happened', () => {
+  const bench = { id: 'e1', name: 'Bench Press', type: 'W' as const, sets: [
+    { id: 's1', w: 100, r: 8, rpe: null, t: null, d: null, raw: null },
+    { id: 's2', w: 100, r: 7, rpe: null, t: null, d: null, raw: null },
+  ] }
+  const later = { ...bench, id: 'e2', sets: [{ id: 's3', w: 105, r: 8, rpe: null, t: null, d: null, raw: null }] }
+  const squat = { id: 'e3', name: 'Back Squat', type: 'W' as const, sets: [
+    { id: 's4', w: 200, r: 5, rpe: null, t: null, d: null, raw: null },
+  ] }
+  const workouts = [
+    { id: 'w1', date: '2026-08-10', title: 'Push', exercises: [bench, squat] },
+    { id: 'w2', date: '2026-08-17', title: 'Push', exercises: [later] },
+  ] as unknown as Parameters<typeof historyFor>[0]
+
+  // Newest first, and only the movement asked for.
+  const history = historyFor(workouts, 'Bench Press')
+  assert.equal(history.length, 2)
+  assert.equal(history[0].date, '2026-08-17')
+  assert.equal(history[1].date, '2026-08-10')
+
+  // Every set, not a summary. Four sets that were not the same are four
+  // different lines, because this screen exists to show what happened rather
+  // than a tidied version of it.
+  assert.deepEqual(history[1].sets.length, 2)
+  assert.match(history[1].sets[0], /100/)
+  assert.match(history[1].sets[1], /7/)
+
+  // A movement never done has no history and does not throw.
+  assert.deepEqual(historyFor(workouts, 'Nordic Curl'), [])
+
+  // Empty sets are not an outing: a row you opened and did not fill in is not
+  // a session with that movement in it.
+  const blank = [{ id: 'w3', date: '2026-08-18', title: 'Push', exercises: [
+    { id: 'e4', name: 'Bench Press', type: 'W' as const, sets: [
+      { id: 's5', w: null, r: null, rpe: null, t: null, d: null, raw: null },
+    ] },
+  ] }] as unknown as Parameters<typeof historyFor>[0]
+  assert.deepEqual(historyFor(blank, 'Bench Press'), [])
+
+  // And it is bounded, because a movement done weekly for three years is not
+  // a screen anybody scrolls.
+  const many = Array.from({ length: 40 }, (_, i) => ({
+    id: `w${i}`,
+    date: `2026-0${(i % 9) + 1}-0${(i % 9) + 1}`,
+    title: 'Push',
+    exercises: [bench],
+  })) as unknown as Parameters<typeof historyFor>[0]
+  assert.equal(historyFor(many, 'Bench Press').length, 12)
+  assert.equal(historyFor(many, 'Bench Press', 3).length, 3)
 })
 
 void (async () => {

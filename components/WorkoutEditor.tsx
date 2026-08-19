@@ -32,6 +32,7 @@ export default function WorkoutEditor({
   onDelete,
   onAddExercise,
   onSwapExercise,
+  onOpenExercise,
   onEnd,
   showDate = false,
 }: {
@@ -51,6 +52,9 @@ export default function WorkoutEditor({
   onDelete: () => void
   onAddExercise: () => void
   onSwapExercise?: (exerciseId: string, name: string) => void
+  // Opens the movement's own screen: the note kept against it, the chart, and
+  // every time it has been done.
+  onOpenExercise?: (name: string) => void
   onEnd?: () => void
   showDate?: boolean
 }) {
@@ -213,6 +217,7 @@ export default function WorkoutEditor({
             onSwap={
               onSwapExercise ? () => onSwapExercise(exercise.id, exercise.name) : undefined
             }
+            onOpen={onOpenExercise ? () => onOpenExercise(exercise.name) : undefined}
             onChange={patchExercise}
             onRemove={() =>
               onChange({ ...workout, exercises: workout.exercises.filter((e) => e.id !== exercise.id) })

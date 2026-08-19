@@ -116,6 +116,10 @@ export interface Settings {
 
 export interface TrainingData {
   workouts: Workout[]
+  // Notes that belong to a movement rather than to a session, keyed by the
+  // movement's name in lower case so a note written against Bench Press is
+  // found for bench press.
+  exerciseNotes: Record<string, string>
   custom: CustomExercise[]
   customWorkouts: CustomWorkout[]
   bodyWeights: BodyWeight[]
@@ -124,6 +128,7 @@ export interface TrainingData {
 
 export const EMPTY_DATA: TrainingData = {
   workouts: [],
+  exerciseNotes: {},
   custom: [],
   customWorkouts: [],
   bodyWeights: [],

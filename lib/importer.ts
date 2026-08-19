@@ -177,6 +177,8 @@ export function importArtifactData(input: unknown): TrainingData {
     customWorkouts,
     // The artifact never tracked bodyweight, so there is nothing to bring over.
     bodyWeights: [],
+    // Nor notes against a movement.
+    exerciseNotes: {},
     settings: {
       goal: valid.includes(goal) ? goal : 'muscle',
       profile: (source.settings?.profile as TrainingData['settings']['profile']) ?? {},
