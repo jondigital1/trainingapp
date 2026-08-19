@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { coach } from '@/lib/coach'
 import { fmtPrescription, prescribe } from '@/lib/prescribe'
 import { fmtDate, isEmptySet, topSet, uid } from '@/lib/format'
@@ -93,23 +93,31 @@ export default function ExerciseBlock({
 
   const rest = restSeconds ?? restFor(exercise.name, exercise.type, goal, effort)
 
+  // Sets that have already started their clock. Fixing a typo in a logged
+  // set clears it and completes it again, and without this the correction
+  // restarted a full rest and scheduled a push alert at somebody mid lift.
+  const rested = useRef(new Set<string>())
+
   function patchSet(id: string, patch: Partial<SetEntry>) {
     const before = exercise.sets.find((s) => s.id === id)
     const after = before ? { ...before, ...patch } : null
     onChange({ ...exercise, sets: exercise.sets.map((s) => (s.id === id ? { ...s, ...patch } : s)) })
 
-    // The moment a set becomes a set is the moment you want the clock running.
-    // Only on today's session: editing last Tuesday should not start a timer.
-    // In a superset the clock only starts after the last movement in the group,
-    // because the whole point is that you do not rest in between.
+    // The moment a set becomes a set is the moment you want the clock running,
+    // and only the first time it becomes one. Only on today's session: editing
+    // last Tuesday should not start a timer. In a superset the clock only
+    // starts after the last movement in the group, because the whole point is
+    // that you do not rest in between.
     if (
       live &&
       restOnComplete &&
       before &&
       after &&
+      !rested.current.has(id) &&
       !isFullSet(before, exercise.type) &&
       isFullSet(after, exercise.type)
     ) {
+      rested.current.add(id)
       onRest(exercise.id, exercise.name, rest)
     }
   }
@@ -182,16 +190,18 @@ export default function ExerciseBlock({
           const lastWorking = (last?.exercise.sets ?? []).filter((s) => !s.drop)
           // The row you are on is the first one still empty. Everything before
           // it is done, everything after is waiting.
-          const firstEmpty = exercise.sets.findIndex((s) => isEmptySet(s, exercise.type))
+          const firstUnfinished = exercise.sets.findIndex((s) => !isFullSet(s, exercise.type))
           let workingIndex = -1
           return exercise.sets.map((set, position) => {
           if (!set.drop) workingIndex += 1
           const i = workingIndex
           // Only the exercise you are on gets a current row. Ten movements
           // showing ten outlined rows would be ten places to look.
-          const state: SetState = !isEmptySet(set, exercise.type)
+          // Done means full, because lime means finished: a row seeded with
+          // last time's weight but no reps yet is a set you are about to do.
+          const state: SetState = isFullSet(set, exercise.type)
             ? 'done'
-            : active && position === firstEmpty
+            : active && position === firstUnfinished
               ? 'current'
               : 'todo'
           const records = prsFor(set, exercise.type, bests, goal)

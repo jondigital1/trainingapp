@@ -150,7 +150,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           <Stat label="Trained in 7 days" value={sums.activeWeek} note={`${sums.activeMonth} in 28`} />
           <Stat label="Sessions" value={sums.sessions} note={`${sums.sets.toLocaleString()} sets`} />
           <Stat
-            label="Lifted"
+            label="Weight moved"
             value={Math.round(sums.volume).toLocaleString()}
             note="pounds, all time"
           />
@@ -422,7 +422,7 @@ function Row({
             <Detail label="Days a week" value={user.days != null ? String(user.days) : '–'} />
             <Detail label="Goal" value={user.goal ?? '–'} />
             <Detail label="Sets" value={user.sets.toLocaleString()} />
-            <Detail label="Lifted" value={`${Math.round(user.volume).toLocaleString()} lb`} />
+            <Detail label="Weight moved" value={`${Math.round(user.volume).toLocaleString()} lb`} />
             <Detail
               label="First workout"
               value={user.firstWorkout ? fmtDate(user.firstWorkout) : '–'}

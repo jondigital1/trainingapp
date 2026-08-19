@@ -90,7 +90,7 @@ export default function StatsPanel({
       <div className="rounded-2xl bg-card p-4 ring-1 ring-edge">
         <h2 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">All time</h2>
         <div className="mt-3 flex flex-col gap-3">
-          <Landmark label="Lifted" value={totals.volume} suffix=" lb" ladder={LADDERS.volume} />
+          <Landmark label="Weight moved" value={totals.volume} suffix=" lb" ladder={LADDERS.volume} />
           <Landmark label="Sessions" value={totals.sessions} ladder={LADDERS.sessions} />
           <Landmark label="Sets" value={totals.sets} ladder={LADDERS.sets} />
         </div>

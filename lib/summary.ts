@@ -90,7 +90,7 @@ function crossed(all: Workout[], workout: Workout): Milestone[] {
   check(LADDERS.sessions, before.sessions, after.sessions, (n) => `${n} sessions logged`)
   check(LADDERS.sets, before.sets, after.sets, (n) => `${n.toLocaleString('en-US')} sets logged`)
   check(LADDERS.volume, before.volume, after.volume, (n) =>
-    `${(n / 1000).toLocaleString('en-US')}k lb moved, all time`,
+    `${(n / 1000).toLocaleString('en-US')}k lb of weight moved, all time`,
   )
   return out
 }

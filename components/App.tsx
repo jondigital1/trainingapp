@@ -23,7 +23,7 @@ import SettingsSheet from './SettingsSheet'
 import StartSheet from './StartSheet'
 import WorkoutEditor from './WorkoutEditor'
 import type { LastSession } from './ExerciseBlock'
-import { buildDay, dayById, MIN_DAYS, needsCheckin, planFor, unitOf, type Profile } from '@/lib/onboarding'
+import { buildDay, dayById, GOAL_FROM_CHOICE, goalLabel, MIN_DAYS, needsCheckin, planFor, primaryGoal, unitOf, type Profile } from '@/lib/onboarding'
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
@@ -34,7 +34,7 @@ import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
-import { scheduledDays } from '@/lib/schedule'
+import { hasSchedule, scheduledDays, suggestSchedule, todaysDayId } from '@/lib/schedule'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
   EMPTY_DATA,
@@ -109,6 +109,9 @@ export default function App({
   const [data, setData] = useState<TrainingData>(EMPTY_DATA)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // A load that failed outright, as opposed to an error during a save. The
+  // render below refuses to guess between new account and broken fetch.
+  const [loadFailed, setLoadFailed] = useState(false)
   const [tab, setTab] = useState<Tab>('calendar')
   const [sheet, setSheet] = useState<SheetName>(null)
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
@@ -305,6 +308,7 @@ export default function App({
           return
         }
         setError(e instanceof Error ? e.message : 'Could not load')
+        setLoadFailed(true)
       })
       .finally(() => {
         if (alive) setLoading(false)
@@ -374,6 +378,13 @@ export default function App({
   }
 
   function reallyStart(title: string, items: CustomWorkoutItem[], sort = false, who?: Profile) {
+    // A day the bans and the equipment emptied is a message, not a session. A
+    // running clock over zero exercises with no explanation reads as a crash.
+    if (items.length === 0) {
+      setSheet(null)
+      setError('The plan could not fill this day: between flagged joints and the equipment on your profile, nothing qualified. Loosen one of those on your profile, or build the session by hand.')
+      return
+    }
     // The plan decides how many rows a movement gets, so a templated session
     // opens already saying what it wants: four rows on the press, three on the
     // pushdowns. Read off the profile that is current at this moment, because
@@ -475,7 +486,14 @@ export default function App({
       const share = await db.shareCustomWorkout(sb, userId, workout)
       const url = `${window.location.origin}/w/${share}`
       const shared = await sharePlainLink(workout.name, url)
-      setError(shared ? '' : `Link copied: ${url}`)
+      // The message renders on the page, so the sheet has to get out of its
+      // way or sharing looks like it did nothing. And copied is only said
+      // when the copy happened; a clipboard that refused gets the raw link,
+      // which is uglier and true.
+      if (shared !== 'shared') {
+        setSheet(null)
+        setError(shared === 'copied' ? `Link copied: ${url}` : `Your link: ${url}`)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not share that one')
     }
@@ -510,11 +528,18 @@ export default function App({
     }
   }
 
+  // The profile is the one place the goal is edited, so saving it is what
+  // moves the training goal. The list's top pick drives, exactly as the hint
+  // under the picker promises; before this, that hint was a lie and only a
+  // separate radio in Settings actually changed anything.
   async function saveProfile(profile: Profile, onboardedAt?: string) {
     const stamp = onboardedAt ?? data.settings.onboardedAt
-    setData((prev) => ({ ...prev, settings: { ...prev.settings, profile, onboardedAt: stamp } }))
+    const choice = primaryGoal(profile)
+    const goal = choice ? GOAL_FROM_CHOICE[choice] : data.settings.goal
+    setData((prev) => ({ ...prev, settings: { ...prev.settings, profile, goal, onboardedAt: stamp } }))
     try {
       await db.saveProfile(sb, userId, profile, stamp)
+      if (goal !== data.settings.goal) await db.saveGoal(sb, userId, goal)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your answers')
     }
@@ -537,8 +562,15 @@ export default function App({
     }
   }
 
-  async function finishOnboarding({ profile, goal, startDayId, build, weight, nudge }: OnboardingResult) {
+  async function finishOnboarding({ profile: answered, goal, startDayId, build, weight, nudge }: OnboardingResult) {
     const stamp = new Date().toISOString()
+    // The plan lands on the week before anybody sees the home screen. Without
+    // this, every fresh account's Today card said Rest day forever, including
+    // right above the day one session they had just started, because nothing
+    // ever wrote a schedule until they found the profile page.
+    const profile: Profile = hasSchedule(answered)
+      ? answered
+      : { ...answered, schedule: suggestSchedule(planFor(answered, goal)) }
     setData((prev) => ({ ...prev, settings: { ...prev.settings, goal, profile, onboardedAt: stamp, nudge } }))
     try {
       await db.saveProfile(sb, userId, profile, stamp)
@@ -619,15 +651,6 @@ export default function App({
       await db.saveExerciseNote(sb, userId, name, note)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your note')
-    }
-  }
-
-  async function setGoal(goal: Goal) {
-    setData((prev) => ({ ...prev, settings: { ...prev.settings, goal } }))
-    try {
-      await db.saveGoal(sb, userId, goal)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save goal')
     }
   }
 
@@ -717,12 +740,35 @@ export default function App({
 
   // First sign in lands straight in the questionnaire. Nothing to tap through
   // first: the account is new, there is no history to look at, and the plan is
+  // A failed load is a failed load, never a fresh account. Before this guard,
+  // any server hiccup left onboardedAt null and dropped a person with months
+  // of history into "Tell us about yourself", which reads as their data being
+  // gone.
+  if (loadFailed) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col items-center justify-center gap-4 px-6">
+        <LiftyMark className="h-10 w-10" />
+        <p className="text-center text-sm leading-relaxed text-muted">
+          Could not load your training. Nothing is lost, it just did not come down this time.
+          {error ? ` (${error})` : ''}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-2xl bg-accent px-6 py-3 font-display text-sm font-bold text-on-accent"
+        >
+          Try again
+        </button>
+      </main>
+    )
+  }
+
   // the reason they are here.
   if (!loading && (!data.settings.onboardedAt || rerun)) {
     return (
       <Onboarding
         again={rerun}
         initial={rerun ? profile : undefined}
+        onCancel={() => setRerun(false)}
         onFinish={(result) => {
           setRerun(false)
           void finishOnboarding(result)
@@ -751,7 +797,7 @@ export default function App({
             onClick={() => setSheet('settings')}
             className="rounded-full bg-tint-cool px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[1.2px] text-accent-ink"
           >
-            {data.settings.goal}
+            {goalLabel(profile, data.settings.goal)}
           </button>
         ) : null}
       </header>
@@ -791,7 +837,7 @@ export default function App({
           <p className="mt-1 text-sm text-muted">
             You planned {profile.days ?? plan?.days} a week. Three days done properly beats{' '}
             {profile.days ?? plan?.days} missed. Want the shorter plan? Either answer sticks, and
-            days a week can always change in Settings.
+            days a week can always change on your profile.
           </p>
           <div className="mt-3 flex gap-2">
             <button
@@ -846,8 +892,13 @@ export default function App({
       {!loading && tab === 'calendar' ? (
         <div className="flex flex-col gap-6">
           {todays.length === 0 ? (
+            // On a scheduled rest day this card must not argue with the Today
+            // card above it: telling somebody to train on the day the plan
+            // told them to rest is the app contradicting its own training.
             <p className="rounded-2xl bg-card p-4 text-sm text-muted ring-1 ring-edge">
-              Nothing logged today. Tap Start below.
+              {hasSchedule(profile) && !todaysDayId(profile, today())
+                ? 'Rest day. Nothing to log unless you feel like logging something anyway.'
+                : 'Nothing logged today. Tap Start below.'}
             </p>
           ) : null}
           {todays.map((workout) => (
@@ -1047,6 +1098,15 @@ export default function App({
             addExercise(targetWorkout.id, name, type, superset)
           }}
           onOpen={setOpenExercise}
+          onUnpick={(name) => {
+            // Only ever takes back what the picker just put in: the last copy
+            // of that movement with nothing logged in it.
+            const w = latest.current.workouts.find((x) => x.id === targetWorkout.id) ?? targetWorkout
+            const doomed = [...w.exercises].reverse().find(
+              (e) => e.name === name && e.sets.every((st) => isEmptySet(st, e.type)),
+            )
+            if (doomed) updateWorkout({ ...w, exercises: w.exercises.filter((e) => e.id !== doomed.id) })
+          }}
           onCreate={(exercise) => void createCustomExercise(exercise)}
           onClose={() => {
             setSheet(null)
@@ -1123,7 +1183,6 @@ export default function App({
         <SettingsSheet
           data={data}
           email={email}
-          onGoal={(goal) => void setGoal(goal)}
           onNudge={(nudge) => void setNudge(nudge)}
           onImport={importAll}
           onRerunQuestionnaire={() => {

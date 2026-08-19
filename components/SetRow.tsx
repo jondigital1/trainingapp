@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { fmtPrevious, fmtTime, parseClock } from '@/lib/format'
 import { columnsFor } from '@/lib/columns'
 import type { SetEntry, SetType } from '@/lib/types'
@@ -103,6 +104,17 @@ function ClockField({
   )
 }
 
+// The fields the ghost hands over on a tap: everything last time measured,
+// nothing it did not.
+function copyOf(previous: SetEntry, type: SetType): Partial<SetEntry> {
+  if (type === 'W') return { w: previous.w, r: previous.r }
+  if (type === 'R') return { r: previous.r }
+  if (type === 'T') return { t: previous.t }
+  if (type === 'WD') return { w: previous.w, d: previous.d }
+  if (type === 'C') return { t: previous.t, d: previous.d }
+  return {}
+}
+
 export default function SetRow({
   index,
   set,
@@ -126,6 +138,13 @@ export default function SetRow({
   onRemove: () => void
 }) {
   const drop = !!set.drop
+  // Armed by the first tap on the remove button, disarmed by time.
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const timer = setTimeout(() => setArmed(false), 3000)
+    return () => clearTimeout(timer)
+  }, [armed])
   const last = drop ? null : fmtPrevious(previous, type)
   const f = fieldClass(state, drop)
   const fields = columnsFor(type).length || 1
@@ -146,13 +165,28 @@ export default function SetRow({
         </span>
       )}
       {showPrevious ? (
-        <span
-          className={`num truncate text-center text-xs font-bold ${
-            state === 'todo' ? 'text-faint/70' : 'text-faint'
-          }`}
-        >
-          {last ?? '–'}
-        </span>
+        // Tapping last time logs it again. The most common set in any long
+        // history is the one that matches the last session, and its numbers
+        // were already on the screen 20px from where they were being retyped:
+        // a twenty set session was a hundred touches that are now twenty.
+        last && state !== 'done' ? (
+          <button
+            type="button"
+            onClick={() => onChange(copyOf(previous!, type))}
+            aria-label={`Log ${last}, same as last time`}
+            className="num truncate rounded-md text-center text-xs font-bold text-accent-ink ring-1 ring-edge py-1"
+          >
+            {last}
+          </button>
+        ) : (
+          <span
+            className={`num truncate text-center text-xs font-bold ${
+              state === 'todo' ? 'text-faint/70' : 'text-faint'
+            }`}
+          >
+            {last ?? '\u00b7'}
+          </span>
+        )
       ) : null}
 
       {type === 'W' ? (
@@ -184,10 +218,16 @@ export default function SetRow({
         </>
       ) : null}
 
+      {/* Two taps, like every other destructive control in a session. This
+          one sits in the most fat-finger-prone grid in the app, beside the
+          reps field, and it used to erase a logged set on the first touch. */}
       <button
-        onClick={onRemove}
-        aria-label={`Remove set ${index + 1}`}
-        className="text-center text-sm text-faint"
+        onClick={() => {
+          if (armed) onRemove()
+          else setArmed(true)
+        }}
+        aria-label={armed ? `Really remove set ${index + 1}` : `Remove set ${index + 1}`}
+        className={`text-center text-sm ${armed ? 'rounded-md bg-alert font-extrabold text-white' : 'text-faint'}`}
       >
         &times;
       </button>

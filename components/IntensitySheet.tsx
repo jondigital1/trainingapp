@@ -26,7 +26,7 @@ export default function IntensitySheet({
   const duration = fmtDuration(seconds)
 
   return (
-    <Sheet title="How was that?" onClose={onSkip}>
+    <Sheet title="How was it?" onClose={onSkip}>
       <p className="text-sm text-muted">
         {title}
         {duration ? ` · ${duration}` : ''}

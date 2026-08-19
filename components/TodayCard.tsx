@@ -80,10 +80,13 @@ export default function TodayCard({
         {week.map((d) => {
           const its = d.dayId ? dayById(d.dayId) : null
           return (
+            // Only today starts a session. The other cells are the week being
+            // read, and reading what Friday holds must not start Friday's
+            // workout right now with a delete-and-Sure? recovery.
             <button
               key={d.iso}
-              onClick={() => d.dayId && onStart(d.dayId)}
-              disabled={!d.dayId}
+              onClick={() => d.today && d.dayId && onStart(d.dayId)}
+              disabled={!d.today || !d.dayId}
               aria-label={
                 its
                   ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`

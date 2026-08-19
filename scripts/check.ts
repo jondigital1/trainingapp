@@ -42,7 +42,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
-import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
+import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf, STEP_COUNT } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
@@ -2650,6 +2650,47 @@ check('every admin action is stamped before it returns', () => {
   const stamps = route.match(/await stamp\(\)/g) ?? []
   assert.ok(oks.length >= 7, 'the action list shrank, update this check')
   assert.equal(stamps.length, oks.length, 'an action returns without landing in the audit trail')
+})
+
+check('the questionnaire is as long as the app says it is', () => {
+  // Settings promised five sections while the questionnaire delivered six.
+  // The count now lives in one exported constant, and this reads the STEPS
+  // array out of the component to hold the two together.
+  const source = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
+  const steps = source.match(/^const STEPS = \[$[\s\S]*?^\]/m)?.[0] ?? ''
+  const entries = (steps.match(/\{ id: '/g) ?? []).length
+  assert.equal(entries, STEP_COUNT, 'STEP_COUNT in lib/onboarding.ts no longer matches STEPS')
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(settings.includes('{STEP_COUNT} sections'), 'Settings hardcodes the section count again')
+})
+
+check('the app never gives directions to places that do not exist', () => {
+  // Ask Lifty and the plan review used to send people to a Progress tab, a
+  // Workout tab and a History tab full of weekly bars, none of which are in
+  // the nav. Directions in copy have to name real places.
+  const sources = ['../lib/knowledge.ts', '../components/Onboarding.tsx', '../components/App.tsx']
+  for (const file of sources) {
+    const text = readFileSync(new URL(file, import.meta.url), 'utf8')
+    for (const ghost of ['Progress tab', 'Workout tab', 'weekly bars on the History tab']) {
+      assert.ok(!text.includes(ghost), `${file} points at "${ghost}", which is not a place`)
+    }
+  }
+  // And things that live on the profile are not described as living in
+  // Settings. The word Settings in help copy has to mean the Settings sheet.
+  const knowledge = readFileSync(new URL('../lib/knowledge.ts', import.meta.url), 'utf8')
+  assert.ok(!/in Settings/.test(knowledge), 'knowledge copy sends people to Settings for profile controls')
+})
+
+check('one goal, whichever door it is edited through', () => {
+  // The profile is the one editor. Its save derives the training goal from
+  // the top of the ordered list, and Settings shows a link rather than a
+  // second radio that used to disagree with it.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const save = app.slice(app.indexOf('async function saveProfile'), app.indexOf('async function logWeight'))
+  assert.ok(save.includes('GOAL_FROM_CHOICE'), 'saveProfile no longer derives the goal from the list')
+  assert.ok(save.includes('saveGoal'), 'the derived goal never reaches the database')
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(!settings.includes('onGoal'), 'Settings grew a second goal editor again')
 })
 
 void (async () => {

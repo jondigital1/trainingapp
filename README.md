@@ -231,7 +231,51 @@ points, a person adds the movement properly in lib/exercises.ts, and the
 people who invented it keep their own. Names and counts only. What anybody
 lifted on their own movements stays theirs.
 
-## Everything you want, in the order you want it
+## The audit, and what it changed
+
+Six parallel reviewers read the whole app, one slice each, and an adversarial
+pass re-checked every claim against the cited line before anything got fixed.
+The pattern in what survived: the daily loop was good, the edges lied. What
+changed, in the order it mattered:
+
+The goal is one answer with one home. The profile's ordered list drives the
+prescriptions, saving the profile derives the training goal from the top of
+it, Settings shows a link instead of a second radio that used to disagree, and
+the header pill says Build muscle rather than a raw internal word.
+
+Closing the profile commits it. Done, the scrim, Escape and switching tabs all
+save; Settings had trained everybody that taps stick, and the profile was the
+one screen that quietly threw edits away.
+
+Logging a set you already did once is one tap. The ghost column showing last
+session's numbers is now a button that fills the row, which turns a twenty set
+session from about a hundred touches into about twenty. Fixing a typo in a
+logged set no longer restarts the rest clock, a seeded weight no longer paints
+a set as done, and End workout sits at the bottom of the session as well as
+the top, where the last set left you.
+
+The plan lands on the week at onboarding, so a new account's Today card names
+the next session instead of saying Rest day forever. The skip button starts
+day one of a sensible plan instead of dumping people on an empty screen, and
+the week strip only starts a session from today's cell: the other six are the
+week being read, not six ways to start the wrong workout.
+
+A failed load shows a retry screen, never the new-user questionnaire over a
+full history. The movement note flushes on close instead of losing the last
+half second of typing. The rerun questionnaire has a way out that keeps
+everything, and finishing it no longer resets a running block. A shared
+workout link survives signing up: the link rides through login, signup and the
+confirmation email, and lands back on the workout it came from.
+
+And the copy stopped disagreeing with itself. Ask Lifty no longer gives
+directions to tabs that do not exist, the section count in Settings is derived
+from the questionnaire so the two cannot drift, the weekly check in wears the
+same name in both places, the profile asks questions in the same words the
+questionnaire used, and the finish screen only says Nice one when a set was
+actually logged. Checks pin the load-bearing ones: directions must name real
+tabs, and the goal must stay a single edited state.
+
+## Everything you want, in the order you want it## Everything you want, in the order you want it
 
 Goals are an ordered list. Pick as many as you like, because wanting to build
 muscle and get stronger and stay capable over the next year is a fact about

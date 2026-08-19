@@ -116,7 +116,7 @@ export default function CustomBuilder({
         }`}
       >
         <span className="text-sm">Superset</span>
-        <span className={`text-xs ${superset ? 'text-on-accent' : 'text-muted'}`}>
+        <span className={`text-xs ${superset ? 'text-accent-ink' : 'text-muted'}`}>
           {superset ? 'everything picked now runs together' : 'off'}
         </span>
       </button>

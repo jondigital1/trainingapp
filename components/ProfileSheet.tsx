@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ageBand,
   LONG_SESSION,
@@ -84,6 +84,9 @@ export default function ProfileSheet({
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Profile>(profile)
+  // What was last handed to onSave, so closing an untouched page saves
+  // nothing and closing a touched one saves everything.
+  const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
   const [section, setSection] = useState<Section>(focus === 'minutes' ? 'week' : focus === 'sore' ? 'body' : 'you')
   const unit = unitOf(draft)
@@ -105,7 +108,7 @@ export default function ProfileSheet({
     set({ [key]: list.includes(v) ? list.filter((x) => x !== v) : [...list, v] } as Partial<Profile>)
   }
 
-  function commit() {
+  function buildNext(): Profile {
     const ft = Number(heightFt)
     const inch = Number(heightInch)
     const height = Number.isFinite(ft) && ft > 0 ? ft * 12 + (Number.isFinite(inch) ? inch : 0) : null
@@ -118,18 +121,45 @@ export default function ProfileSheet({
       goalWeight: gw != null ? toPounds(gw, unit) : undefined,
     }
     next.age = ageBand(next)
+    return next
+  }
+
+  // Seeded on first render, so closing an untouched page saves nothing.
+  if (!saved.current) saved.current = JSON.stringify(buildNext())
+
+  function commit() {
+    const next = buildNext()
+    saved.current = JSON.stringify(next)
     const w = numOrNull(todayWeight)
     if (w != null) onLogWeight(toPounds(w, unit))
     onSave(next)
   }
 
+  // Done, the scrim and Escape all commit rather than discard. Settings
+  // trains people that every tap sticks and Done just closes, and a screen
+  // that looks the same but quietly throws edits away is how somebody flags a
+  // sore knee and gets programmed a squat anyway. Save stays as the loud way
+  // out; there is no longer a silent one.
+  function close() {
+    if (JSON.stringify(buildNext()) !== saved.current) commit()
+    else onClose()
+  }
+
+  // The nav-tab copy of this page has no Done: leaving it is switching tabs,
+  // which unmounts. Same contract, so the flush happens here.
+  const flush = useRef<() => void>(() => {})
+  flush.current = () => {
+    if (JSON.stringify(buildNext()) !== saved.current) commit()
+  }
+  useEffect(() => () => flush.current(), [])
+
   // Straight to the one question that was asked, when the app asked it in
   // context. The full page is a different job from "how long have you got".
   if (focus !== 'all') {
     return (
-      <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={onClose}>
+      <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={close}>
         {focus === 'minutes' ? (
-          <Field label="Time in the gym" hint="Sets how many movements we put in a session.">
+          <Field label="How long have you got?" hint="Sets how many movements we put in a session.">
             <Options
               columns={2}
               value={draft.minutes}
@@ -155,7 +185,7 @@ export default function ProfileSheet({
   return (
     <Sheet
       title="Your profile"
-      onClose={onClose}
+      onClose={close}
       inline={inline}
       action={
         onOpenSettings ? (
@@ -246,8 +276,8 @@ export default function ProfileSheet({
                 value={unit}
                 onPick={(v) => set({ units: v })}
                 options={[
-                  { v: 'lb' as const, label: 'Pounds' },
-                  { v: 'kg' as const, label: 'Kilos' },
+                  { v: 'lb' as const, label: 'lb' },
+                  { v: 'kg' as const, label: 'kg' },
                 ]}
               />
             </Field>
@@ -345,7 +375,7 @@ export default function ProfileSheet({
               </Field>
             ) : null}
 
-            <Field label="Time in the gym" hint="Sets how many movements we put in a session.">
+            <Field label="How long have you got?" hint="Sets how many movements we put in a session.">
               <Options
                 columns={2}
                 value={draft.minutes}
@@ -364,7 +394,7 @@ export default function ProfileSheet({
                 options={[
                   { v: 'full' as const, label: 'Full gym' },
                   { v: 'basic' as const, label: 'Basic gym' },
-                  { v: 'home' as const, label: 'Home with some kit' },
+                  { v: 'home' as const, label: 'Home with kit' },
                   { v: 'body' as const, label: 'Bodyweight only' },
                 ]}
               />
@@ -440,7 +470,7 @@ export default function ProfileSheet({
 
             <SoreFields draft={draft} set={set} toggle={toggle} />
 
-            <Field label="Has a doctor told you to limit exercise, or do you have a heart, lung, kidney or blood sugar condition?">
+            <Field label="Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?">
               <Options
                 columns={2}
                 value={draft.condition}

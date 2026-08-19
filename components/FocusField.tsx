@@ -26,7 +26,7 @@ export function SexField({
 }) {
   return (
     <Field
-      label="Anything the plan should know?"
+      label="Sex"
       hint="Used for one thing: which muscle groups it puts first. Nothing else reads it."
     >
       <Options

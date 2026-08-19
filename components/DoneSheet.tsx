@@ -159,11 +159,14 @@ export default function DoneSheet({
         ) : null}
 
         <div className="mt-6 flex gap-2">
+          {/* Nice one only when something happened. Under the empty-session
+              headline it was exactly the wallpaper praise the finish screen
+              promises not to hand out. */}
           <button
             onClick={onClose}
             className="flex-1 rounded-2xl bg-accent py-3.5 font-display text-base font-bold text-on-accent"
           >
-            Nice one
+            {summary.sets > 0 ? 'Nice one' : 'Done'}
           </button>
           <button
             onClick={() => void shareWorkout(workout)}

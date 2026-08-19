@@ -68,10 +68,14 @@ function inputFor(lb: number | undefined, unit: Unit): string {
 
 export default function Onboarding({
   onFinish,
+  onCancel,
   initial,
   again,
 }: {
   onFinish: (result: OnboardingResult) => void
+  // The way out of a rerun. Somebody who opened the questionnaire again to
+  // change one answer must not have to finish all six steps to leave.
+  onCancel?: () => void
   // Running it a second time starts from the answers already given rather
   // than from nothing. Changing your mind about one of them should not mean
   // typing the other twelve again.
@@ -94,6 +98,9 @@ export default function Onboarding({
   const [heightIn, setHeightIn] = useState(
     seed.heightIn != null ? String(Math.round(seed.heightIn % 12)) : '',
   )
+  const [heightCm, setHeightCm] = useState(
+    seed.heightIn != null ? String(Math.round(seed.heightIn * 2.54)) : '',
+  )
 
   const unit: Unit = profile.units === 'kg' ? 'kg' : 'lb'
   const set = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }))
@@ -110,10 +117,19 @@ export default function Onboarding({
   // The profile as it will be saved, with the typed fields folded in. Built on
   // demand so the plan preview on the last step reflects everything answered.
   const full = useMemo((): Profile => {
+    // Stored in inches whichever box it arrived in, because one stored unit
+    // is how the two boxes stay one answer.
+    const cm = Number(heightCm)
     const ft = Number(heightFt)
     const inch = Number(heightIn)
     const height =
-      Number.isFinite(ft) && ft > 0 ? ft * 12 + (Number.isFinite(inch) ? inch : 0) : null
+      unit === 'kg'
+        ? Number.isFinite(cm) && cm > 0
+          ? cm / 2.54
+          : null
+        : Number.isFinite(ft) && ft > 0
+          ? ft * 12 + (Number.isFinite(inch) ? inch : 0)
+          : null
     const gw = num(goalWeight)
     return {
       ...profile,
@@ -122,7 +138,7 @@ export default function Onboarding({
       heightIn: height ?? undefined,
       goalWeight: gw != null ? toPounds(gw, unit) : undefined,
     }
-  }, [profile, name, age, goalWeight, heightFt, heightIn, unit])
+  }, [profile, name, age, goalWeight, heightFt, heightIn, heightCm, unit])
 
   const goal: Goal = GOAL_FROM_CHOICE[profile.goalChoice ?? 'muscle'] ?? 'muscle'
 
@@ -130,15 +146,18 @@ export default function Onboarding({
   // that is the edge of the week the whole app counts in.
   const [nudge, setNudge] = useState<NudgePref>({ day: null, hour: 18 })
 
-  function finish(startDayId: string | null, build?: boolean) {
+  function finish(startDayId: string | null, build?: boolean, extra?: Partial<Profile>) {
     const w = num(weight)
-    const plan = planFor(full, goal)
+    const merged = extra ? { ...full, ...extra } : full
+    const plan = planFor(merged, goal)
     onFinish({
       // Performance starts a six week block on day one. That is the whole
       // point of asking about experience: somebody who has trained for years
       // should not have to go hunting in Settings for structure they already
       // know they want.
-      profile: plan.block ? { ...full, block: true, blockStart: mondayOf(todayIso()) } : full,
+      // A rerun keeps a running block where it was: answering the questions
+      // again is not starting week one again.
+      profile: plan.block ? { ...merged, block: true, blockStart: initial?.blockStart ?? mondayOf(todayIso()) } : merged,
       goal,
       startDayId,
       build,
@@ -157,6 +176,7 @@ export default function Onboarding({
         index={Math.min(step, STEPS.length - 1)}
         onBack={() => setStep((s) => Math.max(0, s - 1))}
         onJump={(i) => setStep(i)}
+        onCancel={again ? onCancel : undefined}
       />
 
       <div className="flex-1 pb-4">
@@ -181,11 +201,15 @@ export default function Onboarding({
                   </Field>
                 </div>
                 <div className="flex-1">
-                  <Field label="Height">
-                    <div className="flex gap-2">
-                      <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
-                      <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
-                    </div>
+                  <Field label="Height" optional>
+                    {unit === 'kg' ? (
+                      <NumberInput value={heightCm} onChange={setHeightCm} suffix="cm" placeholder="178" />
+                    ) : (
+                      <div className="flex gap-2">
+                        <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
+                        <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
+                      </div>
+                    )}
                   </Field>
                 </div>
               </div>
@@ -207,7 +231,7 @@ export default function Onboarding({
               </Field>
 
               <Field
-                label="Where are you today?"
+                label="What do you weigh today?"
                 hint={
                   again
                     ? 'A fresh reading, if you want one. Leaving it blank changes nothing you have already logged.'
@@ -471,8 +495,15 @@ export default function Onboarding({
               Continue
             </button>
             {step === 0 && !again ? (
-              <button onClick={() => finish(null)} className="mt-1 w-full py-2 text-sm text-muted">
-                Skip and pick something sensible
+              // The button for impatient people has to be the fastest path,
+              // so it starts day one of the default plan with the default
+              // hour, instead of landing on an empty home screen where the
+              // first Start got intercepted by the minutes question.
+              <button
+                onClick={() => finish(planFor({ ...full, minutes: full.minutes ?? 60 }, goal).dayIds[0], false, { minutes: full.minutes ?? 60 })}
+                className="mt-1 w-full py-2 text-sm text-muted"
+              >
+                Skip and start something sensible
               </button>
             ) : null}
           </>
@@ -488,10 +519,12 @@ function Header({
   index,
   onBack,
   onJump,
+  onCancel,
 }: {
   index: number
   onBack: () => void
   onJump: (i: number) => void
+  onCancel?: () => void
 }) {
   return (
     <div className="sticky top-0 z-10 bg-ink pb-4 pt-1">
@@ -504,9 +537,17 @@ function Header({
           </button>
         ) : null}
         <LiftyMark size={22} />
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+        <p className="flex-1 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
           Step {index + 1} of {STEPS.length}
         </p>
+        {/* Only on a rerun. A first run has nothing to go back to, but a rerun
+            opened to change one answer must not demand all six steps as the
+            price of leaving. */}
+        {onCancel ? (
+          <button onClick={onCancel} className="rounded-lg px-2 py-1 text-sm font-extrabold text-muted">
+            Keep everything as it is
+          </button>
+        ) : null}
       </div>
       <div className="mt-2 flex gap-1">
         {STEPS.map((s, i) => (
@@ -544,11 +585,11 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
     notes.push('You have done this before, so this is two to three weeks of rebuilding, not a beginner course.')
   if (plan.block)
     notes.push(
-      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off in Settings if you would rather not.',
+      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off from your profile if you would rather not.',
     )
   if (plan.goalNote) notes.push(plan.goalNote)
   if (profile.goalWeight != null)
-    notes.push(`Goal weight ${fmtWeight(profile.goalWeight, unit)}. It sits on the Progress tab next to the lifts.`)
+    notes.push(`Goal weight ${fmtWeight(profile.goalWeight, unit)}. It sits with your bodyweight on your profile, next to the lifts.`)
   if (swaps.length)
     notes.push(`Swapped for what you have: ${swaps.map((s) => `${s.swappedFrom} to ${s.name}`).join(', ')}.`)
 

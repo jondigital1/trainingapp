@@ -159,22 +159,23 @@ function save(blob: Blob, filename: string) {
 }
 
 // A link, through whatever the phone offers, falling back to the clipboard.
-// Returns true when the share sheet took it, so the caller knows whether it
-// still has to tell somebody where the link went.
-export async function sharePlainLink(title: string, url: string): Promise<boolean> {
+// Three honest outcomes, because the old boolean could not tell a successful
+// copy from a clipboard that refused, and the caller was saying copied either
+// way.
+export async function sharePlainLink(title: string, url: string): Promise<'shared' | 'copied' | 'failed'> {
   const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
   if (typeof nav.share === 'function') {
     try {
       await nav.share({ title, text: `${title} on LiftyBot`, url })
-      return true
+      return 'shared'
     } catch (e) {
-      if (aborted(e)) return true
+      if (aborted(e)) return 'shared'
     }
   }
   try {
     await navigator.clipboard.writeText(url)
+    return 'copied'
   } catch {
-    return false
+    return 'failed'
   }
-  return false
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { safeNext } from '@/lib/redirect'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import LiftyMark from './LiftyMark'
 
@@ -15,7 +16,18 @@ const MIN_PASSWORD = 8
 const INPUT =
   'w-full rounded-xl bg-card px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink'
 
-export default function LoginForm({ expired, start }: { expired?: boolean; start?: Mode }) {
+// next is where to land after auth: the shared workout somebody arrived on,
+// carried through sign in, sign up and the confirmation email, so creating an
+// account to save a workout does not lose the workout.
+export default function LoginForm({
+  expired,
+  start,
+  next,
+}: {
+  expired?: boolean
+  start?: Mode
+  next?: string
+}) {
   const router = useRouter()
   // The homepage has two doors, Sign up and Sign in, and each should open on
   // the form it named rather than on the tab this happens to default to.
@@ -51,7 +63,7 @@ export default function LoginForm({ expired, start }: { expired?: boolean; start
         if (error) throw error
         // The session is a cookie the server has to read, so the server
         // component decides where we land rather than the client guessing.
-        router.replace('/')
+        router.replace(safeNext(next))
         router.refresh()
         return
       }
@@ -60,13 +72,13 @@ export default function LoginForm({ expired, start }: { expired?: boolean; start
         const { data, error } = await sb.auth.signUp({
           email: address,
           password,
-          options: { emailRedirectTo: `${origin}/auth/callback` },
+          options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext(next))}` },
         })
         if (error) throw error
         // With email confirmation on, signUp comes back with a user and no
         // session. With it off, the session is already live.
         if (data.session) {
-          router.replace('/')
+          router.replace(safeNext(next))
           router.refresh()
           return
         }
@@ -77,7 +89,7 @@ export default function LoginForm({ expired, start }: { expired?: boolean; start
       if (mode === 'magic') {
         const { error } = await sb.auth.signInWithOtp({
           email: address,
-          options: { emailRedirectTo: `${origin}/auth/callback` },
+          options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext(next))}` },
         })
         if (error) throw error
         setSent('link')
@@ -97,9 +109,13 @@ export default function LoginForm({ expired, start }: { expired?: boolean; start
   }
 
   if (sent) {
+    // The confirm link signs you in by itself, so the copy must not send a
+    // brand new user back here to retype a password they just invented. And
+    // it only works on the device that asked, because the code exchange needs
+    // this browser's half of the handshake.
     const body =
       sent === 'confirm'
-        ? 'Account created. Confirm it from the email we just sent, then sign in.'
+        ? 'Account created. Open the link we just emailed, on this device, and you are in.'
         : sent === 'reset'
           ? 'If that address has an account, a reset link is on its way. Open it on this device.'
           : 'Link sent. Open it on this device.'

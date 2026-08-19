@@ -12,6 +12,7 @@ export default function ExercisePicker({
   customs,
   replacing,
   onPick,
+  onUnpick,
   onOpen,
   onCreate,
   onClose,
@@ -21,6 +22,10 @@ export default function ExercisePicker({
   // than to add. Picking replaces it in place instead of appending.
   replacing?: string | null
   onPick: (name: string, type: SetType, superset: string | null) => void
+  // Second tap on a row already added this visit. The builder taught people
+  // that tapping Added un-adds; without this, the same tap here appended a
+  // silent duplicate to the running session.
+  onUnpick?: (name: string) => void
   // Opens the movement's own screen. Wanting to know what something is before
   // adding it is a different question from adding it, so it gets its own tap
   // rather than making the row do two jobs.
@@ -71,6 +76,11 @@ export default function ExercisePicker({
   const exact = all.some((e) => e.name.toLowerCase() === query.trim().toLowerCase())
 
   function pick(name: string, type: SetType) {
+    if (added.includes(name) && onUnpick) {
+      onUnpick(name)
+      setAdded((prev) => prev.filter((n) => n !== name))
+      return
+    }
     onPick(name, type, superset)
     setAdded((prev) => [...prev, name])
   }

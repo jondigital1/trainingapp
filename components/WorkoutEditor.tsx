@@ -277,6 +277,18 @@ export default function WorkoutEditor({
         Add exercise
       </button>
 
+      {/* The last set of a long session leaves you at the bottom, and the End
+          button used to live several screens up. Finishing should be where
+          the finishing happened. */}
+      {onEnd && running && workout.exercises.length > 1 ? (
+        <button
+          onClick={onEnd}
+          className="rounded-xl bg-accent py-3 font-display text-sm font-bold text-on-accent"
+        >
+          End workout
+        </button>
+      ) : null}
+
       {/* Why, not what. Folded away until there is something to say, so it is
           never in the way of the numbers. */}
       {noting || workout.note ? (

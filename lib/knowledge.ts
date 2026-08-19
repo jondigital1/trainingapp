@@ -79,7 +79,7 @@ const APP: KnowledgeEntry[] = [
     q: 'Why did the app swap an exercise in my plan?',
     group: 'Using the app',
     aliases: ['different exercise', 'substitution', 'sore joint swap', 'knee swap'],
-    a: 'You flagged a joint, so sessions swap the movement and keep the pattern: a sore knee gets leg press instead of squats, not a day without legs. Flags live in Settings and every swap is undoable by picking the original from the library.',
+    a: 'You flagged a joint, so sessions swap the movement and keep the pattern: a sore knee gets leg press instead of squats, not a day without legs. Flags live on your profile, under Your body, and every swap is undoable by picking the original from the library.',
   },
   {
     id: 'app-order',
@@ -147,7 +147,7 @@ const NUMBERS: KnowledgeEntry[] = [
     q: 'What is a training block?',
     group: 'Your numbers',
     aliases: ['six week block', 'deload', 'mesocycle', 'effort cycle', 'block week', 'training block'],
-    a: 'Six weeks, optional, switched on in Settings. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Workout tab says which week you are in and reads your session scores back against what the week asks for.',
+    a: 'Six weeks, optional, switched on from your profile. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Calendar tab says which week you are in and reads your session scores back against what the week asks for.',
   },
 ]
 
@@ -180,7 +180,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'How many sets and reps should I do?',
     group: 'The basics',
     aliases: ['what does 3x8 mean', 'how many reps to build muscle', 'rep ranges', 'is 3 sets enough'],
-    a: '3x8 means three sets of eight reps. Muscle grows across a wide range, roughly 5 to 20 reps, as long as sets end close to failure, so the range matters less than the effort. A good week lands about 10 hard sets per muscle, which is exactly what the weekly bars on the History tab count.',
+    a: '3x8 means three sets of eight reps. Muscle grows across a wide range, roughly 5 to 20 reps, as long as sets end close to failure, so the range matters less than the effort. A good week lands about 10 hard sets per muscle, which is exactly what the weekly bars under Records on your profile count.',
   },
   {
     id: 'basic-start-weight',
@@ -243,7 +243,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'How long until I see results?',
     group: 'The basics',
     aliases: ['newbie gains', 'when will I look different', 'how long to build muscle'],
-    a: 'Strength moves inside 2 to 4 weeks. The mirror moves in 6 to 12. The fast early phase lasts roughly the first year. Judge progress by the log, not the mirror: the numbers move first, and the Progress tab exists to show them moving.',
+    a: 'Strength moves inside 2 to 4 weeks. The mirror moves in 6 to 12. The fast early phase lasts roughly the first year. Judge progress by the log, not the mirror: the numbers move first, and the charts under Records on your profile exist to show them moving.',
   },
   {
     id: 'basic-restdays',
@@ -285,7 +285,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Something hurts when I lift. Should I push through?',
     group: 'The basics',
     aliases: ['pain when lifting', 'knee pain', 'back hurts', 'injury or soreness'],
-    a: 'No. Sharp pain, joint pain, or pain that persists is a question for a clinician, and this app will not diagnose it. Stop the movement that hurts, train around it, and get it looked at if it lasts or worsens. Flagging the joint in Settings makes sessions swap around it in the meantime. Next day muscle soreness is different and normal.',
+    a: 'No. Sharp pain, joint pain, or pain that persists is a question for a clinician, and this app will not diagnose it. Stop the movement that hurts, train around it, and get it looked at if it lasts or worsens. Flagging the joint on your profile makes sessions swap around it in the meantime. Next day muscle soreness is different and normal.',
   },
   {
     id: 'basic-supplements',
@@ -339,7 +339,7 @@ const STRONGER: KnowledgeEntry[] = [
     q: 'My lifts are stuck. What do I do?',
     group: 'Getting stronger',
     aliases: ['plateau', 'not making progress', 'stalled bench', 'cant add weight'],
-    a: 'First read the log: were you actually adding reps or load, or repeating the same session? Then, in order: add reps before weight, take smaller jumps, or back off about 10 percent and rebuild past the sticking point over 2 to 3 weeks. Sleep and food break more plateaus than programs do. The Progress tab makes a real plateau visible as a flat line, which is different from a noisy one.',
+    a: 'First read the log: were you actually adding reps or load, or repeating the same session? Then, in order: add reps before weight, take smaller jumps, or back off about 10 percent and rebuild past the sticking point over 2 to 3 weeks. Sleep and food break more plateaus than programs do. The charts under Records on your profile make a real plateau visible as a flat line, which is different from a noisy one.',
   },
   {
     id: 'strong-deload',
@@ -353,7 +353,7 @@ const STRONGER: KnowledgeEntry[] = [
     q: 'What is a 1RM and should I test mine?',
     group: 'Getting stronger',
     aliases: ['one rep max', 'test my max', 'max out'],
-    a: 'The most you can lift once. Testing it is a skill with real risk and near zero information that a hard set of 3 to 8 reps does not already give: the app estimates your max from every weighted set and charts it on the Progress tab. Watch the estimate climb instead of testing the real thing, especially in your first year.',
+    a: 'The most you can lift once. Testing it is a skill with real risk and near zero information that a hard set of 3 to 8 reps does not already give: the app estimates your max from every weighted set and charts it under Records on your profile. Watch the estimate climb instead of testing the real thing, especially in your first year.',
   },
 ]
 

@@ -56,8 +56,16 @@ export default function ExerciseSheet({
   const rest = restFor(name, type, goal, 1)
   const typeLabel = SET_TYPES.find((t) => t.type === type)?.label
 
+  // Closing flushes whatever the debounce is still holding. Without this,
+  // typing and immediately tapping Done lost the last 600ms of the note, on
+  // the screen whose whole purpose is that note.
+  function close() {
+    if (draft !== note) onNote(draft)
+    onClose()
+  }
+
   return (
-    <Sheet title={name} onClose={onClose}>
+    <Sheet title={name} onClose={close}>
       <div className="pb-2">
         <p className="text-xs font-bold uppercase tracking-[1.5px] text-faint">
           {[group, typeLabel, rest ? `${fmtTime(rest)} rest` : null].filter(Boolean).join(' · ')}

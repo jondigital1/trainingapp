@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { GOALS } from '@/lib/coach'
+import { goalLabel, STEP_COUNT } from '@/lib/onboarding'
 import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
@@ -45,7 +45,6 @@ function Switch({ on }: { on: boolean }) {
 export default function SettingsSheet({
   data,
   email,
-  onGoal,
   onNudge,
   onImport,
   onEditProfile,
@@ -57,7 +56,6 @@ export default function SettingsSheet({
 }: {
   data: TrainingData
   email: string
-  onGoal: (goal: Goal) => void
   onNudge: (nudge: { day: number | null; hour: number }) => void
   onEditProfile: () => void
   onRerunQuestionnaire: () => void
@@ -161,26 +159,17 @@ export default function SettingsSheet({
 
   return (
     <Sheet title="Settings" onClose={onClose}>
+      {/* Read here, edited on the profile, because the goal is one answer with
+          one home. This used to be a second, unsynced editor wearing different
+          words, which meant changing it here and changing it there disagreed. */}
       <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Goal</h3>
-      <div className="mt-2 flex flex-col gap-2">
-        {GOALS.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => onGoal(g.id)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left ring-1 ${
-              data.settings.goal === g.id
-                ? 'bg-tint-cool ring-[1.5px] ring-accent-ink'
-                : 'surface ring-edge'
-            }`}
-          >
-            <Radio on={data.settings.goal === g.id} />
-            <span className="flex-1 text-sm font-bold">{g.label}</span>
-            <span className="num text-xs text-muted">
-              {g.reps[0]} to {g.reps[1]} reps
-            </span>
-          </button>
-        ))}
-      </div>
+      <button
+        onClick={onEditProfile}
+        className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
+      >
+        <span className="font-bold">{goalLabel(data.settings.profile, data.settings.goal)}</span>
+        <span className="text-xs text-muted">change on your profile</span>
+      </button>
 
       <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Appearance</h3>
       {/* A track with one segment lifted out of it, rather than three buttons
@@ -242,7 +231,7 @@ export default function SettingsSheet({
             aria-pressed={nudge.day !== null}
             className="surface mt-4 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
           >
-            <span className="font-bold">Nudge me about my week</span>
+            <span className="font-bold">Check in on my week</span>
             <Switch on={nudge.day !== null} />
           </button>
           {nudge.day !== null ? (
@@ -304,7 +293,8 @@ export default function SettingsSheet({
       >
         Run the questionnaire again
         <span className="mt-0.5 block text-xs text-muted">
-          Walks the five sections with your answers already in them, and picks a plan at the end.
+          Walks the {STEP_COUNT} sections with your answers already in them, and picks a plan at the
+          end. Leaving early keeps everything as it is.
           Nothing you have logged is touched.
         </span>
       </button>

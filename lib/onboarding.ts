@@ -10,6 +10,11 @@ import type { Unit } from './units'
 // ever removes work, it never invents any.
 export const LONG_SESSION = 90
 
+// How many sections the questionnaire has. Lives here so Settings can promise
+// the same number the questionnaire delivers; the two disagreed once (five
+// against six) and a check now holds them together.
+export const STEP_COUNT = 6
+
 
 // Everything the first run asks, plus the questions that arrive later in
 // context. See docs/onboarding-research.md for why each one earns its place.
@@ -623,6 +628,16 @@ export function legDaysOf(p: Profile): 1 | 2 {
 // The goal a person picks and the goal the coach can act on are not the same
 // list. Leaning out and staying capable are both built on muscle work; saying
 // so beats mapping them to something else without a word.
+// The one name for the goal, everywhere a screen says it. The header pill,
+// Settings and the profile page used to wear three vocabularies for the same
+// stored value ('muscle', 'Muscle 6 to 12 reps', 'Build muscle'), which reads
+// as three different settings to anybody who has not seen the code.
+export function goalLabel(profile: Profile, goal: Goal): string {
+  const choice = primaryGoal(profile)
+  if (choice) return GOAL_CHOICES.find((c) => c.v === choice)?.label ?? choice
+  return goal === 'strength' ? 'Get stronger' : goal === 'endurance' ? 'Stay capable' : 'Build muscle'
+}
+
 export const GOAL_FROM_CHOICE: Record<NonNullable<Profile['goalChoice']>, Goal> = {
   muscle: 'muscle',
   strength: 'strength',

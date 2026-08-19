@@ -30,7 +30,7 @@ export default function RecordPanel({ workouts, days }: { workouts: Workout[]; d
         <Stat label="Sessions" value={totals.sessions.toLocaleString()} />
         <Stat label="Sets" value={totals.sets.toLocaleString()} />
         <Stat label="Reps" value={totals.reps.toLocaleString()} />
-        <Stat label="Lifted" value={`${Math.round(totals.volume).toLocaleString()} lb`} />
+        <Stat label="Weight moved" value={`${Math.round(totals.volume).toLocaleString()} lb`} />
       </div>
 
       <Field label="Weeks in a row that met your plan">

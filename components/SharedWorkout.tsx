@@ -115,17 +115,34 @@ export default function SharedWorkout({ workout, signedIn }: { workout: Shared; 
           >
             {saving ? 'Saving' : 'Save to my workouts'}
           </button>
-          {error ? <p className="mt-2 text-sm font-bold text-alert">{error}</p> : null}
+          {error ? (
+            <>
+              <p className="mt-2 text-sm font-bold text-alert">{error}</p>
+              {/* The one error a link can fix: a session that expired between
+                  the page loading and the save. */}
+              {error === 'Sign in first' ? (
+                <Link
+                  href={`/login?next=${encodeURIComponent(`/w/${workout.id}`)}`}
+                  className="mt-2 text-sm font-extrabold text-teal"
+                >
+                  Sign in and come back here
+                </Link>
+              ) : null}
+            </>
+          ) : null}
         </>
       ) : (
         <>
           <Link
-            href="/login?mode=signup"
+            href={`/login?mode=signup&next=${encodeURIComponent(`/w/${workout.id}`)}`}
             className="mt-7 rounded-2xl bg-accent py-3.5 text-center font-display text-base font-bold text-on-accent"
           >
             Create an account to save it
           </Link>
-          <Link href="/login" className="mt-3 text-center text-sm font-extrabold text-teal">
+          <Link
+            href={`/login?next=${encodeURIComponent(`/w/${workout.id}`)}`}
+            className="mt-3 text-center text-sm font-extrabold text-teal"
+          >
             Already have one? Sign in
           </Link>
         </>
