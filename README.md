@@ -259,6 +259,26 @@ While in there, a small lie the screen told every time: leaning out advertised
 always did. It shows 6 to 12 now, the same as building muscle, because that is
 the same training and cannot honestly advertise two ranges.
 
+## Six screens, each about one thing
+
+The questionnaire was reordered around a rule: every screen is one subject, and
+every answer sits next to the answers it belongs with. Age used to be three
+screens from height and weight; the unit picker was four screens from the
+first thing measured in it; which gym you train in was filed under scheduling
+rather than next to the injuries, which is the other question that decides
+what movements you are given.
+
+    You            name, age, height, sex, units, weight today, heading for
+    Goals          what you want, in order, and what to bring up
+    Experience     years, past training, do you know your numbers
+    Your week      days, leg days, session length
+    Your gym       equipment, sore joints, the doctor question
+    Your plan      what all of it built
+
+The chest pain and dizziness screening question is gone. It was PAR-Q
+furniture for a commercial product this is not, and the doctor question
+carries the lighter plan on its own.
+
 ## Asking what you are, and doing something with the answer
 
 A questionnaire that asks your age, your height, your weight, your injuries and

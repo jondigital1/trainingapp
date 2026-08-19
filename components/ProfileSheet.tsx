@@ -25,7 +25,7 @@ import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
-import { FocusField } from './FocusField'
+import { BringUpField, SexField } from './FocusField'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -251,9 +251,11 @@ export default function ProfileSheet({
                 ]}
               />
             </Field>
+            <SexField profile={draft} onChange={set} />
+
             <GoalPicker goals={goalsOf(draft)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
 
-            <FocusField profile={draft} onChange={set} />
+            <BringUpField profile={draft} onChange={set} />
             {plan.goalCoverage ? <Note>{plan.goalCoverage}</Note> : plan.goalNote ? <Note>{plan.goalNote}</Note> : null}
           </>
         ) : null}

@@ -22,7 +22,7 @@ import { mondayOf } from '@/lib/block'
 import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
-import { FocusField } from './FocusField'
+import { BringUpField, SexField } from './FocusField'
 import { NudgeField, type NudgePref } from './NudgeField'
 import LiftyMark from './LiftyMark'
 import type { Goal } from '@/lib/types'
@@ -30,11 +30,18 @@ import type { Goal } from '@/lib/types'
 // Five sections rather than a dozen full screen taps. Answers that belong
 // together are asked together, everything is optional, and every one of them is
 // editable afterwards on the profile page using the same controls.
+// Ordered so that every screen is one subject and every answer sits next to
+// the answers it belongs with. Age used to be three screens from height and
+// weight, the unit picker was four screens from the first thing measured in
+// it, and which gym you train in was filed under scheduling rather than next
+// to the injuries, which is the other question that decides what movements you
+// are given.
 const STEPS = [
-  { id: 'you', title: 'You', kicker: 'The bits that go on your profile' },
+  { id: 'you', title: 'You', kicker: 'Facts about you, and nothing else' },
+  { id: 'goals', title: 'Goals', kicker: 'What you want out of it' },
   { id: 'experience', title: 'Experience', kicker: 'This picks your program' },
   { id: 'week', title: 'Your week', kicker: 'What you can actually commit to' },
-  { id: 'body', title: 'Your body', kicker: 'Where you are starting from' },
+  { id: 'gym', title: 'Your gym', kicker: 'And anything the plan works around' },
   { id: 'plan', title: 'Your plan', kicker: '' },
 ] as const
 
@@ -161,7 +168,7 @@ export default function Onboarding({
             <>
               {!again ? (
                 <p className="mb-4 text-sm leading-relaxed text-muted">
-                  Five short sections and you have a plan and a session to start.
+                  Six short sections and you have a plan and a session to start.
                 </p>
               ) : null}
               <Field label="What should we call you?" optional>
@@ -174,22 +181,64 @@ export default function Onboarding({
                   </Field>
                 </div>
                 <div className="flex-1">
-                  <Field label="Weights in">
-                    <Options
-                      columns={2}
-                      value={unit}
-                      onPick={(v) => set({ units: v })}
-                      options={[
-                        { v: 'lb' as const, label: 'lb' },
-                        { v: 'kg' as const, label: 'kg' },
-                      ]}
-                    />
+                  <Field label="Height">
+                    <div className="flex gap-2">
+                      <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
+                      <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
+                    </div>
                   </Field>
                 </div>
               </div>
-              <GoalPicker goals={goalsOf(profile)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
 
-              <FocusField profile={full} onChange={set} />
+              <SexField profile={full} onChange={set} />
+
+              {/* Asked immediately above the first thing measured in it, rather
+                  than four screens earlier next to somebody's age. */}
+              <Field label="Weights in">
+                <Options
+                  columns={2}
+                  value={unit}
+                  onPick={(v) => set({ units: v })}
+                  options={[
+                    { v: 'lb' as const, label: 'lb' },
+                    { v: 'kg' as const, label: 'kg' },
+                  ]}
+                />
+              </Field>
+
+              <Field
+                label="Where are you today?"
+                hint={
+                  again
+                    ? 'A fresh reading, if you want one. Leaving it blank changes nothing you have already logged.'
+                    : 'Day one. Everything after it is measured from here, and you can log it as often or as rarely as you like.'
+                }
+                optional
+              >
+                <NumberInput
+                  decimal
+                  value={weight}
+                  onChange={setWeight}
+                  suffix={unitLabel(unit)}
+                  placeholder={unit === 'kg' ? '82' : '180'}
+                />
+              </Field>
+
+              <Field label="Heading for" optional>
+                <NumberInput
+                  decimal
+                  value={goalWeight}
+                  onChange={setGoalWeight}
+                  suffix={unitLabel(unit)}
+                  placeholder={unit === 'kg' ? '77' : '170'}
+                />
+              </Field>
+            </>
+          ) : null}
+
+          {current.id === 'goals' ? (
+            <>
+              <GoalPicker goals={goalsOf(profile)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
 
               {/* Said here, where the choice is made, rather than four steps
                   later on the plan screen. */}
@@ -198,6 +247,8 @@ export default function Onboarding({
               ) : primaryGoal(profile) ? (
                 <Note>{goalNoteFor(primaryGoal(profile))}</Note>
               ) : null}
+
+              <BringUpField profile={full} onChange={set} />
             </>
           ) : null}
 
@@ -319,6 +370,14 @@ export default function Onboarding({
                   ]}
                 />
               </Field>
+            </>
+          ) : null}
+
+          {current.id === 'gym' ? (
+            <>
+              {/* Filed here rather than under the week, because which gym you
+                  are in is not a scheduling answer. It decides which movements
+                  you are given, which is the same job the next question does. */}
               <Field label="Where are you training?">
                 <Options
                   columns={2}
@@ -332,49 +391,6 @@ export default function Onboarding({
                   ]}
                 />
               </Field>
-            </>
-          ) : null}
-
-          {current.id === 'body' ? (
-            <>
-              <Field
-                label="Where are you today?"
-                hint={
-                  again
-                    ? 'A fresh reading, if you want one. Leaving it blank changes nothing you have already logged.'
-                    : 'Day one. Everything after it is measured from here, and you can log it as often or as rarely as you like.'
-                }
-                optional
-              >
-                <NumberInput
-                  decimal
-                  value={weight}
-                  onChange={setWeight}
-                  suffix={unitLabel(unit)}
-                  placeholder={unit === 'kg' ? '82' : '180'}
-                />
-              </Field>
-              <div className="mt-4 flex gap-2">
-                <div className="flex-1">
-                  <Field label="Heading for">
-                    <NumberInput
-                      decimal
-                      value={goalWeight}
-                      onChange={setGoalWeight}
-                      suffix={unitLabel(unit)}
-                      placeholder={unit === 'kg' ? '77' : '170'}
-                    />
-                  </Field>
-                </div>
-                <div className="flex-1">
-                  <Field label="Height">
-                    <div className="flex gap-2">
-                      <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
-                      <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
-                    </div>
-                  </Field>
-                </div>
-              </div>
 
               <Field label="Anything giving you trouble?" optional>
                 <Chips options={SORE_JOINTS} selected={profile.sore ?? []} onToggle={toggleSore} />
@@ -387,7 +403,7 @@ export default function Onboarding({
 
               <Field
                 label="Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?"
-                hint="Two questions we have to ask. They make the plan lighter, they lock nothing."
+                hint="One question we have to ask. It makes the plan lighter, it locks nothing."
               >
                 <Options
                   columns={2}
