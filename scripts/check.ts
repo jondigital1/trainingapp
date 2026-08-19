@@ -1583,9 +1583,11 @@ check('weeks in a row are counted, and never said twice', () => {
 })
 
 const SUB = {
-  // A real, valid pair. web-push refuses anything that is not a P-256 point,
-  // so these cannot be invented.
-  p256dh: 'BOlecETwKkb42OIH-Wcssh4T3VFdFN9wCilwDwQos5ED1mXo34dQkX5BcazFkpGF9HOui6Aibpk9I5V1c-42gQc',
+  // A throwaway pair, generated for this file and used nowhere else. It has to
+  // be a real P-256 point because web-push refuses anything that is not, which
+  // makes it tempting to paste in the deployed one. Do not: this repo is public
+  // and a key in a test fixture is a key in a search index.
+  p256dh: 'BED1kK1-p-N30o5M_SdAVXavdqJSrtkqUK_A92VXswKWDpB7R0p5x-m69dxdinErK5TLCEY11vpMk5RGM3Hgpt8',
   auth: 'k8JV6sjdbhAi1n3_LDBLvA',
   endpoint: 'https://fcm.googleapis.com/fcm/send/abc123',
 }
@@ -1636,7 +1638,7 @@ check('an alert request has to look like one', () => {
 check('what goes on the wire is a signed, encrypted web push', () => {
   process.env.VAPID_SUBJECT = 'mailto:test@example.com'
   process.env.VAPID_PUBLIC_KEY = SUB.p256dh
-  process.env.VAPID_PRIVATE_KEY = 'CjFBramzuM4lkVmuHQYb73R-O6A0JekardX8eEBmGL0'
+  process.env.VAPID_PRIVATE_KEY = 'AFPR1oDKCFht1PrvLXSnoCYH6g8GpFRDH0ipgwDhsFc'
   assert.ok(pushConfigured())
 
   // Built exactly as it would be sent, without sending it, so the request can
