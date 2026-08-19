@@ -262,6 +262,38 @@ and the plan screen says how many days went and why, because a week that comes
 back shorter than the one somebody asked for needs a reason attached rather
 than a card promising a workout and opening on nothing.
 
+## Where things live
+
+The nav was Calendar, History, Ask Lifty, Profile, and it hid the two things
+people most want. Everything that answers "how am I doing", the week's sets
+per muscle, the all time totals, the charts, was three taps deep inside a
+screen that otherwise looks like a questionnaire, and nobody would guess it
+lived there. Settings was reachable only by working out that the pill reading
+BUILD MUSCLE was a button, and on two of the four tabs there was no way in at
+all.
+
+The month calendar solved the first half by making History redundant as a
+navigator: tapping a filled day opens what you did, so the tab existed only to
+hold the list, and the list moved onto the Calendar underneath the month it
+belongs to. It is hidden while a session is live, because a workout in
+progress should not be followed down the page by every workout that came
+before it.
+
+That freed the slot, and Progress took it. Calendar, Progress, Start, Ask
+Lifty, Profile: two places that hold what happened and what it adds up to, one
+that starts the next one, one that answers questions, one that holds who you
+are.
+
+Settings is a named row at the top of the profile with what is inside it
+written underneath, rather than a small pill in a header and a coloured chip on
+one other tab.
+
+The check that holds copy to naming real screens got stricter with it. It used
+to ban three specific ghost names; it now reads the labels out of the nav and
+fails on any tab a piece of copy names that the nav does not render, so the
+next rename cannot leave the help text pointing at a place that no longer
+exists.
+
 ## The month
 
 The tab called Calendar showed today and nothing else, which on a rest day was

@@ -2666,12 +2666,13 @@ check('the questionnaire is as long as the app says it is', () => {
 
 check('the app never gives directions to places that do not exist', () => {
   // Ask Lifty and the plan review used to send people to a Progress tab, a
-  // Workout tab and a History tab full of weekly bars, none of which are in
-  // the nav. Directions in copy have to name real places.
+  // Workout tab and a History tab, none of which existed. Directions in copy
+  // have to name real places, so this reads the nav and holds the copy to it.
+  // Progress is a real tab now; Workout and History never were.
   const sources = ['../lib/knowledge.ts', '../components/Onboarding.tsx', '../components/App.tsx']
   for (const file of sources) {
     const text = readFileSync(new URL(file, import.meta.url), 'utf8')
-    for (const ghost of ['Progress tab', 'Workout tab', 'weekly bars on the History tab']) {
+    for (const ghost of ['Workout tab', 'History tab']) {
       assert.ok(!text.includes(ghost), `${file} points at "${ghost}", which is not a place`)
     }
   }
@@ -2679,6 +2680,17 @@ check('the app never gives directions to places that do not exist', () => {
   // Settings. The word Settings in help copy has to mean the Settings sheet.
   const knowledge = readFileSync(new URL('../lib/knowledge.ts', import.meta.url), 'utf8')
   assert.ok(!/in Settings/.test(knowledge), 'knowledge copy sends people to Settings for profile controls')
+
+  // Every tab a piece of copy names has to be one the nav actually renders.
+  const nav = readFileSync(new URL('../components/BottomNav.tsx', import.meta.url), 'utf8')
+  const real = [...nav.matchAll(/label: '([^']+)'/g)].map((m) => m[1])
+  assert.ok(real.length >= 4, 'could not read the nav labels')
+  for (const file of sources) {
+    const text = readFileSync(new URL(file, import.meta.url), 'utf8')
+    for (const named of [...text.matchAll(/the ([A-Z][A-Za-z ]{2,14}) tab/g)].map((m) => m[1])) {
+      assert.ok(real.includes(named), `copy names a "${named}" tab; the nav has ${real.join(', ')}`)
+    }
+  }
 })
 
 check('one goal, whichever door it is edited through', () => {

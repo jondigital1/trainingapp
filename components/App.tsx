@@ -808,7 +808,7 @@ export default function App({
           </div>
         ) : (
           <h1 className="font-display text-xl font-bold tracking-tight">
-            {tab === 'history' ? 'History' : ''}
+            {tab === 'progress' ? 'Progress' : ''}
           </h1>
         )}
         {tab === 'calendar' ? (
@@ -1011,37 +1011,21 @@ export default function App({
             workouts={data.workouts}
             today={now}
             onOpenDate={(date) => {
+              // Opened in place, on the tab the calendar is on. The sessions
+              // themselves live underneath it now, so leaving is not required
+              // to read one.
               const hit = data.workouts.find((w) => w.date === date)
-              if (!hit) return
-              setTab('history')
-              setOpenHistory(hit.id)
+              if (hit) setOpenHistory(hit.id)
             }}
             onPeek={setPeekDay}
           />
-        </div>
-      ) : null}
 
-
-
-      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('calendar')} /> : null}
-
-      {!loading && tab === 'profile' ? (
-        <ProfileSheet
-          inline
-          admin={admin}
-          email={email}
-          profile={profile}
-          focus="all"
-          weights={data.bodyWeights}
-          workouts={data.workouts}
-          onOpenSettings={() => setSheet('settings')}
-          onLogWeight={(lb) => void logWeight(lb)}
-          onSave={(next) => void saveProfile(next)}
-          onClose={() => setTab('calendar')}
-        />
-      ) : null}
-
-      {!loading && tab === 'history' ? (
+          {/* Everything behind you, under the month that navigates it. This
+              was its own tab until the calendar made that tab redundant as a
+              navigator. Hidden while a session is live, because a workout in
+              progress should not be followed down the page by every workout
+              that came before it. */}
+          {todays.length === 0 ? (
         <div className="flex flex-col gap-3">
           {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}
           {past.map((workout) =>
@@ -1116,6 +1100,32 @@ export default function App({
             ),
           )}
         </div>
+          ) : null}
+        </div>
+      ) : null}
+
+
+
+      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('calendar')} /> : null}
+
+      {!loading && tab === 'profile' ? (
+        <ProfileSheet
+          inline
+          admin={admin}
+          email={email}
+          profile={profile}
+          focus="all"
+          weights={data.bodyWeights}
+          workouts={data.workouts}
+          onOpenSettings={() => setSheet('settings')}
+          onLogWeight={(lb) => void logWeight(lb)}
+          onSave={(next) => void saveProfile(next)}
+          onClose={() => setTab('calendar')}
+        />
+      ) : null}
+
+      {!loading && tab === 'progress' ? (
+        <RecordsTab workouts={data.workouts} today={now} target={weeklyTarget} />
       ) : null}
 
       <BottomNav tab={tab} onPick={setTab} onStart={() => setSheet('start')} />

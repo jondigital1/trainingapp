@@ -18,11 +18,9 @@ import {
 } from '@/lib/onboarding'
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
-import RecordsTab from './RecordsTab'
 import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtDate, today } from '@/lib/format'
 import { blockWeek, mondayOf } from '@/lib/block'
-import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
@@ -39,7 +37,6 @@ const SECTIONS = [
   { id: 'you', label: 'You' },
   { id: 'week', label: 'Your week' },
   { id: 'body', label: 'Your body' },
-  { id: 'records', label: 'Records' },
 ] as const
 
 type Section = (typeof SECTIONS)[number]['id']
@@ -244,6 +241,27 @@ export default function ProfileSheet({
         </div>
       ) : (
       <>
+      {onOpenSettings ? (
+        // Named, on the page, rather than only a small pill in the header and
+        // a coloured chip on one other tab. Somebody looking for sign out,
+        // theme, notifications or their data should not have to guess that
+        // the word BUILD MUSCLE is a button.
+        <button
+          onClick={onOpenSettings}
+          className="mt-4 flex w-full items-center justify-between gap-3 rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
+        >
+          <span>
+            <span className="font-bold">Settings</span>
+            <span className="mt-0.5 block text-xs text-muted">
+              Theme, notifications, your data, sign out
+            </span>
+          </span>
+          <span aria-hidden className="text-muted">
+            &rarr;
+          </span>
+        </button>
+      ) : null}
+
       <div className="mt-4 flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
           <button
@@ -398,13 +416,10 @@ export default function ProfileSheet({
           </>
         ) : null}
 
-        {section === 'records' ? (
-          <RecordsTab
-            workouts={workouts}
-            today={today()}
-            target={scheduledDays(draft) || draft.days || 3}
-          />
-        ) : null}
+        {/* Records moved to its own place on the nav. Everything that
+            answers "how am I doing" was three taps deep inside a screen that
+            otherwise looks like a form, and nobody would guess it lived
+            there. */}
 
         {section === 'body' ? (
           <>

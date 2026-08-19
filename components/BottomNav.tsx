@@ -1,6 +1,6 @@
 'use client'
 
-export type Tab = 'calendar' | 'history' | 'lifty' | 'profile'
+export type Tab = 'calendar' | 'progress' | 'lifty' | 'profile'
 
 // Four destinations and one action. Starting a workout is the reason the app
 // is open, so it sits in the middle where the thumb already is, raised and in
@@ -23,13 +23,18 @@ const LEFT: NavItem[] = [
     ),
   },
   {
-    id: 'history',
-    label: 'History',
+    // Was History, which the month calendar made redundant as a navigator:
+    // tapping a filled day opens what you did, and the sessions themselves
+    // moved onto the Calendar tab underneath it. The slot went to the numbers,
+    // which were three taps deep inside a form and which nobody would guess
+    // lived there.
+    id: 'progress',
+    label: 'Progress',
     icon: (
       <>
-        <path d="M12 4.5a7.5 7.5 0 1 0 7.2 9.6l-2.1-.6A5.4 5.4 0 1 1 12 6.6V9l4-3.4L12 2.2Z" />
-        <rect x="11" y="8.5" width="1.9" height="5" rx="0.95" />
-        <rect x="11.6" y="11.6" width="4.2" height="1.9" rx="0.95" />
+        <rect x="3.2" y="13" width="3.6" height="7.5" rx="1.4" />
+        <rect x="10.2" y="8.5" width="3.6" height="12" rx="1.4" />
+        <rect x="17.2" y="4" width="3.6" height="16.5" rx="1.4" />
       </>
     ),
   },
