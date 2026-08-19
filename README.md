@@ -205,13 +205,13 @@ a CSV of whatever the list currently shows.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0010. Clear the editor before each paste: a partial paste fails in confusing
+   0011. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the seven tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
    table, the start, end and score on a session, and what a custom exercise
    knows about itself, the note on a session, the function that deletes
-   your account, and the admins table.
+   your account, the admins table, and shared workouts.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
@@ -394,6 +394,37 @@ say that. Building saves and starts, since you built it to do it. Editing saves
 and stops there, because changing next Tuesday's plan is not the same as
 deciding to train right now.
 
+## Passing a workout to somebody
+
+Share, next to Edit on any of your own workouts. It publishes a copy and hands
+the link to the phone's share sheet, or the clipboard where there is no share
+sheet. Whoever opens it sees the session, and one button puts a copy in their
+own workouts.
+
+A copy, not a pointer, in both directions. Editing yours afterwards does not
+silently rewrite what you gave somebody, and them editing theirs does not touch
+yours. If you want them to have the new version, you share it again.
+
+Only the shape of a session travels: the name, the movements in order, and their
+superset tags. Nothing either of you has ever logged is in the link, so it
+cannot leak a number somebody lifted.
+
+The link is readable signed out, because a link you have to make an account to
+even look at is a link nobody opens. The row is owned and protected by the same
+one policy as every other table, so nobody can list what anybody else has
+published; reading one goes through a security definer function that takes the
+id as its whole argument and returns exactly one row. The id is a uuid, so
+knowing it means having been given it, and a link that is not shaped like one is
+a 404 before it reaches the database.
+
+This exists instead of a trainer role. A trainer role is a second product: a
+roster, an invite anybody has to accept, a program builder, a review surface,
+and a rewrite of the row level security on every table so a second person can
+read somebody else's training. That last part is the one change here where a
+mistake leaks everybody's data rather than breaking a screen. So this is the
+cheap version of the same question, which is whether anybody wants to train
+somebody else's session at all.
+
 ## Bringing the artifact history over
 
 Open the v4 artifact, read `training-data-v2` out of `window.storage`, copy the
@@ -482,7 +513,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 109 assertions over everything that is pure logic: the movement
+`npm run check` is 110 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering

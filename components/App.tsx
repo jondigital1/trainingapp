@@ -29,6 +29,7 @@ import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
 import { customFor, registerCustoms } from '@/lib/custom'
 import { isLighter, prescribedSets } from '@/lib/prescribe'
 import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
+import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
 import { scheduledDays } from '@/lib/schedule'
@@ -36,6 +37,7 @@ import { hardestFirst, topLoads } from '@/lib/order'
 import {
   EMPTY_DATA,
   type CustomExercise,
+  type CustomWorkout,
   type CustomWorkoutItem,
   type Goal,
   type SetType,
@@ -462,6 +464,19 @@ export default function App({
   // Building saves and starts, since you built it to do it. Editing saves and
   // stops there, because changing next Tuesday's plan is not the same as
   // deciding to train right now.
+  // Publishing a workout and handing over the link. A copy, not a pointer, so
+  // editing yours afterwards does not rewrite what somebody else was given.
+  async function shareWorkoutLink(workout: CustomWorkout) {
+    try {
+      const share = await db.shareCustomWorkout(sb, userId, workout)
+      const url = `${window.location.origin}/w/${share}`
+      const shared = await sharePlainLink(workout.name, url)
+      setError(shared ? '' : `Link copied: ${url}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not share that one')
+    }
+  }
+
   async function saveCustomWorkout(name: string, items: CustomWorkoutItem[], id?: string) {
     const editing = !!id
     const workout = { id: id ?? uid(), name, items }
@@ -938,6 +953,7 @@ export default function App({
             setSeedWorkout(null)
             setSheet('builder')
           }}
+          onShare={(workout) => void shareWorkoutLink(workout)}
           onEdit={(id) => {
             setSeedWorkout(null)
             setEditingWorkout(id)

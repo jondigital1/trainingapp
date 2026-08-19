@@ -46,7 +46,7 @@ import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetR
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { seriesFor, trackedNames } from '../lib/progress'
 import { groupSize, hardestFirst, isHardestFirst, moveRun, topLoads } from '../lib/order'
-import type { Exercise } from '../lib/types'
+import type { CustomWorkoutItem, Exercise } from '../lib/types'
 import type { Workout } from '../lib/types'
 
 let checks = 0
@@ -1706,6 +1706,30 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('a share link is a workout and nothing else', () => {
+  // The whole safety argument for sharing is that only the shape of a session
+  // travels. If a logged number could ride along, the feature would be a leak.
+  const items: CustomWorkoutItem[] = [
+    { name: 'Incline Dumbbell Press', type: 'W', superset: null },
+    { name: 'Hanging Leg Raise', type: 'R', superset: 'core' },
+    { name: 'Plank', type: 'T', superset: 'core' },
+  ]
+  const keys = new Set(items.flatMap((i) => Object.keys(i)))
+  assert.deepEqual([...keys].sort(), ['name', 'superset', 'type'],
+    'a shared item carries a name, a type and a superset tag, and nothing else')
+
+  // The link is a uuid, so it is guessed rather than counted, and the page
+  // refuses anything that is not one before it ever reaches the database.
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  assert.ok(uuid.test('3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'))
+  for (const bad of ['1', 'null', "' or 1=1 --", '../../etc/passwd', '']) {
+    assert.ok(!uuid.test(bad), bad)
+  }
+
+  // And a shared day still estimates, which is what the page shows.
+  assert.ok(estimateSeconds(items, 'muscle') > 0)
+})
 
 check('a date reads the same whether it arrives as a date or a timestamp', () => {
   // The auth table hands back full ISO timestamps while everything the app

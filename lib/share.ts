@@ -157,3 +157,24 @@ function save(blob: Blob, filename: string) {
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// A link, through whatever the phone offers, falling back to the clipboard.
+// Returns true when the share sheet took it, so the caller knows whether it
+// still has to tell somebody where the link went.
+export async function sharePlainLink(title: string, url: string): Promise<boolean> {
+  const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
+  if (typeof nav.share === 'function') {
+    try {
+      await nav.share({ title, text: `${title} on LiftyBot`, url })
+      return true
+    } catch (e) {
+      if (aborted(e)) return true
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    return false
+  }
+  return false
+}

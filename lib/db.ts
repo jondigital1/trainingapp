@@ -168,6 +168,34 @@ export async function saveCustomWorkout(sb: SupabaseClient, userId: string, w: C
   if (res.error) throw res.error
 }
 
+// Publishing takes a copy rather than pointing at the original, so editing your
+// own workout afterwards does not silently rewrite what you gave somebody. If
+// you want them to have the new one, you share it again.
+export async function shareCustomWorkout(
+  sb: SupabaseClient,
+  userId: string,
+  workout: CustomWorkout,
+): Promise<string> {
+  const res = await sb
+    .from('shared_workouts')
+    .insert({ user_id: userId, name: workout.name, items: workout.items })
+    .select('id')
+    .single()
+  if (res.error) throw new Error(res.error.message)
+  return res.data.id as string
+}
+
+export async function listShares(sb: SupabaseClient): Promise<{ id: string; name: string }[]> {
+  const res = await sb.from('shared_workouts').select('id,name').order('created_at')
+  if (res.error) throw new Error(res.error.message)
+  return (res.data ?? []) as { id: string; name: string }[]
+}
+
+export async function unshare(sb: SupabaseClient, id: string) {
+  const res = await sb.from('shared_workouts').delete().eq('id', id)
+  if (res.error) throw new Error(res.error.message)
+}
+
 export async function deleteCustomWorkout(sb: SupabaseClient, id: string) {
   const res = await sb.from('custom_workouts').delete().eq('id', id)
   if (res.error) throw res.error

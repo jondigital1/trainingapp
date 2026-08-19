@@ -89,6 +89,14 @@ export interface CustomWorkout {
   items: CustomWorkoutItem[]
 }
 
+// A workout somebody published. The id is the link, so it is a uuid and not a
+// counter. Nothing logged travels with it, only the shape of the session.
+export interface SharedWorkout {
+  id: string
+  name: string
+  items: CustomWorkoutItem[]
+}
+
 export type Goal = 'strength' | 'muscle' | 'endurance'
 
 // One reading per day, stored in pounds. Kilos are a display choice.

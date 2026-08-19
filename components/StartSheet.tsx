@@ -15,6 +15,7 @@ export default function StartSheet({
   onStart,
   onBuild,
   onEdit,
+  onShare,
   onCopy,
   onDelete,
   onClose,
@@ -26,6 +27,9 @@ export default function StartSheet({
   onStart: (title: string, items: CustomWorkoutItem[], sort?: boolean, dayId?: string) => void
   onBuild: () => void
   onEdit: (id: string) => void
+  // Publishes a copy and hands back the link, so a workout can be passed to
+  // somebody without either of them being anybody's client.
+  onShare: (workout: CustomWorkout) => void
   onCopy: (name: string, items: CustomWorkoutItem[]) => void
   onDelete: (id: string) => void
   onClose: () => void
@@ -93,6 +97,13 @@ export default function StartSheet({
                 >
                   <span className="text-sm font-bold">{w.name}</span>
                   <span className="num ml-2 text-xs text-faint">{w.items.length}</span>
+                </button>
+                <button
+                  onClick={() => onShare(w)}
+                  aria-label={`Share ${w.name}`}
+                  className="px-2 py-3 text-[12.5px] font-extrabold text-muted"
+                >
+                  Share
                 </button>
                 <button
                   onClick={() => onEdit(w.id)}
