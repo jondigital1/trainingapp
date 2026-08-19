@@ -2792,6 +2792,68 @@ check('the list advances only when its front was truly trained, and no is respec
   assert.ok(!/now or|limited|last chance|crush|unlock/i.test(g.body + a.body))
 })
 
+check('not interested in barbells means no barbells, not just a different score', () => {
+  // A real user answered Not interested and got Barbell Bench Press as their
+  // first movement, because the answer only ever fed the experience score.
+  // The equipment answer now reaches the equipment.
+  const p = { days: 3, minutes: 60 as const, barbell: 'no' as const, years: 'overTwo' as const, knows: 'yes' as const }
+  for (const dayId of planFor(p, 'muscle').dayIds) {
+    for (const item of buildDay(dayById(dayId)!, p)) {
+      assert.notEqual(equipmentOf(item.name), 'barbell', `${item.name} for somebody who said not interested`)
+    }
+  }
+  // The named swap lands where it was pointed: bench becomes the machine press.
+  const push = buildDay(dayById('ppl-push')!, p)
+  assert.ok(push.some((i) => i.name === 'Machine Chest Press'), 'the bench did not swap to its preferred machine')
+  // Never tried is not a refusal: Foundation teaches, it does not assume.
+  const shy = { days: 3, barbell: 'never' as const, years: 'overTwo' as const, knows: 'yes' as const }
+  assert.ok(shy.barbell === 'never', 'only an explicit no bans the bar')
+})
+
+check('asking to bring up your core gets you core, whatever the split thinks', () => {
+  // The same user picked Core, and the whole push pull legs week carries not
+  // one core movement, so reordering had nothing to reorder. Core pairs with
+  // anything and recovers overnight, so a focused core that is absent from a
+  // day is added to it, first choice a plank rather than the alphabet's ab
+  // wheel.
+  const p = { days: 3, minutes: 60 as const, focus: ['Core'], years: 'overTwo' as const, knows: 'yes' as const }
+  for (const dayId of planFor(p, 'muscle').dayIds) {
+    const built = buildDay(dayById(dayId)!, p)
+    assert.ok(built.some((i) => groupOf(i.name) === 'Core'), `${dayId} has no core for a core-focused user`)
+  }
+  assert.equal(buildDay(dayById('ppl-push')!, p)[0].name, 'Plank', 'focused work opens the session')
+
+  // Within the time budget even on the shortest day: the addition competes
+  // for a slot, it does not blow the clock.
+  const short = buildDay(dayById('ppl-push')!, { ...p, minutes: 30 })
+  assert.ok(short.length <= 4, 'the core addition blew the 30 minute budget')
+  assert.ok(short.some((i) => groupOf(i.name) === 'Core'))
+
+  // Only core carries anywhere. A chest focus does not bolt a press onto leg
+  // day, because chest has a day of its own and turns up on it.
+  const legsDay = planFor(p, 'muscle').dayIds.find((id) => id.includes('legs'))!
+  const chestFocused = buildDay(dayById(legsDay)!, { ...p, focus: ['Chest'] })
+  assert.ok(!chestFocused.some((i) => groupOf(i.name) === 'Chest'), 'a split day grew another day\'s work')
+
+  // And nobody who did not ask gets a plank: the unfocused day is untouched.
+  const plain = buildDay(dayById('ppl-push')!, { days: 3, minutes: 60 as const, years: 'overTwo' as const, knows: 'yes' as const })
+  assert.ok(!plain.some((i) => groupOf(i.name) === 'Core'))
+})
+
+check('the clock trims the session, never the reason somebody gave for training', () => {
+  // At 30 minutes the four day split dropped its whole core circuit over the
+  // head of a person who picked Core, because a circuit that cannot be kept
+  // whole used to vanish whole. It now leaves its first focused movement
+  // behind as a single.
+  const p = { days: 4, minutes: 30 as const, focus: ['Core'], years: 'overTwo' as const, knows: 'yes' as const }
+  const dayId = planFor(p, 'muscle').dayIds[0]
+  const built = buildDay(dayById(dayId)!, p)
+  assert.ok(built.length <= 4, 'over the 30 minute budget')
+  const core = built.filter((i) => groupOf(i.name) === 'Core')
+  assert.ok(core.length >= 1, 'the trim took the focused work')
+  assert.equal(core[0].superset, null, 'a rescued movement stops claiming to be a circuit')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

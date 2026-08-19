@@ -231,7 +231,34 @@ points, a person adds the movement properly in lib/exercises.ts, and the
 people who invented it keep their own. Names and counts only. What anybody
 lifted on their own movements stays theirs.
 
-## The offers the log earns
+## Answers the plan asks for reach the plan
+
+A user answered Not interested on barbell lifts, picked Core as the thing to
+bring up, and got a first session that opened on a barbell bench press with no
+core in it. Both answers were being collected and ignored, which is worse than
+never asking.
+
+Not interested in barbells is an equipment answer now. Every barbell movement
+swaps the way a missing machine would: the bench lands on its named machine
+press, the squat on the leg press, on any plan and on away days too. Never
+tried does not ban the bar, because Foundation teaches; only the explicit no
+does.
+
+Core carries anywhere. Every other muscle group belongs to a day of the split
+and turns up on its day, which is why bringing something up reorders rather
+than adds. Core is the exception: it pairs with anything, recovers overnight,
+the templates sprinkle it into whole splits, and yet push pull legs carries
+none at all, so a core-focused user could go a week without a rep of it. A
+focused core that is absent from a day is added to it, one movement, a plank
+before the alphabet's ab wheel, competing fairly for a slot inside the time
+budget rather than blowing it.
+
+And the clock trims the session, never the reason somebody gave for training:
+a circuit that cannot survive the time budget whole used to vanish whole,
+which silently deleted the focused work at thirty minutes. A dropped circuit
+now leaves its first focused movement behind as a single.
+
+## The offers the log earns## The offers the log earns
 
 Two cards on the Calendar tab, each made once, each with a no that sticks.
 

@@ -380,8 +380,14 @@ function banned(profile: Profile): Set<string> {
 
 function allowed(profile: Profile, name: string, bans: Set<string>): boolean {
   if (bans.has(name)) return false
+  const equipment = equipmentOf(name)
+  // Not interested in barbell lifts is an equipment answer, and for a long
+  // time it was treated as only a score: it shaped which program somebody got
+  // and then handed them a barbell bench press anyway. An answer the plan
+  // asks for and then ignores is worse than a question never asked.
+  if (profile.barbell === 'no' && equipment === 'barbell') return false
   const kit = ACCESS_EQUIPMENT[profile.access ?? 'full']
-  return kit.includes(equipmentOf(name))
+  return kit.includes(equipment)
 }
 
 // Swap rather than drop: find the nearest movement in the same muscle group
@@ -433,7 +439,7 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     })
   }
 
-  const ordered = emphasise(out, focusOf(profile))
+  const ordered = emphasise(withCarriedFocus(out, profile, bans, used), focusOf(profile))
 
   const cap = BUDGET[profile.minutes ?? 60] ?? 8
   if (ordered.length <= cap) return ordered
@@ -449,27 +455,76 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
   }
 
   const kept = new Set<string>()
+  // A circuit that cannot be kept whole used to vanish whole, which silently
+  // deleted the thing somebody asked to bring up: a thirty minute day dropped
+  // its core circuit over the head of a person who picked Core. A dropped
+  // group now leaves its first focused movement behind as a single, so the
+  // clock trims the session and never the reason somebody gave for training.
+  const wanted = new Set(focusOf(profile))
+  const rescued = new Set<string>()
   let reserved = 0
   for (const [tag, members] of groups) {
     if (reserved + members.length <= cap - 2) {
       kept.add(tag)
       reserved += members.length
+      continue
     }
+    const save = members.find((m) => wanted.has(groupOf(m.name) ?? ''))
+    if (save) rescued.add(save.name)
   }
 
   const trimmed: PlannedItem[] = []
   let singles = 0
   for (const item of ordered) {
-    if (item.superset) {
+    if (item.superset && !rescued.has(item.name)) {
       if (kept.has(item.superset)) trimmed.push(item)
       continue
     }
     if (singles < cap - reserved) {
-      trimmed.push(item)
+      // A rescue leaves its circuit, so it stops carrying the tag: half a
+      // circuit is not a circuit, but one movement is still the answer.
+      trimmed.push(item.superset ? { ...item, superset: null } : item)
       singles += 1
     }
   }
   return trimmed
+}
+
+// The one focused group a day gains when it has none: core. Every other group
+// belongs to a day of the split and turns up on its day, which is why
+// emphasise reorders rather than adds. Core is different: it pairs with
+// anything, recovers overnight, and the templates themselves sprinkle it into
+// whole splits, yet push pull legs carries none at all, so somebody who asked
+// to bring up their core could go a full week without a single rep of it. One
+// movement, added before the time budget runs, so it competes fairly for a
+// slot and, being focused, is the last thing the trim would take.
+const CARRIES_ANYWHERE = ['Core']
+const CARRY_FIRST = ['Plank', 'Dead Bug', 'Hanging Knee Raise']
+
+function withCarriedFocus(
+  items: PlannedItem[],
+  profile: Profile,
+  bans: Set<string>,
+  used: Set<string>,
+): PlannedItem[] {
+  if (!items.length) return items
+  const out = [...items]
+  for (const group of focusOf(profile)) {
+    if (!CARRIES_ANYWHERE.includes(group)) continue
+    if (out.some((i) => groupOf(i.name) === group)) continue
+    const pool = LIBRARY.filter(
+      (e) => e.group === group && e.type !== 'C' && !used.has(e.name) && allowed(profile, e.name, bans),
+    )
+    // A named first choice, because the alphabet's first choice was the ab
+    // wheel, which is a rough opener for somebody the plan just met.
+    const pick =
+      pool.find((e) => CARRY_FIRST.includes(e.name)) ??
+      pool.sort((a, b) => a.name.localeCompare(b.name))[0]
+    if (!pick) continue
+    used.add(pick.name)
+    out.push({ name: pick.name, type: pick.type, superset: null })
+  }
+  return out
 }
 
 // What somebody said they want to bring up, moved to the front.
