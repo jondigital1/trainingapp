@@ -662,7 +662,7 @@ export default function App({ userId, email }: { userId: string; email: string }
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-nav">
       <header className="flex items-center justify-between pb-4 pt-5">
         <h1 className="text-xl font-semibold tracking-tight">
-          {tab === 'calendar' ? 'Training Log' : tab === 'history' ? 'History' : ''}
+          {tab === 'calendar' ? 'Lifty' : tab === 'history' ? 'History' : ''}
         </h1>
         {tab === 'calendar' ? (
           <button

@@ -3,12 +3,12 @@ import './globals.css'
 import ServiceWorker from '@/components/ServiceWorker'
 
 export const metadata: Metadata = {
-  title: 'Training Log',
+  title: 'Lifty',
   description: 'Log every set, see the last session, know what to do next.',
-  applicationName: 'Training Log',
+  applicationName: 'Lifty',
   // Installed to a home screen this is the name under the icon and the title
   // bar of the standalone window.
-  appleWebApp: { capable: true, title: 'Training Log', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Lifty', statusBarStyle: 'default' },
   icons: {
     icon: [
       { url: '/icons/192', sizes: '192x192', type: 'image/png' },

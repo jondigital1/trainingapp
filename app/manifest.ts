@@ -4,8 +4,8 @@ import type { MetadataRoute } from 'next'
 // standalone drops the address bar, and the icons let the install prompt fire.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Training Log',
-    short_name: 'Training',
+    name: 'Lifty',
+    short_name: 'Lifty',
     description: 'Log every set, see the last session, know what to do next.',
     start_url: '/',
     scope: '/',

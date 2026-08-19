@@ -229,7 +229,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col justify-center px-6 py-10">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Training Log</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Lifty</h1>
         <p className="mt-2 text-sm text-muted">Log every set. See the last session. Know what to do next.</p>
         {children}
       </div>

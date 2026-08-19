@@ -1,4 +1,4 @@
-# Training Log
+# Lifty
 
 The artifact build, moved onto Next.js, Supabase and Vercel. Same app: log every
 set, see what you did last time on the line above the inputs, get told what to do
