@@ -5,10 +5,7 @@ import {
   ageBand,
   LONG_SESSION,
   COMMON_DISLIKES,
-  GOAL_CHOICES,
-  goalsAgree,
   goalsOf,
-  primaryGoal,
   GOAL_FROM_CHOICE,
   legDaysOf,
   OTHER_TRAINING,
@@ -26,7 +23,8 @@ import { fmtDate, today } from '@/lib/format'
 import { blockWeek, mondayOf } from '@/lib/block'
 import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
-import { Chips, Field, Many, NumberInput, Note, Options, TextInput } from './Form'
+import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { GoalPicker } from './GoalPicker'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -252,38 +250,7 @@ export default function ProfileSheet({
                 ]}
               />
             </Field>
-            <Field
-              label="What do you want out of this?"
-              hint="Pick as many as you like. One of them sets the reps and the rests, and you can change which any time."
-            >
-              <Many
-                columns={2}
-                value={goalsOf(draft)}
-                onToggle={(v) => {
-                  const now = goalsOf(draft)
-                  const next = now.includes(v) ? now.filter((g) => g !== v) : [...now, v]
-                  set({ goals: next, goalChoice: next.includes(draft.goalChoice!) ? draft.goalChoice : next[0] })
-                }}
-                options={GOAL_CHOICES}
-              />
-            </Field>
-
-            {/* Only when the picks genuinely pull in different directions. Wanting to
-                build muscle and lean out is one answer, and asking which comes first
-                would be asking somebody to choose between a thing and itself. */}
-            {goalsOf(draft).length > 1 && !goalsAgree(goalsOf(draft)) ? (
-              <Field
-                label="Which one sets the numbers?"
-                hint="You keep all of them. This only picks the rep ranges you train in right now."
-              >
-                <Options
-                  columns={2}
-                  value={primaryGoal(draft)}
-                  onPick={(v) => set({ goalChoice: v })}
-                  options={GOAL_CHOICES.filter((c) => goalsOf(draft).includes(c.v))}
-                />
-              </Field>
-            ) : null}
+            <GoalPicker goals={goalsOf(draft)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
             {plan.goalCoverage ? <Note>{plan.goalCoverage}</Note> : plan.goalNote ? <Note>{plan.goalNote}</Note> : null}
           </>
         ) : null}

@@ -201,33 +201,42 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
-## Pick everything you want, one of them drives
+## Everything you want, in the order you want it
 
-Goals are a list now. Pick as many as you like, because wanting to build muscle
-and get stronger and stay capable over the next year is a fact about somebody
-rather than a mistake to correct.
+Goals are an ordered list. Pick as many as you like, because wanting to build
+muscle and get stronger and stay capable over the next year is a fact about
+somebody rather than a mistake to correct, and put them in the order you want
+them because that is what somebody actually means when they list four things.
 
-One of them steers, because a set cannot be three rep ranges at once. That is
+The order is the answer to which one drives. Whatever is at the top sets the
+reps and the rests, because a set cannot be three rep ranges at once. That is
 the honest part and the app says it out loud rather than quietly averaging four
 answers into something nobody asked for.
 
-The second question only appears when the picks genuinely pull in different
+Asking for an order rather than a winner is the difference between a
+questionnaire and a plan. Somebody who says build muscle first, then get
+stronger, has described a year, and the app holds that instead of making them
+pretend the other three do not exist. Every card carries its place in the list,
+one to four, rather than a tick, so the screen is a running order at a glance.
+
+The order question only appears when the picks genuinely pull in different
 directions. Building muscle and leaning out are the same training, so being
 asked which comes first would be asking somebody to choose between a thing and
 itself; those two just get told they are covered together and the kitchen is
-what separates them. Muscle and strength do pull apart, so those get the second
-question, and the answer explains what is running, what rides along with it,
-and what is waiting and can be switched to any time.
+what separates them.
 
-That answer leads with the list, not with the winner. It opens by saying nothing
-on your list cancels anything else out, and only then names which one is setting
-the reps and the rests. The order is the whole point. Somebody who wants four
-things and is told which one they are getting has been answered; somebody told
-nothing on their list is in conflict has been understood, and those are not the
-same thing. The second question is worded to match: it asks which one sets the
-numbers, and says underneath that you keep all of them. Nothing on that screen
-asks anybody to give something up, because nothing on that screen is being
-given up.
+Changing your mind is Start this, one tap, on any row that is not already at
+the top. Nothing leaves the list when something else moves up, which is the
+whole point: the second goal is queued, not surrendered, and nothing logged
+changes when the queue moves.
+
+The sentence underneath leads with the list, not with the winner. It opens by
+saying nothing on your list cancels anything else out, and only then names what
+is first, what rides along with it, what is next, and what is after that. The
+order of that sentence is deliberate. Somebody who wants four things and is
+told which one they are getting has been answered; somebody told nothing on
+their list is in conflict has been understood, and those are not the same
+thing.
 
 Leaning out says lose fat now, in the words people use for it, instead of
 gesturing at it. The note under it is warmer for the same reason: lifting is
@@ -240,9 +249,10 @@ others.
 
 Underneath, one field still drives the prescriptions and it is the same field it
 always was, so a profile written before the list existed reads as a list of one
-and nothing downstream had to learn about lists. Removing the goal that was
-steering hands the wheel to the first one still on the list rather than steering
-by something just deselected.
+and nothing downstream had to learn about lists. A profile written while the
+primary was a separate question can have the one that was steering sitting in
+the middle of the list; it reads as first, so nobody's training changed under
+them on the day the order shipped.
 
 While in there, a small lie the screen told every time: leaning out advertised
 8 to 15 reps and handed out 8 to 12, because it maps to the muscle goal and
@@ -544,6 +554,7 @@ Postgres wants uuids and the artifact did not use them.
     components/App.tsx    tabs, state, the debounced writer
     components/           editor, exercise block, set row, picker, builder, sheets
     components/Form.tsx   the form vocabulary the questionnaire and profile share
+    components/GoalPicker.tsx  goals in the order you want them, shared by both
     components/BottomNav.tsx   four destinations and the start button
     lib/exercises.ts      226 movements across 14 muscle groups, each typed
     lib/onboarding.ts     the questions, the scoring, the three programs, the swaps

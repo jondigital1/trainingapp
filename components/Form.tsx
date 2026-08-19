@@ -80,11 +80,15 @@ export function Many<T extends string>({
   value,
   onToggle,
   columns = 1,
+  ordered = false,
 }: {
   options: { v: T; label: string; note?: string }[]
   value: T[]
   onToggle: (v: T) => void
   columns?: 1 | 2
+  // The badge counts instead of ticking, because the order things were tapped
+  // in is the order they are wanted in and the card should say so.
+  ordered?: boolean
 }) {
   return (
     <div className={columns === 2 ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2'}>
@@ -100,7 +104,7 @@ export function Many<T extends string>({
           >
             <span className="block">{o.label}</span>
             {o.note ? <span className="mt-0.5 block text-xs text-muted">{o.note}</span> : null}
-            {on ? <Check /> : null}
+            {on ? ordered ? <Rank n={value.indexOf(o.v) + 1} /> : <Check /> : null}
           </button>
         )
       })}
@@ -203,6 +207,14 @@ export function Note({ children }: { children: React.ReactNode }) {
 }
 
 // The check that says which one is picked, since the fill no longer does.
+function Rank({ n }: { n: number }) {
+  return (
+    <span className="absolute right-3 top-1/2 grid h-[18px] w-[18px] -translate-y-1/2 place-items-center rounded-full bg-accent-ink text-[11px] font-semibold leading-none text-card">
+      {n}
+    </span>
+  )
+}
+
 function Check() {
   return (
     <span className="absolute right-3 top-1/2 grid h-[18px] w-[18px] -translate-y-1/2 place-items-center rounded-full bg-accent-ink">

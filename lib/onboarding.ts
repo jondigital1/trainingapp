@@ -522,17 +522,29 @@ export type GoalChoice = NonNullable<Profile['goalChoice']>
 
 // Everything they said they want. A profile written before the list existed has
 // the single answer only, and reads as a list of one.
+// The list is in the order somebody wants things, first to last, so the front
+// of it is the one steering.
 export function goalsOf(p: Profile): GoalChoice[] {
-  if (p.goals?.length) return p.goals
-  return p.goalChoice ? [p.goalChoice] : []
+  const all = p.goals?.length ? p.goals : p.goalChoice ? [p.goalChoice] : []
+  // Profiles written when the primary was a separate question can have the one
+  // that was steering sitting in the middle of the list. It moves to the front
+  // rather than somebody's training quietly changing under them.
+  if (p.goalChoice && all.includes(p.goalChoice) && all[0] !== p.goalChoice) {
+    return promoteGoal(all, p.goalChoice)
+  }
+  return all
 }
 
-// The one steering. Their stated primary if it is still on the list, otherwise
-// the first thing they picked, otherwise nothing.
+// The one steering: whatever they put first.
 export function primaryGoal(p: Profile): GoalChoice | undefined {
-  const all = goalsOf(p)
-  if (p.goalChoice && all.includes(p.goalChoice)) return p.goalChoice
-  return all[0]
+  return goalsOf(p)[0]
+}
+
+// Moving something to the front is the whole of changing your mind. Nothing
+// leaves the list, so the order is a plan rather than a series of decisions to
+// abandon three things.
+export function promoteGoal(goals: GoalChoice[], v: GoalChoice): GoalChoice[] {
+  return [v, ...goals.filter((g) => g !== v)]
 }
 
 // Two goals that resolve to the same training are not a conflict, they are one
@@ -578,14 +590,18 @@ export function goalCoverage(p: Profile): string | null {
   // meant when they said the app did not identify with them.
   const parts = [
     'Nothing on your list cancels anything else out.',
-    `${cap(GOAL_LABEL[first])} is what sets the reps and the rests.`,
+    `${cap(GOAL_LABEL[first])} is first, so it sets the reps and the rests.`,
   ]
   if (covered.length) {
     parts.push(`${cap(list(covered.map((c) => GOAL_LABEL[c])))} comes with it, same training.`)
   }
-  if (waiting.length) {
+  if (waiting.length === 1) {
     parts.push(
-      `${cap(list(waiting.map((c) => `${GOAL_LABEL[c]} means ${GOAL_SHORT[c]}`)))}, so that one is waiting rather than gone. Switch to it whenever you want on your profile, and nothing you have logged changes.`,
+      `${cap(GOAL_LABEL[waiting[0]])} means ${GOAL_SHORT[waiting[0]]}, so that one is waiting rather than gone. Switch to it whenever you are ready on your profile, and nothing you have logged changes.`,
+    )
+  } else if (waiting.length > 1) {
+    parts.push(
+      `${cap(GOAL_LABEL[waiting[0]])} is next, and it means ${GOAL_SHORT[waiting[0]]}. Then ${list(waiting.slice(1).map((c) => GOAL_LABEL[c]))}. Moving one to the front is a tap on your profile whenever you are ready, and nothing you have logged changes.`,
     )
   }
   return parts.join(' ')

@@ -32,6 +32,7 @@ import {
   goalsOf,
   legDaysOf,
   primaryGoal,
+  promoteGoal,
   returning,
   selfDirected,
   type Profile,
@@ -1748,7 +1749,7 @@ function person(over: Partial<AdminUser>): AdminUser {
   }
 }
 
-check('you can want several things, and one of them is doing the driving', () => {
+check('the goals are a running order, and the front of it is doing the driving', () => {
   // Wanting to build muscle and lean out is one answer written twice, so it is
   // never a conflict and never asks which comes first.
   assert.ok(goalsAgree(['muscle', 'lean']))
@@ -1763,12 +1764,25 @@ check('you can want several things, and one of them is doing the driving', () =>
   assert.equal(primaryGoal({ goalChoice: 'strength' }), 'strength')
   assert.equal(primaryGoal({}), undefined)
 
-  // The stated primary wins while it is still on the list, and the first pick
-  // takes over the moment it is removed, so nothing steers by a goal they
-  // just deselected.
-  assert.equal(primaryGoal({ goals: ['muscle', 'strength'], goalChoice: 'strength' }), 'strength')
-  assert.equal(primaryGoal({ goals: ['muscle', 'health'], goalChoice: 'strength' }), 'muscle')
+  // The order is the answer: whatever is first is what sets the numbers.
+  assert.equal(primaryGoal({ goals: ['muscle', 'strength'] }), 'muscle')
+  assert.equal(primaryGoal({ goals: ['strength', 'muscle'] }), 'strength')
   assert.equal(primaryGoal({ goals: ['health'] }), 'health')
+
+  // Promoting reorders and never drops anything, because the list is a plan
+  // rather than a set of decisions to abandon three things.
+  assert.deepEqual(promoteGoal(['muscle', 'strength', 'health'], 'health'), ['health', 'muscle', 'strength'])
+  assert.deepEqual(promoteGoal(['muscle', 'strength'], 'muscle'), ['muscle', 'strength'])
+  assert.deepEqual(promoteGoal([], 'muscle'), ['muscle'])
+
+  // A profile written when the primary was a separate question can have the
+  // one that was steering sitting in the middle of the list. It reads as
+  // first, so nobody's training changes under them on the day this shipped.
+  assert.deepEqual(goalsOf({ goals: ['muscle', 'strength'], goalChoice: 'strength' }), ['strength', 'muscle'])
+  assert.equal(primaryGoal({ goals: ['muscle', 'strength'], goalChoice: 'strength' }), 'strength')
+  // And a stale primary that is no longer on the list steers nothing.
+  assert.deepEqual(goalsOf({ goals: ['muscle', 'health'], goalChoice: 'strength' }), ['muscle', 'health'])
+  assert.equal(primaryGoal({ goals: ['muscle', 'health'], goalChoice: 'strength' }), 'muscle')
 
   // One goal says nothing about coverage: there is nothing to cover.
   assert.equal(goalCoverage({ goals: ['muscle'], goalChoice: 'muscle' }), null)
@@ -1781,26 +1795,42 @@ check('you can want several things, and one of them is doing the driving', () =>
   assert.ok(!/first/i.test(both), 'nothing is queued behind anything here')
 
   // Two that disagree open by saying the list is not in conflict, and only
-  // then name what is setting the numbers and what is waiting. The order is
+  // then name what is first and what is waiting. The order of the sentence is
   // the point: being told which one you are getting answers the question,
   // being told nothing on the list is lost answers the person.
-  const split = goalCoverage({ goals: ['muscle', 'strength'], goalChoice: 'muscle' })!
+  const split = goalCoverage({ goals: ['muscle', 'strength'] })!
   assert.match(split, /^Nothing on your list cancels anything else out\./)
-  assert.match(split, /building muscle is what sets the reps and the rests/i)
+  assert.match(split, /building muscle is first, so it sets the reps and the rests/i)
   assert.match(split, /getting stronger/i)
   assert.match(split, /waiting rather than gone/i)
   assert.match(split, /switch to it/i)
   assert.ok(!/\bonly\b|\binstead of\b/i.test(split), 'nothing here is framed as a loss')
 
   // Three, where one rides along and one waits.
-  const three = goalCoverage({ goals: ['muscle', 'lean', 'health'], goalChoice: 'muscle' })!
+  const three = goalCoverage({ goals: ['muscle', 'lean', 'health'] })!
   assert.match(three, /leaning out comes with it/i)
   assert.match(three, /staying capable means/i)
 
+  // Four reads as a running order rather than a pile: what is first, what
+  // comes with it, what is next, and what is after that.
+  const four = goalCoverage({ goals: ['muscle', 'lean', 'strength', 'health'] })!
+  assert.match(four, /building muscle is first/i)
+  assert.match(four, /leaning out comes with it/i)
+  assert.match(four, /getting stronger is next/i)
+  assert.match(four, /then staying capable/i)
+  assert.match(four, /moving one to the front/i)
+
+  // Reordering the same four changes what is driving and what is queued, and
+  // says so, because otherwise the order would be decoration.
+  const flipped = goalCoverage({ goals: ['health', 'strength', 'muscle', 'lean'] })!
+  assert.match(flipped, /staying capable is first/i)
+  assert.match(flipped, /getting stronger is next/i)
+  assert.notEqual(flipped, four)
+
   // And the plan carries both, so every screen tells the same story.
-  const plan = planFor({ days: 4, goals: ['strength', 'health'], goalChoice: 'strength' }, 'strength')
+  const plan = planFor({ days: 4, goals: ['strength', 'health'] }, 'strength')
   assert.deepEqual(plan.goals, ['strength', 'health'])
-  assert.match(plan.goalCoverage!, /getting stronger is what sets the reps and the rests/i)
+  assert.match(plan.goalCoverage!, /getting stronger is first/i)
 })
 
 check('every goal says what it does, and what it does not cost you', () => {
