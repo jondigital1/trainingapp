@@ -77,6 +77,8 @@ export default function SettingsSheet({
   // and guessing either produces a toggle that flips under you on hydration.
   const [alerts, setAlerts] = useState<PushState>('unsupported')
   const [busy, setBusy] = useState(false)
+  // Said out loud when the phone agreed but the server did not hear about it.
+  const [failed, setFailed] = useState('')
 
   useEffect(() => setAlerts(pushState()), [])
 
@@ -98,7 +100,11 @@ export default function SettingsSheet({
       // account that can never be sent anything.
       const state = await enableNudge()
       if (state === 'denied' || state === 'unsupported') setAlerts(state)
-      if (state === 'on') onNudge({ day: 0, hour: nudge.hour })
+      if (state === 'unregistered') setFailed('This phone allowed it, but saving it here did not work. Try again in a moment.')
+      if (state === 'on') {
+        setFailed('')
+        onNudge({ day: 0, hour: nudge.hour })
+      }
     } else {
       onNudge({ day: null, hour: nudge.hour })
     }
@@ -269,6 +275,7 @@ export default function SettingsSheet({
               </label>
             </>
           ) : null}
+          {failed ? <p className="mt-2 text-xs font-bold leading-relaxed text-alert">{failed}</p> : null}
           <p className="mt-2 text-xs leading-relaxed text-muted">
             One message a week, comparing the days you said you train against the days you have.
             It is not a streak: nothing here counts a rest day against you, and it never arrives

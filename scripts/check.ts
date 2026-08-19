@@ -3062,6 +3062,21 @@ check('the month reads as a month, whatever the month starts on', () => {
   assert.equal(monthGrid(profile, [], shiftMonth('2026-08-01', 1), '2026-08-19').filter((c) => c.inMonth).length, 30)
 })
 
+check('a switch that says on means a phone the server can actually reach', () => {
+  // The registration is the feature: without a row on the server there is
+  // nowhere to send a Friday evening message from. The failure used to be
+  // swallowed, so the switch said on over a feature that could never fire,
+  // which is how this one went a month without delivering anything.
+  const push = readFileSync(new URL('../lib/push.ts', import.meta.url), 'utf8')
+  const enable = push.slice(push.indexOf('export async function enableNudge'), push.indexOf('export async function forgetNudge'))
+  assert.match(enable, /if \(!res\.ok\) return 'unregistered'/, 'a rejected registration is reported as success again')
+  assert.match(enable, /catch \{\s*return 'unregistered'/, 'a failed registration is swallowed again')
+
+  // And the screen says so rather than leaving somebody with a lie.
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  assert.match(settings, /state === 'unregistered'/, 'the settings screen ignores a failed registration')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

@@ -25,7 +25,7 @@ export const PUSH_KEY = 'training-log-push'
 // between an offer and a nag.
 export const ASK_KEY = 'training-log-push-asked'
 
-export type PushState = 'unsupported' | 'off' | 'on' | 'denied'
+export type PushState = 'unsupported' | 'off' | 'on' | 'denied' | 'unregistered'
 
 // Set at build time. Without it the whole feature is off, which is the right
 // behaviour for a fork of this app that has not set up its own keys.
@@ -170,15 +170,20 @@ export async function enableNudge(): Promise<PushState> {
   if (state !== 'on') return state
   const subscription = await subscribe()
   if (!subscription) return 'denied'
+  // The registration is the feature. Without a row on the server there is
+  // nowhere to send a Friday evening message from, so a failure here is
+  // reported rather than swallowed: a switch that says on over a feature that
+  // can never fire is the worst of both, and it is how this one went a month
+  // without ever delivering anything.
   try {
-    await fetch('/api/device', {
+    const res = await fetch('/api/device', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ subscription, zone: zoneOf() }),
     })
+    if (!res.ok) return 'unregistered'
   } catch {
-    // Offline. The switch is still on and the next time it is touched, or the
-    // next time push is enabled, the endpoint goes up again.
+    return 'unregistered'
   }
   return 'on'
 }

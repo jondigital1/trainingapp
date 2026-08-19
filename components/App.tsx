@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as db from '@/lib/db'
 import { fmtDate, fmtSets, today, uid, workoutVolume } from '@/lib/format'
 import { supabaseBrowser } from '@/lib/supabase/client'
-import { enableNudge, forgetNudge } from '@/lib/push'
+import { forgetNudge } from '@/lib/push'
 import CustomBuilder from './CustomBuilder'
 import Onboarding from './Onboarding'
 import BottomNav, { type Tab } from './BottomNav'
@@ -672,8 +672,9 @@ export default function App({
   async function setNudge(nudge: { day: number | null; hour: number }) {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, nudge } }))
     try {
+      // Turning it on already registered this phone, in the sheet, where the
+      // permission prompt happened. Only turning it off has work to do here.
       if (nudge.day === null) await forgetNudge()
-      else await enableNudge()
       await db.saveNudge(sb, userId, nudge)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save when to nudge you')
