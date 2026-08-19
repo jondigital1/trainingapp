@@ -49,7 +49,7 @@ export default function Homepage() {
         <div className="relative mx-auto grid max-w-[1120px] items-center gap-14 px-6 pb-20 pt-14 sm:px-8 sm:pt-[76px] lg:grid-cols-2">
           <div>
             <p className="inline-flex items-center rounded-full border border-edge bg-white px-3.5 py-1.5 text-[12.5px] font-extrabold tracking-[1.5px] text-teal">
-              EARLY ACCESS · FALL 2026
+              EARLY ACCESS · OPEN NOW
             </p>
             <h1 className="mt-4 font-display text-[42px] font-bold leading-[1.04] tracking-[-0.5px] sm:text-[58px]">
               Train smarter.
@@ -57,8 +57,8 @@ export default function Homepage() {
               Lift heavier.
             </h1>
             <p className="mt-4 max-w-[460px] text-[17px] leading-relaxed text-muted sm:text-[18px]">
-              LiftyBot builds your program, watches your bar speed, and coaches every set, a lifting
-              buddy with a very visible brain.
+              LiftyBot builds your program, puts sets and reps on every movement, and argues with
+              the numbers you log. A lifting buddy with a very visible brain.
             </p>
             <div className="mt-7 flex flex-wrap gap-3.5">
               <Link href="/login?mode=signup" className={`${LIME} px-[30px] py-3.5 text-[17px]`}>
@@ -99,14 +99,19 @@ export default function Homepage() {
           />
           <Feature
             tint="cyan"
-            title="Cues in real time"
-            body="Your phone's camera reads bar speed and range of motion, and LiftyBot calls the cue before the rep gets ugly."
-            icon={<polyline points="2,14 6,14 9,6 13,19 16,11 18,14 22,14" />}
+            title="Rest, timed properly"
+            body="Two minutes after a heavy press, forty five seconds after a cable curl. The clock knows the difference, starts itself when you finish a set, and reaches you with the phone locked."
+            icon={
+              <>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M 12 7 v 5 l 3 2" />
+              </>
+            }
           />
           <Feature
             tint="lime"
             title="PRs, remembered"
-            body="Every rep logged without typing. When a personal record falls, you'll hear about it, briefly and with feeling."
+            body="Every set is checked against every set you have ever done. When a personal record falls, you'll hear about it, briefly and with feeling."
             icon={
               <>
                 <path d="M 5 21 h 14" />
@@ -132,13 +137,13 @@ export default function Homepage() {
           />
           <Step
             n="02"
-            title="Lift, it watches the bar"
-            body="Prop your phone anywhere. It counts reps, reads speed, and talks you through the set."
+            title="Lift, it does the maths"
+            body="Every movement arrives with its sets and reps on it. Log what you did and the next line tells you what to try."
           />
           <Step
             n="03"
-            title="Get next week's plan"
-            body="Sunday night, your week arrives: loads, sets, and one honest note on what to fix."
+            title="Train the block, not the day"
+            body="Six weeks, with a deload at the end. The rest and the effort move with the week, so a peak week feels like one."
           />
         </div>
       </section>
@@ -158,10 +163,10 @@ export default function Homepage() {
 
       <section id="access" className="mx-auto max-w-[1120px] px-6 pb-10 pt-24 text-center sm:px-8">
         <h2 className="font-display text-[34px] font-bold tracking-[-0.4px] sm:text-[42px]">
-          Early access opens this fall.
+          Early access is open.
         </h2>
         <p className="mx-auto mt-3.5 max-w-[440px] leading-relaxed text-muted">
-          First wave gets the beta free, and a say in what LiftyBot learns next.
+Free while it is in beta, and the first wave gets a say in what LiftyBot learns next.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3.5">
           <Link href="/login?mode=signup" className={`${LIME} px-8 py-3.5 text-[17px]`}>
@@ -248,23 +253,23 @@ function ChatCard() {
           </div>
           <div>
             <p className="font-display text-[16px] font-bold leading-tight">LiftyBot</p>
-            <p className="text-xs font-bold text-teal">Coaching · Bench day</p>
+            <p className="text-xs font-bold text-teal">Ask Lifty · Push day</p>
           </div>
           <p className="ml-auto text-[11.5px] font-extrabold tracking-[1px] text-faint">LIVE</p>
         </div>
         <div className="flex flex-col gap-2.5 p-[18px]">
           <p className="max-w-[85%] self-start rounded-[4px_14px_14px_14px] bg-cyan-tint px-3.5 py-2.5 text-sm leading-normal">
-            Warm-up logged. Working weight today: <strong>62.5 kg</strong>, bar speed says you&rsquo;ve
-            got it.
+Incline press today: <strong>4 × 8 to 12</strong>. Last time you got 80 for 9, so start
+            there.
           </p>
           <p className="max-w-[75%] self-end rounded-[14px_4px_14px_14px] bg-lime-tint px-3.5 py-2.5 text-sm leading-normal">
-            felt easy tbh
+            why 8 to 12?
           </p>
           <p className="max-w-[85%] self-start rounded-[4px_14px_14px_14px] bg-cyan-tint px-3.5 py-2.5 text-sm leading-normal">
-            Good. Last set: slow on the way down, I&rsquo;m counting.
+That is the muscle range, and this movement earns four sets. Get 12 and I add weight.
           </p>
           <div className="mt-2 flex items-center gap-2.5 rounded-xl border border-hair bg-frost px-3.5 py-3">
-            <p className="text-xs font-extrabold tracking-[1.2px] text-teal">SET 3 · 8 REPS · 62.5 KG</p>
+            <p className="text-xs font-extrabold tracking-[1.2px] text-teal">SET 3 OF 4 · 8 TO 12 · 80 LB</p>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-hair">
               <div className="h-full w-[66%] rounded-full bg-lime" />
             </div>
