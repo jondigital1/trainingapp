@@ -155,51 +155,63 @@ opt into.
 
 ## Admin
 
-`/admin`, for one person. Not linked from anywhere, and anybody not on the
-allowlist gets a 404 rather than a 403, because a 403 tells somebody poking at
-the app that there is a door here worth coming back for.
+It lives on the profile page, behind a two-way switch that only an admin ever
+sees: You, and Admin. Same page, same address, no second URL to remember and
+nothing for anybody else to find.
 
-Two environment variables switch it on. `ADMIN_EMAILS` is a comma separated
-allowlist; an empty one locks everybody out rather than letting everybody in,
-which is the direction a mistake here has to fail in. `SUPABASE_SERVICE_ROLE_KEY`
-is the only key that can read the auth table at all, and it bypasses row level
-security completely, which is why it lives behind a `server-only` import that
-fails the build if a client component ever pulls it in, and why it has no
-`NEXT_PUBLIC_` prefix for Next to inline it with.
+Two kinds of admin, and they are deliberately not equal.
 
-What it shows is the two halves that never meet anywhere else: the auth table,
-which knows who exists and when they last signed in, and the app's own tables,
-which know whether any of that turned into training. So every person carries
-their sessions, sets, weight moved, first and last workout, whether they
+**Root** is `ADMIN_EMAILS` in the environment: a comma separated allowlist that
+cannot be granted or revoked from inside the app at all. An empty one locks
+everybody out rather than letting everybody in, which is the direction a mistake
+here has to fail in. It is what gets you back in when the table is empty or the
+database is having a bad day, and the screen will not let you remove it, because
+the screen is not where it came from.
+
+**Granted** is a row in `public.admins`, handed out by an existing admin from a
+person's row on that screen. A separate table rather than a flag on settings,
+because settings is a row the user owns and can write to, and a flag anybody can
+set on their own row is not a permission, it is a suggestion. Row level security
+is on and there are deliberately no policies, so no policy ever matches and
+nothing reached through the anon key can read or write it. The service role
+bypasses RLS, which is how the endpoints get at it, and that key sits behind a
+`server-only` import that fails the build if a client component ever pulls it
+in.
+
+What the screen shows is the two halves that never meet anywhere else: the auth
+table, which knows who exists and when they last signed in, and the app's own
+tables, which know whether any of that turned into training. Every person
+carries their sessions, sets, weight moved, first and last workout, whether they
 finished the questionnaire, and which program they landed on.
 
 The state on each row counts training rather than sign ins, because opening the
 app and doing nothing is not training. Training is a session in the last ten
 days, slipping is thirty, gone quiet is beyond that, and never started is
-somebody who signed up and never logged a set. That last group gets called out
+somebody who signed up and never logged a set. That last group is called out
 above the list on its own, because for an app like this it is the only number
 worth acting on.
 
-Actions, each re-checking the allowlist on the request rather than trusting the
-page that rendered the button: send a password reset, which goes out through
-the ordinary flow so it arrives over the real mail setup and lands on the real
-form; confirm an email by hand; block and unblock sign in; and delete an
-account, which takes everything behind it and so is typed rather than tapped.
-The destructive two refuse to point at your own account, because locking
-yourself out of your own admin screen is a mistake nobody recovers from in a
-hurry. There is a CSV of whatever the list currently shows.
+Actions, each re-checking on the request rather than trusting the page that drew
+the button: send a password reset, which goes out through the ordinary flow so
+it arrives over the real mail setup and lands on the real form; confirm an email
+by hand; block and unblock sign in; make somebody an admin, which asks twice
+because it hands them everybody else's training and the ability to delete it;
+and delete an account, which is typed rather than tapped. Everything
+destructive refuses to point at your own account, because locking yourself out
+of your own admin screen is a mistake nobody recovers from in a hurry. There is
+a CSV of whatever the list currently shows.
 
 ## Setup
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0009. Clear the editor before each paste: a partial paste fails in confusing
+   0010. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the seven tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
    table, the start, end and score on a session, and what a custom exercise
-   knows about itself, the note on a session, and the function that deletes
-   your account.
+   knows about itself, the note on a session, the function that deletes
+   your account, and the admins table.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.

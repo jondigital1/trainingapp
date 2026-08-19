@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import App from '@/components/App'
 import Homepage from '@/components/Homepage'
+import { resolveAdmin } from '@/lib/adminAuth'
 import { supabaseServer } from '@/lib/supabase/server'
 
 // One address, two things. Signed in you get the app; signed out you get the
@@ -20,5 +21,6 @@ export default async function Page() {
     data: { user },
   } = await sb.auth.getUser()
   if (!user) return <Homepage />
-  return <App userId={user.id} email={user.email ?? ''} />
+  const { admin } = await resolveAdmin(user.email, user.id)
+  return <App userId={user.id} email={user.email ?? ''} admin={admin} />
 }

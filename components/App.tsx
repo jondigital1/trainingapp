@@ -90,7 +90,17 @@ function validWorkout(w: unknown): w is Workout {
   )
 }
 
-export default function App({ userId, email }: { userId: string; email: string }) {
+export default function App({
+  userId,
+  email,
+  admin,
+}: {
+  userId: string
+  email: string
+  // Worked out on the server, because whether somebody is an admin is not a
+  // thing the browser gets to have an opinion about.
+  admin?: boolean
+}) {
   const sb = useMemo(() => supabaseBrowser(), [])
   const [data, setData] = useState<TrainingData>(EMPTY_DATA)
   const [loading, setLoading] = useState(true)
@@ -816,6 +826,8 @@ export default function App({ userId, email }: { userId: string; email: string }
       {!loading && tab === 'profile' ? (
         <ProfileSheet
           inline
+          admin={admin}
+          email={email}
           profile={profile}
           focus="all"
           weights={data.bodyWeights}

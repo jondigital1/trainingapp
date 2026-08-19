@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { isAdmin } from '@/lib/admin'
+import { resolveAdmin } from '@/lib/adminAuth'
+import { loadUsers } from '@/lib/adminData'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { supabaseServer } from '@/lib/supabase/server'
 
@@ -12,12 +13,29 @@ import { supabaseServer } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
-type Action = 'reset' | 'confirm' | 'ban' | 'unban' | 'delete'
+type Action = 'reset' | 'confirm' | 'ban' | 'unban' | 'delete' | 'grant' | 'revoke'
+
+// The list itself, so the profile screen can load it when the toggle flips
+// rather than every profile visit paying for a read of the auth table.
+export async function GET() {
+  const sb = await supabaseServer()
+  const { data } = await sb.auth.getUser()
+  const me = data.user
+  if (!me || !(await resolveAdmin(me.email, me.id)).admin) {
+    return new NextResponse('Not found', { status: 404 })
+  }
+  try {
+    return NextResponse.json({ users: (await loadUsers()) ?? [] })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'could not load' }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   const sb = await supabaseServer()
   const { data, error } = await sb.auth.getUser()
-  if (error || !data.user || !isAdmin(data.user.email)) {
+  const grant = data.user ? await resolveAdmin(data.user.email, data.user.id) : null
+  if (error || !data.user || !grant?.admin) {
     return new NextResponse('Not found', { status: 404 })
   }
 
@@ -36,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   // Locking yourself out of your own admin screen is a mistake nobody recovers
   // from in a hurry, so the destructive actions refuse to point at you.
-  if (id === data.user.id && (action === 'delete' || action === 'ban')) {
+  if (id === data.user.id && (action === 'delete' || action === 'ban' || action === 'revoke')) {
     return NextResponse.json({ error: 'that is your own account' }, { status: 400 })
   }
 
@@ -67,6 +85,30 @@ export async function POST(request: NextRequest) {
         const { error: failed } = await admin.auth.admin.updateUserById(id, { ban_duration: 'none' })
         if (failed) throw new Error(failed.message)
         return NextResponse.json({ ok: 'Allowed back in' })
+      }
+      case 'grant': {
+        if (!email) return NextResponse.json({ error: 'no email' }, { status: 400 })
+        // Admin is not a preference, it is being handed the keys to everybody
+        // else's training and the ability to delete it, so it is recorded with
+        // who granted it and when.
+        const { error: failed } = await admin
+          .from('admins')
+          .upsert({ user_id: id, email, granted_by: data.user!.id })
+        if (failed) throw new Error(failed.message)
+        return NextResponse.json({ ok: 'Made an admin' })
+      }
+      case 'revoke': {
+        // A root admin came from the deploy, so the screen cannot take it away;
+        // saying so beats a button that silently does nothing.
+        if ((await resolveAdmin(email, id)).root) {
+          return NextResponse.json(
+            { error: 'that one is set in the environment, not here' },
+            { status: 400 },
+          )
+        }
+        const { error: failed } = await admin.from('admins').delete().eq('user_id', id)
+        if (failed) throw new Error(failed.message)
+        return NextResponse.json({ ok: 'Admin removed' })
       }
       case 'delete': {
         // Every table cascades from auth.users, so this is the whole account:

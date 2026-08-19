@@ -12,6 +12,13 @@ export function adminEmails(): string[] {
     .filter(Boolean)
 }
 
+// The root admins: the allowlist in the environment. This is the half that
+// cannot be changed from inside the app, which is what makes it the thing to
+// fall back to when the granted list is empty, wrong, or unreachable.
+export function isRootAdmin(email: string | null | undefined): boolean {
+  return isAdmin(email)
+}
+
 export function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false
   const list = adminEmails()
@@ -22,6 +29,10 @@ export function isAdmin(email: string | null | undefined): boolean {
 }
 
 export interface AdminUser {
+  // Granted through the admin screen, or named in the environment. Root admins
+  // cannot be revoked from the UI, because the UI is not where they came from.
+  admin: boolean
+  rootAdmin: boolean
   id: string
   email: string
   createdAt: string
@@ -143,11 +154,12 @@ export function matches(user: AdminUser, query: string): boolean {
 export function toCsv(users: AdminUser[], today: string): string {
   const head = [
     'email', 'id', 'signed up', 'last sign in', 'confirmed', 'banned until',
-    'onboarded', 'program', 'days a week', 'goal',
+    'admin', 'onboarded', 'program', 'days a week', 'goal',
     'sessions', 'sets', 'volume lb', 'first workout', 'last workout', 'state',
   ]
   const rows = users.map((u) => [
     u.email, u.id, u.createdAt, u.lastSignInAt ?? '', u.confirmedAt ?? '', u.bannedUntil ?? '',
+    u.rootAdmin ? 'root' : u.admin ? 'yes' : '',
     u.onboardedAt ?? '', u.program ?? '', u.days ?? '', u.goal ?? '',
     u.sessions, u.sets, Math.round(u.volume), u.firstWorkout ?? '', u.lastWorkout ?? '',
     HEALTH_LABEL[health(u, today)],

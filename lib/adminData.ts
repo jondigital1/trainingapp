@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabaseAdmin } from './supabase/admin'
-import type { AdminUser } from './admin'
+import { isRootAdmin, type AdminUser } from './admin'
+import { grantedAdminIds } from './adminAuth'
 
 // Everything the admin screen shows, assembled from the two halves that never
 // meet anywhere else: the auth table, which knows who exists and when they last
@@ -34,6 +35,8 @@ export async function loadUsers(): Promise<AdminUser[] | null> {
     people.push(...(data.users as unknown as typeof people))
     if (data.users.length < PAGE) break
   }
+
+  const granted = await grantedAdminIds()
 
   const [workouts, sets, settings] = await Promise.all([
     sb.from('workouts').select('user_id,date'),
@@ -78,9 +81,13 @@ export async function loadUsers(): Promise<AdminUser[] | null> {
     const done = byUser.get(p.id)
     const s = profiles.get(p.id)
     const profile = (s?.profile ?? {}) as { days?: number; program?: string }
+    const email = p.email ?? ''
+    const root = isRootAdmin(email)
     return {
       id: p.id,
-      email: p.email ?? '',
+      email,
+      admin: root || granted.has(p.id),
+      rootAdmin: root,
       createdAt: p.created_at,
       lastSignInAt: p.last_sign_in_at ?? null,
       confirmedAt: p.email_confirmed_at ?? p.confirmed_at ?? null,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { fmtDate } from '@/lib/format'
 import {
   HEALTH_LABEL,
@@ -27,15 +27,12 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: 'email', label: 'A to Z' },
 ]
 
-export default function AdminDashboard({
-  users,
-  today,
-  me,
-}: {
-  users: AdminUser[]
-  today: string
-  me: string
-}) {
+export default function AdminDashboard({ today, me }: { today: string; me: string }) {
+  // Loaded when the toggle flips rather than on every profile visit, because
+  // reading the whole auth table is not something a profile page should pay
+  // for on the way past.
+  const [users, setUsers] = useState<AdminUser[] | null>(null)
+  const [failed, setFailed] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<Sort>('recent')
   const [open, setOpen] = useState<string | null>(null)
@@ -43,7 +40,27 @@ export default function AdminDashboard({
   const [busy, setBusy] = useState<string | null>(null)
   const [gone, setGone] = useState<string[]>([])
 
-  const live = useMemo(() => users.filter((u) => !gone.includes(u.id)), [users, gone])
+  useEffect(() => {
+    let alive = true
+    fetch('/api/admin')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(
+            res.status === 404
+              ? 'This account is not an admin any more. Sign out and back in if that is a surprise.'
+              : 'Could not load the list. Check that SUPABASE_SERVICE_ROLE_KEY is set.',
+          )
+        }
+        return (await res.json()) as { users: AdminUser[] }
+      })
+      .then((body) => alive && setUsers(body.users))
+      .catch((e) => alive && setFailed(e instanceof Error ? e.message : 'Could not load the list.'))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const live = useMemo(() => (users ?? []).filter((u) => !gone.includes(u.id)), [users, gone])
   const sums = useMemo(() => totals(live, today), [live, today])
   const cold = useMemo(() => neverStarted(live), [live])
   const shown = useMemo(
@@ -63,6 +80,11 @@ export default function AdminDashboard({
       const body = (await res.json().catch(() => ({}))) as { ok?: string; error?: string }
       if (!res.ok) throw new Error(body.error ?? 'that did not work')
       if (action === 'delete') setGone((g) => [...g, user.id])
+      if (action === 'grant' || action === 'revoke') {
+        setUsers((all) =>
+          (all ?? []).map((u) => (u.id === user.id ? { ...u, admin: action === 'grant' } : u)),
+        )
+      }
       setNote({ id: user.id, text: body.ok ?? label })
     } catch (e) {
       setNote({ id: user.id, text: e instanceof Error ? e.message : 'that did not work', bad: true })
@@ -84,23 +106,17 @@ export default function AdminDashboard({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col px-4 pb-16 pt-6">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <LiftyMark size={30} />
-          <div>
-            <h1 className="font-display text-xl font-bold tracking-tight">Admin</h1>
-            <p className="text-xs font-bold text-faint">{me}</p>
-          </div>
-        </div>
-        <button onClick={exportCsv} className={QUIET}>
-          Export CSV
-        </button>
-      </header>
+    <div className="flex w-full flex-col">
+      {users === null && !failed ? <p className="text-sm text-muted">Loading everybody.</p> : null}
+      {failed ? (
+        <p className="rounded-xl bg-card p-3.5 text-sm font-bold leading-relaxed text-alert ring-1 ring-edge">
+          {failed}
+        </p>
+      ) : null}
 
       {/* The numbers that answer "is this working", not the ones that are easy
           to count. Signups matter less than whether anybody trained. */}
-      <section className="mt-5">
+      <section className={users === null ? 'hidden' : ''}>
         <h2 className={LABEL}>The whole app</h2>
         <dl className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Stat label="People" value={sums.users} note={`${sums.signupsThisWeek} this week`} />
@@ -124,10 +140,15 @@ export default function AdminDashboard({
         </CoachChip>
       ) : null}
 
-      <section className="mt-6">
+      <section className={`mt-6 ${users === null ? 'hidden' : ''}`}>
         <div className="flex items-center justify-between gap-3">
           <h2 className={LABEL}>People</h2>
-          <span className="num text-xs font-bold text-faint">{shown.length} shown</span>
+          <div className="flex items-baseline gap-3">
+            <span className="num text-xs font-bold text-faint">{shown.length} shown</span>
+            <button onClick={exportCsv} className={QUIET}>
+              Export CSV
+            </button>
+          </div>
         </div>
 
         <input
@@ -172,7 +193,7 @@ export default function AdminDashboard({
           ))}
         </div>
       </section>
-    </main>
+    </div>
   )
 }
 
@@ -213,6 +234,7 @@ function Row({
   onAct: (user: AdminUser, action: string, label: string) => void
 }) {
   const [confirm, setConfirm] = useState('')
+  const [asking, setAsking] = useState(false)
   const state = health(user, today)
   const banned = !!user.bannedUntil && new Date(user.bannedUntil) > new Date()
   const working = (action: string) => busy === `${user.id}:${action}`
@@ -234,6 +256,7 @@ function Row({
           {` · joined ${fmtDate(user.createdAt)}`}
           {banned ? ' · blocked' : ''}
           {!user.confirmedAt ? ' · unconfirmed' : ''}
+          {user.admin ? ' · admin' : ''}
         </p>
       </button>
 
@@ -302,6 +325,53 @@ function Row({
               )
             ) : null}
           </div>
+
+          {/* Handing somebody admin is handing them everybody else's training
+              and the ability to delete it, so it asks twice. */}
+          {!isMe ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-ink px-3 py-2.5 ring-1 ring-edge">
+              <span className="flex-1 text-xs font-bold">
+                {user.rootAdmin
+                  ? 'Admin, set in the environment'
+                  : user.admin
+                    ? 'Admin'
+                    : 'Make an admin'}
+                <span className="mt-0.5 block text-[11px] font-normal leading-relaxed text-muted">
+                  {user.rootAdmin
+                    ? 'Named in ADMIN_EMAILS, so this screen cannot take it away.'
+                    : 'Sees every account here, and can delete any of them.'}
+                </span>
+              </span>
+              {!user.rootAdmin ? (
+                <button
+                  onClick={() =>
+                    user.admin
+                      ? onAct(user, 'revoke', 'Admin removed')
+                      : asking
+                        ? onAct(user, 'grant', 'Made an admin')
+                        : setAsking(true)
+                  }
+                  disabled={!!busy}
+                  aria-pressed={user.admin}
+                  className={`rounded-lg px-3 py-2 text-[12.5px] font-extrabold ${
+                    user.admin
+                      ? 'text-muted'
+                      : asking
+                        ? 'bg-accent text-on-accent'
+                        : 'text-accent-ink ring-1 ring-edge'
+                  }`}
+                >
+                  {working('grant') || working('revoke')
+                    ? 'Working'
+                    : user.admin
+                      ? 'Remove admin'
+                      : asking
+                        ? 'Yes, make them admin'
+                        : 'Make admin'}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {note ? (
             <p className={`mt-2 text-xs font-bold ${note.bad ? 'text-alert' : 'text-accent-ink'}`}>

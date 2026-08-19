@@ -22,6 +22,7 @@ import { blockWeek, mondayOf } from '@/lib/block'
 import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
@@ -59,6 +60,8 @@ export default function ProfileSheet({
   onSave,
   onLogWeight,
   onOpenSettings,
+  admin,
+  email,
   onClose,
 }: {
   profile: Profile
@@ -69,9 +72,15 @@ export default function ProfileSheet({
   onSave: (next: Profile) => void
   onLogWeight: (pounds: number) => void
   onOpenSettings?: () => void
+  // Set when the person looking at this page can see everybody else's. The
+  // admin screen lives here rather than at its own address, because this is
+  // where you already are when you want it.
+  admin?: boolean
+  email?: string
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Profile>(profile)
+  const [asAdmin, setAsAdmin] = useState(false)
   const [section, setSection] = useState<Section>(focus === 'minutes' ? 'week' : focus === 'sore' ? 'body' : 'you')
   const unit = unitOf(draft)
 
@@ -174,6 +183,33 @@ export default function ProfileSheet({
         </div>
       </div>
 
+      {/* Two views of the same page, and only one person ever sees the switch. */}
+      {admin ? (
+        <div className="mt-4 flex gap-1 rounded-[13px] bg-track p-1">
+          {[
+            { on: false, label: 'You' },
+            { on: true, label: 'Admin' },
+          ].map((v) => (
+            <button
+              key={v.label}
+              onClick={() => setAsAdmin(v.on)}
+              aria-pressed={asAdmin === v.on}
+              className={`flex-1 rounded-[9px] py-2 text-sm font-bold ${
+                asAdmin === v.on ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'text-muted'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {asAdmin ? (
+        <div className="mt-4">
+          <AdminDashboard today={today()} me={email ?? ''} />
+        </div>
+      ) : (
+      <>
       <div className="mt-4 flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
           <button
@@ -421,6 +457,8 @@ export default function ProfileSheet({
       </div>
 
       <SaveButton onClick={commit} />
+      </>
+      )}
     </Sheet>
   )
 }

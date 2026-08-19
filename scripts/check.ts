@@ -1699,6 +1699,7 @@ checkAsync('skipping the rest stops the alert, it does not just hang up', async 
 function person(over: Partial<AdminUser>): AdminUser {
   return {
     id: 'id', email: 'a@example.com', createdAt: '2026-08-01T00:00:00Z',
+    admin: false, rootAdmin: false,
     lastSignInAt: null, confirmedAt: null, bannedUntil: null,
     sessions: 0, sets: 0, volume: 0, lastWorkout: null, firstWorkout: null,
     onboardedAt: null, goal: null, program: null, days: null,
