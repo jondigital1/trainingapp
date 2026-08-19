@@ -201,6 +201,18 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
+Under the people, what the library is missing. Every custom exercise is
+somebody who searched the picker, found nothing, and typed the movement in by
+hand, and the report groups those by name across accounts, plurals folded in,
+spellings counted, movements the library already has filtered out because
+those are people who did not find the search, not gaps. Two users on one row
+is the library being told something. Nothing promotes itself: custom names are
+personal shorthand, and the library's worth is that every entry has a type, a
+group, a rest tier and swap behaviour somebody thought about. The report
+points, a person adds the movement properly in lib/exercises.ts, and the
+people who invented it keep their own. Names and counts only. What anybody
+lifted on their own movements stays theirs.
+
 ## Everything you want, in the order you want it
 
 Goals are an ordered list. Pick as many as you like, because wanting to build

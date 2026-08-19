@@ -15,6 +15,7 @@ import {
   type Sort,
 } from '@/lib/admin'
 import CoachChip from './CoachChip'
+import type { GapRow } from '@/lib/gaps'
 import LiftyMark from './LiftyMark'
 
 const LABEL = 'text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint'
@@ -32,6 +33,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
   // reading the whole auth table is not something a profile page should pay
   // for on the way past.
   const [users, setUsers] = useState<AdminUser[] | null>(null)
+  const [gaps, setGaps] = useState<GapRow[]>([])
   const [failed, setFailed] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<Sort>('recent')
@@ -51,9 +53,13 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
               : 'Could not load the list. Check that SUPABASE_SERVICE_ROLE_KEY is set.',
           )
         }
-        return (await res.json()) as { users: AdminUser[] }
+        return (await res.json()) as { users: AdminUser[]; gaps?: GapRow[] }
       })
-      .then((body) => alive && setUsers(body.users))
+      .then((body) => {
+        if (!alive) return
+        setUsers(body.users)
+        setGaps(body.gaps ?? [])
+      })
       .catch((e) => alive && setFailed(e instanceof Error ? e.message : 'Could not load the list.'))
     return () => {
       alive = false
@@ -193,6 +199,39 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           ))}
         </div>
       </section>
+
+      {/* What the library is missing, according to the people using it. Every
+          row is somebody who searched, found nothing, and typed it in by hand.
+          Nothing here promotes itself: the report points, a person adds the
+          movement properly, typed and tiered, in lib/exercises.ts. */}
+      {gaps.length ? (
+        <section className="mt-6">
+          <h3 className={LABEL}>What the library is missing</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Custom exercises people made because the picker did not have them. Two users on one row
+            is the library being told something.
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {gaps.slice(0, 20).map((gap) => (
+              <li
+                key={gap.name}
+                className="flex items-baseline justify-between gap-3 rounded-2xl bg-card px-3.5 py-2.5 ring-1 ring-edge"
+              >
+                <span className="min-w-0">
+                  <span className="text-sm font-bold">{gap.name}</span>
+                  {gap.group ? <span className="ml-2 text-xs text-muted">{gap.group}</span> : null}
+                </span>
+                <span className="num shrink-0 text-xs font-bold text-accent-ink">
+                  {gap.users === 1 ? '1 user' : `${gap.users} users`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {gaps.length > 20 ? (
+            <p className="mt-1.5 text-xs text-muted">And {gaps.length - 20} more, below two users each.</p>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { resolveAdmin } from '@/lib/adminAuth'
-import { loadUsers } from '@/lib/adminData'
+import { loadGapRows, loadUsers } from '@/lib/adminData'
+import { gapReport } from '@/lib/gaps'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { supabaseServer } from '@/lib/supabase/server'
 
@@ -25,7 +26,8 @@ export async function GET() {
     return new NextResponse('Not found', { status: 404 })
   }
   try {
-    return NextResponse.json({ users: (await loadUsers()) ?? [] })
+    const [users, gapRows] = await Promise.all([loadUsers(), loadGapRows()])
+    return NextResponse.json({ users: users ?? [], gaps: gapReport(gapRows) })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'could not load' }, { status: 500 })
   }

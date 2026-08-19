@@ -106,3 +106,21 @@ export async function loadUsers(): Promise<AdminUser[] | null> {
     }
   })
 }
+
+// The rows behind the gap report: every custom exercise across every account,
+// read with the service role because that is the only thing that can. Names
+// and ids only. What somebody lifted on their own movements stays theirs.
+export async function loadGapRows(): Promise<
+  { userId: string; name: string; type: string; group: string | null }[]
+> {
+  const sb = supabaseAdmin()
+  if (!sb) return []
+  const { data, error } = await sb.from('custom_exercises').select('user_id,name,type,muscle_group')
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => ({
+    userId: r.user_id as string,
+    name: r.name as string,
+    type: r.type as string,
+    group: (r.muscle_group as string) ?? null,
+  }))
+}

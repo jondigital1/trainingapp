@@ -44,6 +44,7 @@ import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
 import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
+import { gapReport } from '../lib/gaps'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
@@ -2542,6 +2543,43 @@ check('a session built from a room and a wish list is still a session', () => {
   // What you are bringing up still comes first, on the road as at home.
   const focused = awaySession(AWAY_FULL_BODY, { ...p, focus: ['Glutes'] }, 'home')
   assert.equal(groupOf(focused[0].name), 'Glutes', 'the away session ignored the focus')
+})
+
+check('the library hears about what it is missing, and never lies about how loudly', () => {
+  const row = (userId: string, name: string, group: string | null = null) => ({
+    userId, name, type: 'W', group,
+  })
+
+  // Three spellings of the same invention are one row, counted in people, and
+  // titled with the spelling most of them used.
+  const report = gapReport([
+    row('a', 'Viking Press', 'Shoulders'),
+    row('b', 'viking press'),
+    row('c', 'Viking Presses'),
+    row('c', 'Viking Press'),
+    row('d', 'Jefferson Curl'),
+  ])
+  assert.equal(report.length, 2)
+  assert.equal(report[0].name, 'Viking Press')
+  assert.equal(report[0].users, 3, 'people, not rows: one person twice is one person')
+  assert.equal(report[0].group, 'Shoulders', 'the group survives even when only one row carried it')
+  assert.equal(report[1].name, 'Jefferson Curl')
+
+  // The test that wrote itself: the first draft of this check used Belt
+  // Squat as its example gap, and the report filtered it out, because the
+  // library already has one. That is the filter doing its job.
+  assert.deepEqual(gapReport([row('a', 'Belt Squat')]), [])
+
+  // Sorted by how many people are asking, because that is the reading order.
+  assert.ok(report[0].users >= report[1].users)
+
+  // A movement the library already has is not a gap, it is somebody who did
+  // not find the search. Plurals of library names are the same non-gap.
+  const noise = gapReport([row('a', 'Barbell Bench Press'), row('b', 'barbell bench press'), row('c', 'Leg Extensions')])
+  assert.deepEqual(noise, [])
+
+  // Blank names are nobody asking for anything.
+  assert.deepEqual(gapReport([row('a', '   ')]), [])
 })
 
 void (async () => {
