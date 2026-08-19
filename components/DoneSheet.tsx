@@ -53,9 +53,9 @@ export default function DoneSheet({
         {stats.length ? (
           <dl className="mt-5 grid grid-cols-2 gap-2">
             {stats.map((s) => (
-              <div key={s.label} className="surface flex gap-4 rounded-2xl px-3.5 py-3 ring-1 ring-edge">
-                <Half label={s.label} value={s.value} />
-                {s.second ? <Half label={s.second.label} value={s.second.value} right /> : null}
+              <div key={s.label} className="surface flex gap-7 rounded-2xl px-3.5 py-3 ring-1 ring-edge">
+                <Half label={s.label} value={s.value} wide={!s.second} />
+                {s.second ? <Half label={s.second.label} value={s.second.value} /> : null}
               </div>
             ))}
           </dl>
@@ -128,9 +128,12 @@ export default function DoneSheet({
 
 // Two lines of room for the label whether it needs them or not, so the values
 // sit on the same lines rather than stepping down wherever a label wraps.
-function Half({ label, value, right }: { label: string; value: string; right?: boolean }) {
+//
+// A pair sits side by side with a fixed gap rather than pushed to both edges:
+// far enough apart to read as two numbers, close enough to read as one card.
+function Half({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
   return (
-    <div className={right ? 'text-right' : 'flex-1'}>
+    <div className={wide ? 'flex-1' : ''}>
       <dt className="flex min-h-[2.1em] items-start text-[10.5px] font-extrabold uppercase leading-tight tracking-[1.5px] text-faint">
         {label}
       </dt>
