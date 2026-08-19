@@ -28,12 +28,12 @@ export default function DoneSheet({
   const feel = intensityLabel(summary.intensity)
 
   const stats: { label: string; value: string }[] = []
-  if (duration) stats.push({ label: 'Time', value: duration })
+  if (duration) stats.push({ label: 'Workout duration', value: duration })
   stats.push({ label: 'Sets', value: String(summary.sets) })
   if (summary.volume > 0) {
-    stats.push({ label: 'Moved', value: `${Math.round(summary.volume).toLocaleString('en-US')} lb` })
+    stats.push({ label: 'Weight moved', value: `${Math.round(summary.volume).toLocaleString('en-US')} lb` })
   }
-  if (summary.intensity != null) stats.push({ label: 'Felt like', value: `${summary.intensity} of 10` })
+  if (summary.intensity != null) stats.push({ label: 'Intensity level', value: `${summary.intensity} of 10` })
 
   return (
     <Sheet title={workout.title} onClose={onClose}>
@@ -47,7 +47,10 @@ export default function DoneSheet({
           <dl className="mt-5 grid grid-cols-2 gap-2">
             {stats.map((s) => (
               <div key={s.label} className="surface rounded-2xl px-3.5 py-3 ring-1 ring-edge">
-                <dt className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+                {/* Two lines of room whether the label needs them or not, so
+                    the four values sit on the same two lines rather than
+                    stepping down wherever a label happens to wrap. */}
+                <dt className="flex min-h-[2.1em] items-start text-[10.5px] font-extrabold uppercase leading-tight tracking-[1.5px] text-faint">
                   {s.label}
                 </dt>
                 <dd className="num mt-1 font-display text-xl font-bold">{s.value}</dd>

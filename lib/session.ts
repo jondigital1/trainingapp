@@ -38,6 +38,9 @@ export function durationOf(workout: Workout): number | null {
 // session took 47 minutes and 12 seconds.
 export function fmtDuration(seconds: number | null): string | null {
   if (seconds == null || seconds <= 0) return null
+  // A session closed inside a minute rounded to "0 min", which reads as a bug
+  // rather than as a short session.
+  if (seconds < 60) return 'under a min'
   const total = Math.round(seconds / 60)
   const h = Math.floor(total / 60)
   const m = total % 60

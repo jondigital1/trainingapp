@@ -1707,6 +1707,16 @@ function person(over: Partial<AdminUser>): AdminUser {
   }
 }
 
+check('a short session says it was short, not that it was nothing', () => {
+  assert.equal(fmtDuration(null), null)
+  assert.equal(fmtDuration(0), null, 'a session that never started has no duration')
+  assert.equal(fmtDuration(20), 'under a min', 'and one that rounded to zero is not zero')
+  assert.equal(fmtDuration(59), 'under a min')
+  assert.equal(fmtDuration(60), '1 min')
+  assert.equal(fmtDuration(47 * 60 + 4), '47 min')
+  assert.equal(fmtDuration(67 * 60), '1h 07m')
+})
+
 check('a share link is a workout and nothing else', () => {
   // The whole safety argument for sharing is that only the shape of a session
   // travels. If a logged number could ride along, the feature would be a leak.
