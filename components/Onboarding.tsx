@@ -5,6 +5,7 @@ import {
   buildDay,
   dayById,
   GOAL_FROM_CHOICE,
+  legDaysOf,
   LONG_SESSION,
   planFor,
   PROGRAMS,
@@ -277,6 +278,22 @@ export default function Onboarding({
                   ]}
                 />
               </Field>
+              {(profile.days ?? 0) >= 4 ? (
+                <Field
+                  label="Leg days"
+                  hint="Two is quads on one day, hamstrings and glutes on the other."
+                >
+                  <Options
+                    columns={2}
+                    value={legDaysOf(profile)}
+                    onPick={(v) => set({ legDays: v })}
+                    options={[
+                      { v: 1 as const, label: 'Once a week' },
+                      { v: 2 as const, label: 'Twice, split' },
+                    ]}
+                  />
+                </Field>
+              ) : null}
               <Field label="How long have you got?" hint="Sets how many movements go in a session.">
                 <Options
                   columns={2}
@@ -539,6 +556,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
         <Row label="Weekly target per muscle" value="10 plus" />
         <Row label="Exercises per session" value={String(plan.exercises)} />
         <Row label="How hard" value={plan.cleared ? 'comfortable' : 'stop 2 to 3 short'} />
+        <Row label="Leg days" value={plan.legDays === 2 ? 'two, quads and posterior' : 'one'} />
         <Row label="Training blocks" value={plan.block ? '6 weeks, on' : 'off'} />
       </div>
 

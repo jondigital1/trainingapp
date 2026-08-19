@@ -201,21 +201,23 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
-## Two leg days
+## One leg day or two
 
-Five days a week and up gets a quad and calves day and a hamstrings and glutes
-day, and they are different sessions. Four days gets the same thing on Upper
-Lower, which is what Foundation and Build hand out there. Three days does not,
-because a third of your week is not enough to split the lower body across.
+A question, in the questionnaire next to how many days a week, and on the
+profile page afterwards. Once a week, or twice with quads on one day and
+hamstrings and glutes on the other. It only appears at four days and up, because
+three days a week has nowhere to put a second one.
 
-What it replaced: one day called Legs, and at six days a week the same Legs day
-run twice. That was the most common thing new people said was wrong with the
-plans, and they were right.
+Both answers give a whole week that makes sense, not the same week with a day
+crossed out. Choosing one hands the second leg day back to the upper body, so a
+five day week goes from chest, back, quads, shoulders, posterior to chest, back,
+legs, shoulders, upper pump.
 
-Performance at four days keeps push, pull, legs and an upper mix. Two leg days
-out of four is upper lower, which the other two programs already give you there.
-That one is a choice rather than an oversight, and it is written down in the
-checks so it stays a choice.
+Unanswered is twice, because at four days and up that is what most people do and
+it is what the plans used to fail to offer at all. It used to be one day called
+Legs everywhere, and at six days a week the same Legs day run twice, which was
+the most common thing new people said was wrong. Making it two for everybody
+would have been the same mistake pointing the other way.
 
 ## The knee is a question now, not a template
 
@@ -568,7 +570,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 114 assertions over everything that is pure logic: the movement
+`npm run check` is 115 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering

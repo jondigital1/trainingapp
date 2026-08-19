@@ -6,6 +6,7 @@ import {
   LONG_SESSION,
   COMMON_DISLIKES,
   GOAL_FROM_CHOICE,
+  legDaysOf,
   OTHER_TRAINING,
   planFor,
   PROGRAMS,
@@ -334,6 +335,21 @@ export default function ProfileSheet({
                 options={[3, 4, 5, 6].map((n) => ({ v: n, label: `${n} days` }))}
               />
             </Field>
+
+            {(draft.days ?? 0) >= 4 ? (
+              <Field label="Leg days" hint="Two is quads on one day, hamstrings and glutes on the other.">
+                <Options
+                  columns={2}
+                  value={legDaysOf(draft)}
+                  onPick={(v) => set({ legDays: v })}
+                  options={[
+                    { v: 1 as const, label: 'Once a week' },
+                    { v: 2 as const, label: 'Twice, split' },
+                  ]}
+                />
+              </Field>
+            ) : null}
+
             <Field label="Time in the gym" hint="Sets how many movements we put in a session.">
               <Options
                 columns={2}

@@ -34,6 +34,11 @@ export interface Profile {
   // which is the single most common thing new people said was missing: they
   // could not find the door marked "I know what I want to do".
   writesOwn?: 'no' | 'sometimes' | 'yes'
+  // One leg day a week or two. Two is quads on one and hamstrings and glutes on
+  // the other, which is what most people at four days and up want and what the
+  // plans hand out unless somebody says otherwise. Plenty of people train legs
+  // once and that is a preference, not an oversight to correct.
+  legDays?: 1 | 2
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still
@@ -162,6 +167,26 @@ const TABLE: Record<Program, Record<number, string[]>> = {
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
     5: ['five-chest', 'five-back', 'five-quads', 'five-shoulders', 'five-posterior'],
     6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'five-quads', 'five-posterior'],
+  },
+}
+
+// Same weeks, with the second leg day given back to the upper body. Only the
+// combinations that differ are here; three days a week and Performance at four
+// already run a single Legs day.
+const ONE_LEG: Record<Program, Record<number, string[]>> = {
+  Foundation: {
+    4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'summer4-upper'],
+    5: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'summer4-upper', 'fb-c'],
+    6: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'summer4-upper', 'five-shoulders', 'five-pump'],
+  },
+  Build: {
+    4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'summer4-upper'],
+    5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
+    6: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'five-pump'],
+  },
+  Performance: {
+    5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
+    6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper'],
   },
 }
 
@@ -412,6 +437,7 @@ export interface Plan {
   capped: boolean
   splitName: string
   dayIds: string[]
+  legDays: 1 | 2
   perMuscle: string
   exercises: number
   reps: string
@@ -433,6 +459,13 @@ export interface Plan {
 // Start sheet, and what happens when the questionnaire ends.
 export function selfDirected(p: Profile): boolean {
   return p.writesOwn === 'yes'
+}
+
+// Two unless they said one. Three days a week has one either way, because a
+// third of your week is not enough to split the lower body across.
+export function legDaysOf(p: Profile): 1 | 2 {
+  if ((p.days ?? 3) < 4) return 1
+  return p.legDays === 1 ? 1 : 2
 }
 
 // The goal a person picks and the goal the coach can act on are not the same
@@ -468,8 +501,11 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   // no effort targets to chase and no wave, whatever the experience score says.
   const cleared = profile.condition === 'yes' || profile.symptoms === 'yes'
   const choice = profile.goalChoice
+  const legs = legDaysOf({ ...profile, days })
   const dayIds =
-    back && prog === 'Foundation' && RETURNER_DAYS[days] ? RETURNER_DAYS[days] : TABLE[prog][days]
+    back && prog === 'Foundation' && RETURNER_DAYS[days]
+      ? RETURNER_DAYS[days]
+      : (legs === 1 ? ONE_LEG[prog][days] : undefined) ?? TABLE[prog][days]
 
   return {
     program: prog,
@@ -478,6 +514,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     capped: asked > MAX_DAYS,
     splitName: back && prog === 'Foundation' && days === 4 ? 'Full Body, building up' : SPLIT_NAME[prog][days],
     dayIds,
+    legDays: legs,
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',

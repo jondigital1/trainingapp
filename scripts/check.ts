@@ -24,6 +24,7 @@ import {
   MIN_DAYS,
   planFor,
   program,
+  legDaysOf,
   returning,
   selfDirected,
   type Profile,
@@ -1736,6 +1737,38 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('one leg day or two is a choice, and both weeks are real weeks', () => {
+  for (const program of ['Foundation', 'Build', 'Performance'] as const) {
+    for (const days of [4, 5, 6]) {
+      const base = { days, minutes: 60 as const, ...SEED[program] }
+
+      const two = planFor({ ...base, legDays: 2 }, 'muscle')
+      const one = planFor({ ...base, legDays: 1 }, 'muscle')
+
+      assert.equal(two.legDays, 2)
+      assert.equal(one.legDays, 1)
+      assert.equal(one.dayIds.length, days, `${program} at ${days} lost a day`)
+      for (const id of one.dayIds) assert.ok(dayById(id), `${program} at ${days}: missing ${id}`)
+
+      // One means one. Counted by day rather than by name, because a week that
+      // ran the same Legs session twice is the thing this replaced.
+      const legNames = one.dayIds
+        .map((id) => dayById(id)?.name ?? '')
+        .filter((n) => /leg|quad|hamstring|glute/i.test(n))
+      assert.equal(legNames.length, 1, `${program} at ${days} has leg days: ${legNames.join(', ')}`)
+    }
+  }
+
+  // Unanswered is two at four days and up, which is what the plans do now, and
+  // one below that because there is nowhere to put a second.
+  assert.equal(legDaysOf({ days: 5 }), 2)
+  assert.equal(legDaysOf({ days: 4 }), 2)
+  assert.equal(legDaysOf({ days: 3 }), 1)
+  assert.equal(legDaysOf({ days: 3, legDays: 2 }), 1, 'three days cannot hold two')
+  assert.equal(legDaysOf({ days: 5, legDays: 1 }), 1)
+  assert.equal(planFor({ days: 3, minutes: 60, ...SEED.Build }, 'muscle').legDays, 1)
+})
 
 check('five days and up gets two leg days, and they are different days', () => {
   const QUADS = /quad/i
