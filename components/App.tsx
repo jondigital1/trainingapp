@@ -677,7 +677,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         {tab === 'calendar' ? (
           <button
             onClick={() => setSheet('settings')}
-            className="rounded-full bg-card px-3 py-1 text-xs text-muted ring-1 ring-edge"
+            className="rounded-full bg-tint-cool px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[1.2px] text-accent-ink"
           >
             {data.settings.goal}
           </button>
@@ -712,8 +712,10 @@ export default function App({ userId, email }: { userId: string; email: string }
 
       {!loading && tab === 'calendar' && behind ? (
         <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
-          <p className="text-xs uppercase tracking-wide text-muted">The last four weeks</p>
-          <p className="mt-1 text-2xl num">{trainedLast28} / 28 days</p>
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            The last four weeks
+          </p>
+          <p className="num mt-1 font-display text-2xl font-bold">{trainedLast28} / 28 days</p>
           <p className="mt-1 text-sm text-muted">
             You planned {profile.days ?? plan?.days} a week. Three days done properly beats{' '}
             {profile.days ?? plan?.days} missed. Want the shorter plan? Either answer sticks, and
@@ -859,7 +861,7 @@ export default function App({ userId, email }: { userId: string; email: string }
                 />
                 <button
                   onClick={() => setOpenHistory(null)}
-                  className="mt-3 w-full rounded-xl bg-ink py-2 text-sm text-muted ring-1 ring-edge"
+                  className="surface mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold text-muted ring-1 ring-edge"
                 >
                   Close
                 </button>
@@ -868,27 +870,33 @@ export default function App({ userId, email }: { userId: string; email: string }
               <button
                 key={workout.id}
                 onClick={() => setOpenHistory(workout.id)}
-                className="rounded-2xl bg-card p-3 text-left ring-1 ring-edge"
+                className="rounded-[18px] bg-card p-3.5 text-left ring-1 ring-edge"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-semibold">{workout.title}</span>
-                  <span className="shrink-0 text-xs text-muted num">{fmtDate(workout.date)}</span>
+                  <span className="truncate font-display text-base font-semibold">{workout.title}</span>
+                  <span className="num shrink-0 text-xs font-bold text-faint">
+                    {fmtDate(workout.date)}
+                  </span>
                 </div>
-                <div className="mt-1 flex flex-col gap-0.5">
+                <div className="mt-1.5 flex flex-col gap-0.5">
                   {workout.exercises.slice(0, 3).map((exercise) => (
-                    <p key={exercise.id} className="truncate text-xs text-muted num">
+                    <p key={exercise.id} className="num truncate text-xs text-muted">
                       {exercise.name} {fmtSets(exercise)}
                     </p>
                   ))}
                   {workout.exercises.length > 3 ? (
-                    <p className="text-xs text-muted num">and {workout.exercises.length - 3} more</p>
+                    <p className="num text-xs text-faint">and {workout.exercises.length - 3} more</p>
                   ) : null}
                 </div>
-                {workoutVolume(workout) > 0 ? (
-                  <p className="mt-1 text-xs text-muted num">
-                    {Math.round(workoutVolume(workout)).toLocaleString()} lb
-                  </p>
-                ) : null}
+                <div className="mt-2 flex items-baseline justify-between gap-2 border-t border-edge pt-2">
+                  <span className="num text-xs font-bold text-muted">
+                    {workoutVolume(workout) > 0
+                      ? `${Math.round(workoutVolume(workout)).toLocaleString()} lb`
+                      : ''}
+                    {workout.intensity != null ? ` · felt like ${workout.intensity} of 10` : ''}
+                  </span>
+                  <span className="text-[12.5px] font-extrabold text-accent-ink">Open</span>
+                </div>
               </button>
             ),
           )}

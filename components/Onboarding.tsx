@@ -15,6 +15,7 @@ import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/unit
 import { mondayOf } from '@/lib/block'
 import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import LiftyMark from './LiftyMark'
 import type { Goal } from '@/lib/types'
 
 // Five sections rather than a dozen full screen taps. Answers that belong
@@ -371,7 +372,7 @@ export default function Onboarding({
           <div className="flex gap-2">
             <button
               onClick={() => finish(planFor(full, goal).dayIds[0])}
-              className="flex-1 rounded-2xl bg-accent py-4 text-base font-medium text-on-accent"
+              className="flex-1 rounded-2xl bg-accent py-4 font-display text-base font-bold text-on-accent"
             >
               Start day 1
             </button>
@@ -383,7 +384,7 @@ export default function Onboarding({
           <>
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="w-full rounded-2xl bg-accent py-4 text-base font-medium text-on-accent"
+              className="w-full rounded-2xl bg-accent py-4 font-display text-base font-bold text-on-accent"
             >
               Continue
             </button>
@@ -412,13 +413,16 @@ function Header({
 }) {
   return (
     <div className="sticky top-0 z-10 bg-ink pb-4 pt-1">
+      {/* The mark rides in the progress row, so the questionnaire is plainly
+          the same thing that will be coaching you afterwards. */}
       <div className="flex items-center gap-2">
         {index > 0 ? (
           <button onClick={onBack} className="-ml-2 rounded-lg px-2 py-1 text-sm text-muted" aria-label="Back">
             &larr;
           </button>
         ) : null}
-        <p className="text-xs uppercase tracking-wide text-muted">
+        <LiftyMark size={22} />
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
           Step {index + 1} of {STEPS.length}
         </p>
       </div>
@@ -429,7 +433,7 @@ function Header({
             onClick={() => (i <= index ? onJump(i) : undefined)}
             aria-label={s.title}
             aria-current={i === index ? 'step' : undefined}
-            className={`h-1 flex-1 rounded-full ${i <= index ? 'bg-accent' : 'bg-edge'}`}
+            className={`h-1.5 flex-1 rounded-full ${i <= index ? 'bg-accent' : 'bg-track'}`}
           />
         ))}
       </div>

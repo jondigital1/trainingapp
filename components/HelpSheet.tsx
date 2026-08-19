@@ -8,6 +8,8 @@ import {
   searchKnowledge,
   type KnowledgeEntry,
 } from '@/lib/knowledge'
+import CoachChip from './CoachChip'
+import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
 function Entry({ entry, open, onToggle }: { entry: KnowledgeEntry; open: boolean; onToggle: () => void }) {
@@ -18,12 +20,13 @@ function Entry({ entry, open, onToggle }: { entry: KnowledgeEntry; open: boolean
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 py-3 text-left"
       >
-        <span className="text-sm">{entry.q}</span>
-        <span aria-hidden className="shrink-0 text-xs text-muted">
+        <span className="text-sm font-bold">{entry.q}</span>
+        <span aria-hidden className="shrink-0 text-xs text-faint">
           {open ? '−' : '+'}
         </span>
       </button>
-      {open ? <p className="pb-3 text-sm leading-relaxed text-muted">{entry.a}</p> : null}
+      {/* The answer arrives as Lifty saying it, since Lifty is who was asked. */}
+      {open ? <CoachChip bubble className="pb-3">{entry.a}</CoachChip> : null}
     </div>
   )
 }
@@ -40,6 +43,14 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
 
   return (
     <Sheet title="Ask Lifty" onClose={onClose} inline={inline}>
+      <div className="mb-4 flex items-center gap-3">
+        <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-full bg-midnight">
+          <LiftyMark size={28} />
+        </span>
+        <p className="text-[13px] font-bold leading-snug text-muted">
+          Every answer is written into the app
+        </p>
+      </div>
       <input
         value={query}
         onChange={(e) => {
@@ -64,16 +75,16 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
             ))}
           </div>
         ) : (
-          <p className="mt-4 rounded-xl surface p-4 text-sm leading-relaxed text-muted ring-1 ring-edge">
+          <CoachChip bubble className="mt-4">
             Lifty does not know that one. It only knows what is written into the app and never
             searches the internet, so it would rather say so than make something up.
-          </p>
+          </CoachChip>
         )
       ) : (
         <>
           {/* Four, not forty five. A list long enough to scroll is a wall of
               text, which is the thing the search box exists to avoid. */}
-          <p className="mt-5 text-xs uppercase tracking-wide text-muted">Asked most</p>
+          <p className="mt-5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Asked most</p>
           <div className="mt-1 flex flex-col">
             {common.map((entry) => (
               <Entry
@@ -89,7 +100,7 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
 
       {!searching || results.length === 0 ? (
         <div className="mt-5">
-          <p className="text-xs uppercase tracking-wide text-muted">Browse by topic</p>
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Browse by topic</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {KNOWLEDGE_GROUPS.map((g) => (
               <button
@@ -99,8 +110,10 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
                   setOpen(null)
                 }}
                 aria-pressed={group === g}
-                className={`rounded-full px-3 py-2 text-sm ${
-                  group === g ? 'bg-accent text-on-accent' : 'surface text-muted ring-1 ring-edge'
+                className={`rounded-full px-3 py-2 text-sm font-bold ${
+                  group === g
+                    ? 'bg-tint-cool text-accent-ink ring-[1.5px] ring-accent-ink'
+                    : 'surface text-muted ring-1 ring-edge'
                 }`}
               >
                 {g}

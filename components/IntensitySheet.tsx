@@ -55,11 +55,11 @@ export default function IntensitySheet({
       <div className="mt-7 flex gap-2">
         <button
           onClick={() => onSave(score)}
-          className="flex-1 rounded-2xl bg-accent py-3.5 text-base font-medium text-on-accent"
+          className="flex-1 rounded-2xl bg-accent py-3.5 font-display text-base font-bold text-on-accent"
         >
           Save it
         </button>
-        <button onClick={onSkip} className="rounded-2xl px-5 py-3.5 text-base text-muted">
+        <button onClick={onSkip} className="px-5 py-3.5 text-base font-extrabold text-muted">
           Skip
         </button>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fmtDate, workoutVolume } from '@/lib/format'
+import { fmtDate, fmtTime, isEmptySet, workoutVolume } from '@/lib/format'
 import { durationOf, fmtDuration, intensityLabel, isRunning, wantsScore } from '@/lib/session'
 import RunningClock from './RunningClock'
 import SupersetSheet from './SupersetSheet'
@@ -13,7 +13,6 @@ import { hardestFirst, isHardestFirst, moveRun } from '@/lib/order'
 import type { Exercise, Goal, Workout } from '@/lib/types'
 
 interface BlockExtras {
-  nested: boolean
   restSeconds: number
   restOnComplete: boolean
 }
@@ -107,17 +106,21 @@ export default function WorkoutEditor({
             aria-label="Rename this workout"
             className="min-w-0 flex-1 text-left"
           >
-            <h2 className="flex items-baseline gap-1.5 text-lg font-semibold tracking-tight">
+            <h2 className="flex items-baseline gap-1.5 font-display text-xl font-semibold tracking-tight">
               <span className="truncate">{workout.title}</span>
-              <span aria-hidden className="shrink-0 text-xs font-normal text-muted">&#9998;</span>
+              <span aria-hidden className="shrink-0 text-xs font-normal text-faint">&#9998;</span>
             </h2>
-            <p className="num text-xs text-muted">
+            <p className="num text-xs font-bold text-faint">
               {fmtDate(workout.date)}
               {workout.exercises.length ? ` · ${workout.exercises.length} exercises` : ''}
               {volume > 0 ? ` · ${Math.round(volume).toLocaleString()} lb` : ''}
               {duration ? ` · ${duration}` : ''}
             </p>
-            {score ? <p className="mt-0.5 text-xs text-accent-ink">Felt like {workout.intensity} of 10, {score.toLowerCase()}</p> : null}
+            {score ? (
+              <p className="mt-0.5 text-xs font-bold text-accent-ink">
+                Felt like {workout.intensity} of 10, {score.toLowerCase()}
+              </p>
+            ) : null}
           </button>
         )}
         <div className="flex shrink-0 items-center">
@@ -129,13 +132,15 @@ export default function WorkoutEditor({
               if (result === 'saved') setShared('Saved the PDF')
             }}
             aria-label={`Share ${workout.title}`}
-            className="rounded-lg px-3 py-2 text-xs text-muted"
+            className="px-2 py-1.5 text-[12.5px] font-extrabold text-muted"
           >
             Share
           </button>
           <button
             onClick={() => (confirm ? onDelete() : setConfirm(true))}
-            className={`rounded-lg px-3 py-2 text-xs ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
+            className={`px-2 py-1.5 text-[12.5px] font-extrabold ${
+              confirm ? 'rounded-lg bg-alert text-white' : 'text-muted'
+            }`}
           >
             {confirm ? 'Sure?' : 'Delete'}
           </button>
@@ -145,15 +150,15 @@ export default function WorkoutEditor({
       {shared ? <p className="text-xs text-muted">{shared}</p> : null}
 
       {onEnd && (running || unscored) ? (
-        <div className="flex items-center justify-between gap-2 rounded-2xl bg-card px-3 py-2 ring-1 ring-edge">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-card px-3.5 py-2.5 ring-1 ring-edge">
           {running ? (
             <RunningClock startedAt={workout.startedAt!} />
           ) : (
-            <span className="num text-sm text-muted">{duration ?? 'Session over'}</span>
+            <span className="num text-sm font-bold text-faint">{duration ?? 'Session over'}</span>
           )}
           <button
             onClick={onEnd}
-            className="shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-on-accent"
+            className="shrink-0 rounded-xl bg-accent px-[18px] py-2.5 font-display text-sm font-bold text-on-accent"
           >
             {running ? 'End workout' : 'How was it?'}
           </button>
@@ -180,6 +185,10 @@ export default function WorkoutEditor({
 
       {(() => {
         const runs = groupRuns(workout.exercises)
+        // Only one card wears the outline, and only while the session is live.
+        const activeId = live
+          ? workout.exercises.find((e) => e.sets.some((s) => isEmptySet(s, e.type)))?.id
+          : undefined
 
         // Joining two neighbouring runs into one superset. Everything in both
         return runs.map((run, runIndex) => {
@@ -190,6 +199,7 @@ export default function WorkoutEditor({
             goal={goal}
             effort={effort}
             lighter={lighter}
+            active={exercise.id === activeId}
             last={lastFor(exercise.name, workout)}
             bests={bestsFor(exercise.name, workout)}
             live={live}
@@ -221,10 +231,10 @@ export default function WorkoutEditor({
         return (
           <div key={run.exercises[0].id} className="rounded-2xl bg-card p-2 ring-1 ring-accent-ink">
             <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
-              <span className="text-[11px] uppercase tracking-wide text-accent-ink">
+              <span className="num text-[10.5px] font-extrabold uppercase tracking-[1.2px] text-accent-ink">
                 Superset {letter}
-                <span className="ml-2 normal-case tracking-normal text-muted">
-                  rest after {letter}
+                <span className="ml-1.5 text-faint">
+                  · rest {fmtTime(rest)} after {letter}
                   {run.exercises.length}
                 </span>
               </span>
@@ -237,7 +247,7 @@ export default function WorkoutEditor({
                     ),
                   })
                 }
-                className="text-[11px] text-muted"
+                className="text-[12px] font-extrabold text-muted"
               >
                 Unlink
               </button>
@@ -245,7 +255,6 @@ export default function WorkoutEditor({
             <div className="flex flex-col gap-1.5">
               {run.exercises.map((exercise, i) =>
                 block(exercise, `${letter}${i + 1}`, {
-                  nested: true,
                   restSeconds: rest,
                   restOnComplete: i === run.exercises.length - 1,
                 }),
@@ -258,7 +267,7 @@ export default function WorkoutEditor({
 
       <button
         onClick={onAddExercise}
-        className="rounded-xl border border-dashed border-edge py-3 text-sm text-muted"
+        className="rounded-[14px] border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted"
       >
         Add exercise
       </button>
@@ -278,7 +287,7 @@ export default function WorkoutEditor({
       ) : (
         <button
           onClick={() => setNoting(true)}
-          className="self-start rounded-lg px-1 py-1 text-xs text-muted"
+          className="self-start px-1 py-1 text-[12.5px] font-extrabold text-faint"
         >
           + Add a note
         </button>

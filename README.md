@@ -111,6 +111,38 @@ marks are on a page. The app icons are rasterised from that same vector at build
 time rather than committed as PNGs, so there is one definition of the logo in
 this repo and the icons cannot drift away from it.
 
+## Selection is not action
+
+The one rule the whole interface hangs off. Lime means two things and only two:
+the single primary action on a view, and work you have finished. Nothing else
+is allowed to be green.
+
+So a chosen option is not a lime block any more. It is the card colour with an
+accent-ink edge and a check, which reads as picked without competing with the
+button you are meant to press next. Six answered questions used to look like six
+primary actions.
+
+What stays lime: Start, Save, End workout, Save and add, Nice one, Skip on the
+rest bar, the day boxes you have trained, the filled rows of a set you have
+done, the days in the 28 day grid. What turns into an outline: every option
+list, every chip, the goal rows, the theme picker, the schedule picker, the
+picker's superset toggle. What turns Midnight: the two places a filter is a
+mode rather than a choice, the picker's muscle groups and the profile's section
+tabs.
+
+Deleting an account is the one destructive thing here, and it now has its own
+colour rather than borrowing the colour of Save.
+
+## Coach chips
+
+When the app has something to say, it says it with a face on. A 24px Midnight
+circle with the mark, then the words. Two flavours: a bubble for a remark, which
+is a plan note, an answer in Ask Lifty, or the line under a finished session,
+and plain accent-ink text for coaching on the thing you are looking at, which is
+the line under a set.
+
+It replaced a left-border blockquote, which read as a pull quote from nobody.
+
 ## Appearance
 
 Light by default, dark by choice, and System if you want it to follow the phone.

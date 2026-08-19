@@ -3,6 +3,7 @@
 import { fmtDuration, intensityLabel } from '@/lib/session'
 import { recordText, type Summary } from '@/lib/summary'
 import { shareWorkout } from '@/lib/share'
+import LiftyMark from './LiftyMark'
 import type { Workout } from '@/lib/types'
 import Sheet from './Sheet'
 
@@ -45,9 +46,11 @@ export default function DoneSheet({
         {stats.length ? (
           <dl className="mt-5 grid grid-cols-2 gap-2">
             {stats.map((s) => (
-              <div key={s.label} className="rounded-2xl bg-ink px-3 py-2.5 ring-1 ring-edge">
-                <dt className="text-[11px] uppercase tracking-wide text-muted">{s.label}</dt>
-                <dd className="num mt-0.5 text-lg font-semibold">{s.value}</dd>
+              <div key={s.label} className="surface rounded-2xl px-3.5 py-3 ring-1 ring-edge">
+                <dt className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+                  {s.label}
+                </dt>
+                <dd className="num mt-1 font-display text-xl font-bold">{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -59,13 +62,13 @@ export default function DoneSheet({
 
         {summary.records.length ? (
           <section className="mt-5">
-            <h4 className="text-[11px] uppercase tracking-wide text-muted">
+            <h4 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
               {summary.records.length === 1 ? 'Record' : 'Records'}
             </h4>
             <ul className="mt-2 flex flex-col gap-1.5">
               {summary.records.map((record) => (
-                <li key={record.name} className="rounded-2xl bg-ink px-3 py-2.5 ring-1 ring-accent-ink">
-                  <p className="text-sm font-medium leading-snug">{record.name}</p>
+                <li key={record.name} className="surface rounded-2xl px-3.5 py-3 ring-[1.5px] ring-accent-ink">
+                  <p className="text-sm font-bold leading-snug">{record.name}</p>
                   <p className="mt-0.5 text-xs leading-snug text-accent-ink">{recordText(record)}</p>
                 </li>
               ))}
@@ -76,7 +79,7 @@ export default function DoneSheet({
         {summary.milestones.length ? (
           <ul className="mt-3 flex flex-col gap-1.5">
             {summary.milestones.map((m) => (
-              <li key={m.label} className="rounded-2xl bg-ink px-3 py-2.5 text-sm ring-1 ring-edge">
+              <li key={m.label} className="surface rounded-2xl px-3.5 py-3 text-sm font-bold ring-1 ring-edge">
                 {m.label}
               </li>
             ))}
@@ -102,13 +105,13 @@ export default function DoneSheet({
         <div className="mt-6 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-2xl bg-accent py-3.5 text-base font-medium text-on-accent"
+            className="flex-1 rounded-2xl bg-accent py-3.5 font-display text-base font-bold text-on-accent"
           >
             Nice one
           </button>
           <button
             onClick={() => void shareWorkout(workout)}
-            className="rounded-2xl px-5 py-3.5 text-base text-muted ring-1 ring-edge"
+            className="rounded-2xl px-5 py-3.5 text-base font-extrabold text-muted ring-[1.5px] ring-edge"
           >
             Share
           </button>

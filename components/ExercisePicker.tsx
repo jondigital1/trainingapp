@@ -86,17 +86,17 @@ export default function ExercisePicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search movements"
-        className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
+        className="surface w-full rounded-xl px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-[1.5px] focus:ring-accent-ink"
       />
 
       <button
         onClick={() => setSuperset(superset ? null : uid())}
-        className={`mt-3 flex w-full items-center justify-between rounded-xl px-4 py-3 text-left ring-1 ${
-          superset ? 'bg-accent text-on-accent ring-accent' : 'bg-ink ring-edge'
+        className={`mt-3 flex w-full items-center justify-between rounded-xl px-4 py-3 text-left ${
+          superset ? 'bg-tint-cool ring-[1.5px] ring-accent-ink' : 'surface ring-1 ring-edge'
         }`}
       >
-        <span className="text-sm">Superset</span>
-        <span className={`text-xs ${superset ? 'text-on-accent' : 'text-muted'}`}>
+        <span className="text-sm font-bold">Superset</span>
+        <span className={`text-xs ${superset ? 'font-bold text-accent-ink' : 'text-muted'}`}>
           {superset
             ? added.length
               ? `${added.length} in this one, keep picking`
@@ -108,7 +108,9 @@ export default function ExercisePicker({
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           onClick={() => setGroup(null)}
-          className={`rounded-full px-3 py-1 text-xs ${group === null ? 'bg-accent text-on-accent' : 'bg-ink text-muted ring-1 ring-edge'}`}
+          className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+            group === null ? 'bg-midnight text-frost' : 'surface text-muted ring-1 ring-edge'
+          }`}
         >
           All
         </button>
@@ -116,7 +118,9 @@ export default function ExercisePicker({
           <button
             key={g}
             onClick={() => setGroup(group === g ? null : g)}
-            className={`rounded-full px-3 py-1 text-xs ${group === g ? 'bg-accent text-on-accent' : 'bg-ink text-muted ring-1 ring-edge'}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+              group === g ? 'bg-midnight text-frost' : 'surface text-muted ring-1 ring-edge'
+            }`}
           >
             {g}
           </button>
@@ -139,7 +143,7 @@ export default function ExercisePicker({
         {results.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nothing matches</p> : null}
       </div>
       {query.trim() && !exact ? (
-        <div className="mt-4 rounded-xl bg-ink p-3 ring-1 ring-edge">
+        <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
           <p className="text-sm">
             Create <span className="text-accent-ink">{query.trim()}</span>
           </p>
@@ -193,7 +197,7 @@ export default function ExercisePicker({
               pick(exercise.name, exercise.type)
               setQuery('')
             }}
-            className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-medium text-on-accent"
+            className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent"
           >
             Save and add
           </button>
@@ -213,7 +217,7 @@ const TIER_SECONDS: Record<RestTier, number> = {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <h4 className="mt-4 text-xs uppercase tracking-wide text-muted">{children}</h4>
+  return <h4 className="mt-4 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">{children}</h4>
 }
 
 function Chips({
@@ -232,8 +236,8 @@ function Chips({
           key={o.v}
           onClick={() => onPick(o.v)}
           aria-pressed={value === o.v}
-          className={`rounded-full px-3 py-1.5 text-xs ${
-            value === o.v ? 'bg-accent text-on-accent' : 'bg-card text-muted ring-1 ring-edge'
+          className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+            value === o.v ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'bg-card text-muted ring-1 ring-edge'
           }`}
         >
           {o.label}

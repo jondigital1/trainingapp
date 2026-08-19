@@ -37,7 +37,7 @@ export default function RecordsTab({
             onClick={() => setView(v.id)}
             aria-current={view === v.id ? 'page' : undefined}
             className={`rounded-full px-3 py-2 text-sm ring-1 ${
-              view === v.id ? 'bg-accent text-on-accent ring-accent' : 'surface text-muted ring-edge'
+              view === v.id ? 'bg-midnight text-frost ring-midnight' : 'surface text-muted ring-edge'
             }`}
           >
             {v.label}

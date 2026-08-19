@@ -121,7 +121,7 @@ export default function BodyWeightCard({
               placeholder={unit === 'kg' ? '82' : '180'}
             />
           </div>
-          <button onClick={log} className="rounded-xl bg-accent px-4 text-sm font-medium text-on-accent">
+          <button onClick={log} className="rounded-xl bg-accent px-4 font-display text-sm font-bold text-on-accent">
             Save
           </button>
         </div>

@@ -21,6 +21,21 @@
   --color-muted: #5c6b7e;
   --color-faint: #8e99a8;
   --color-bright: #0b121d;
+  /* The quiet fill: segmented control tracks, the Add set pill, and the rows
+     of a set you have not reached yet. Not a surface and not a border. */
+  --color-track: #edf1f6;
+  /* Lime, dark enough to be text. On Midnight the plain Lime already is, so
+     this collapses to it there rather than staying an unreadable olive. */
+  --color-lime-ink: #7a9a1f;
+  /* Two tints that have to survive dark mode. The brand's #F2F8DC and #EAF6F9
+     are light-surface colours; on Midnight they would be two bright slabs. So
+     they are tokens: a lime wash for a set you have finished, and a cool wash
+     for anything the bot says. */
+  --color-tint-done: #f2f8dc;
+  --color-tint-cool: #eaf6f9;
+  /* Destructive, and only that. It exists so deleting an account cannot be
+     mistaken for the primary action, which everywhere else is green. */
+  --color-alert: #c4442a;
 
   /* Fixed brand values, the same in both modes. The marketing page is light
      only by design, and these are what it is drawn with. */
@@ -54,6 +69,11 @@
   --color-muted: #8e99a8;
   --color-faint: #8e99a8;
   --color-bright: #f5f8fb;
+  --color-track: #1b2738;
+  --color-lime-ink: #c7e45a;
+  --color-tint-done: #212c17;
+  --color-tint-cool: #16303c;
+  --color-alert: #e0614a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -67,6 +87,11 @@
     --color-muted: #8e99a8;
     --color-faint: #8e99a8;
     --color-bright: #f5f8fb;
+    --color-track: #1b2738;
+    --color-lime-ink: #c7e45a;
+    --color-tint-done: #212c17;
+    --color-tint-cool: #16303c;
+    --color-alert: #e0614a;
   }
 }
 

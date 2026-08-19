@@ -20,27 +20,31 @@ export default function BlockCard({
   return (
     <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs uppercase tracking-wide text-muted">Block {number}</h2>
-        <span className="num text-xs text-muted">
-          week {week.index} of {BLOCK_WEEKS}
-        </span>
+        <h2 className="num text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-accent-ink">
+          Block {number} · Week {week.index} of {BLOCK_WEEKS}
+        </h2>
+        <span className="text-xs font-bold text-faint">{week.name}</span>
       </div>
 
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-lg font-semibold tracking-tight">{week.name}</span>
-        <span className="text-sm text-accent-ink">{week.rir}</span>
-      </div>
-
-      <div className="mt-3 flex gap-1.5">
+      {/* Six segments, one per week. Behind you is filled, this week is
+          outlined so it reads as where you are rather than where you got to,
+          and ahead is the quiet track. */}
+      <div className="mt-2.5 flex gap-1.5">
         {BLOCK.map((w) => (
           <span
             key={w.index}
-            className={`h-1.5 flex-1 rounded-full ${
-              w.index === week.index ? 'bg-accent' : w.index < week.index ? 'bg-accent/40' : 'bg-edge'
+            className={`h-2 flex-1 rounded-full ${
+              w.index === week.index
+                ? 'bg-card ring-[1.5px] ring-accent-ink'
+                : w.index < week.index
+                  ? 'bg-accent'
+                  : 'bg-track'
             }`}
           />
         ))}
       </div>
+
+      <p className="mt-3 text-sm font-bold text-accent-ink">{week.rir}</p>
 
       <p className="mt-3 text-sm leading-relaxed text-muted">{week.note}</p>
 

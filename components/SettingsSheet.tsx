@@ -10,6 +10,36 @@ import PasswordChange from './PasswordChange'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
 
+// The radio the goal rows use, since a picked goal is a choice and not an
+// action. The switch is the one control in the app that is genuinely binary.
+function Radio({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`grid h-[18px] w-[18px] flex-none place-items-center rounded-full ring-[1.5px] ${
+        on ? 'ring-accent-ink' : 'ring-edge'
+      }`}
+    >
+      {on ? <span className="h-2.5 w-2.5 rounded-full bg-accent-ink" /> : null}
+    </span>
+  )
+}
+
+function Switch({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`flex h-[26px] w-[44px] flex-none items-center rounded-full p-0.5 transition-colors ${
+        on ? 'bg-accent-ink' : 'bg-track ring-1 ring-edge'
+      }`}
+    >
+      <span
+        className={`h-[22px] w-[22px] rounded-full bg-card shadow-sm transition-transform ${
+          on ? 'translate-x-[18px]' : ''
+        }`}
+      />
+    </span>
+  )
+}
+
 export default function SettingsSheet({
   data,
   email,
@@ -108,32 +138,38 @@ export default function SettingsSheet({
 
   return (
     <Sheet title="Settings" onClose={onClose}>
-      <h3 className="text-xs uppercase tracking-wide text-muted">Goal</h3>
+      <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Goal</h3>
       <div className="mt-2 flex flex-col gap-2">
         {GOALS.map((g) => (
           <button
             key={g.id}
             onClick={() => onGoal(g.id)}
-            className={`flex items-center justify-between rounded-xl px-3 py-3 text-left ring-1 ${
-              data.settings.goal === g.id ? 'bg-accent text-on-accent ring-accent' : 'bg-ink ring-edge'
+            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left ring-1 ${
+              data.settings.goal === g.id
+                ? 'bg-tint-cool ring-[1.5px] ring-accent-ink'
+                : 'surface ring-edge'
             }`}
           >
-            <span className="text-sm">{g.label}</span>
-            <span className={`text-xs num ${data.settings.goal === g.id ? 'text-on-accent' : 'text-muted'}`}>
+            <Radio on={data.settings.goal === g.id} />
+            <span className="flex-1 text-sm font-bold">{g.label}</span>
+            <span className="num text-xs text-muted">
               {g.reps[0]} to {g.reps[1]} reps
             </span>
           </button>
         ))}
       </div>
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Appearance</h3>
-      <div className="mt-2 flex gap-2">
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Appearance</h3>
+      {/* A track with one segment lifted out of it, rather than three buttons
+          one of which happens to be green. */}
+      <div className="mt-2 flex gap-1 rounded-[13px] bg-track p-1">
         {(['light', 'dark', 'system'] as const).map((t) => (
           <button
             key={t}
             onClick={() => pickTheme(t)}
-            className={`flex-1 rounded-xl py-2 text-sm capitalize ring-1 ${
-              theme === t ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
+            aria-pressed={theme === t}
+            className={`flex-1 rounded-[9px] py-2 text-sm font-bold capitalize ${
+              theme === t ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'text-muted'
             }`}
           >
             {t}
@@ -141,7 +177,7 @@ export default function SettingsSheet({
         ))}
       </div>
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Rest alerts</h3>
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Rest alerts</h3>
       {alerts === 'unsupported' ? (
         <p className="mt-2 text-sm leading-relaxed text-muted">
           This browser cannot receive alerts. On an iPhone it works once the app is added to the
@@ -158,12 +194,10 @@ export default function SettingsSheet({
             onClick={() => void toggleAlerts()}
             disabled={busy}
             aria-pressed={alerts === 'on'}
-            className={`mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ${
-              alerts === 'on' ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
-            }`}
+            className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
           >
-            <span>Alert me when rest is up</span>
-            <span className="text-xs">{alerts === 'on' ? 'On' : 'Off'}</span>
+            <span className="font-bold">Alert me when rest is up</span>
+            <Switch on={alerts === 'on'} />
           </button>
           <p className="mt-2 text-xs leading-relaxed text-muted">
             The buzz and the beep need the app awake. This one is sent from outside the phone, so it
@@ -172,7 +206,7 @@ export default function SettingsSheet({
         </>
       )}
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">You</h3>
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">You</h3>
       <button
         onClick={onEditProfile}
         className="mt-2 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
@@ -193,7 +227,7 @@ export default function SettingsSheet({
         </span>
       </button>
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Data</h3>
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Data</h3>
       <button onClick={exportCsv} className="mt-2 w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge">
         Export CSV, one row per set
       </button>
@@ -217,7 +251,7 @@ export default function SettingsSheet({
       </button>
       {status ? <p className="mt-2 text-xs text-accent-ink">{status}</p> : null}
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Help</h3>
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Help</h3>
       <button
         onClick={onHelp}
         className="mt-2 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
@@ -228,7 +262,7 @@ export default function SettingsSheet({
         </span>
       </button>
 
-      <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Account</h3>
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Account</h3>
       <p className="mt-2 text-sm text-muted">{email}</p>
       <PasswordChange />
       <button onClick={onSignOut} className="mt-2 w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge">
@@ -236,7 +270,7 @@ export default function SettingsSheet({
       </button>
 
       {/* Two taps and a typed word, because this one does not come back. */}
-      <h3 className="mt-8 text-xs uppercase tracking-wide text-muted">Delete your account</h3>
+      <h3 className="mt-8 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Delete your account</h3>
       <p className="mt-2 text-xs leading-relaxed text-muted">
         Every session, every set, your bodyweight and your profile, gone for good. Export a CSV
         first if you want to keep any of it.
@@ -254,7 +288,7 @@ export default function SettingsSheet({
             <button
               disabled={typed.trim().toUpperCase() !== 'DELETE'}
               onClick={onDeleteAccount}
-              className="flex-1 rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
+              className="flex-1 rounded-xl bg-alert py-3 font-display text-sm font-bold text-white disabled:opacity-45"
             >
               Delete everything
             </button>
@@ -263,7 +297,7 @@ export default function SettingsSheet({
                 setKilling(false)
                 setTyped('')
               }}
-              className="rounded-xl px-4 py-3 text-sm text-muted"
+              className="px-4 py-3 text-sm font-extrabold text-muted"
             >
               Keep it
             </button>
@@ -272,7 +306,7 @@ export default function SettingsSheet({
       ) : (
         <button
           onClick={() => setKilling(true)}
-          className="mt-2 w-full rounded-xl bg-ink py-3 text-sm text-muted ring-1 ring-edge"
+          className="surface mt-2 w-full rounded-xl py-3 text-sm font-bold text-alert ring-1 ring-edge"
         >
           Delete my account
         </button>

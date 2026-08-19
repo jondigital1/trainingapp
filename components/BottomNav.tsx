@@ -67,12 +67,12 @@ function Item({ item, on, onPick }: { item: NavItem; on: boolean; onPick: (tab: 
       <button
         onClick={() => onPick(item.id)}
         aria-current={on ? 'page' : undefined}
-        className={`flex w-full flex-col items-center gap-1 py-2 ${on ? 'text-accent-ink' : 'text-muted'}`}
+        className={`flex w-full flex-col items-center gap-1 py-2 ${on ? 'text-accent-ink' : 'text-faint'}`}
       >
-        <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
+        <svg viewBox="0 0 24 24" aria-hidden className="h-[22px] w-[22px]" fill="currentColor">
           {item.icon}
         </svg>
-        <span className="text-[11px] leading-none">{item.label}</span>
+        <span className="text-[10.5px] font-extrabold leading-none">{item.label}</span>
       </button>
     </li>
   )
@@ -90,7 +90,7 @@ export default function BottomNav({
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg border-t border-edge bg-ink/95 pb-safe-nav backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg border-t border-edge bg-ink/97 pb-safe-nav backdrop-blur"
     >
       <ul className="flex items-end">
         {LEFT.map((item) => (
@@ -105,13 +105,13 @@ export default function BottomNav({
           >
             {/* Lifted above the bar rather than merely coloured, so the thumb
                 finds it without reading anything. */}
-            <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-lg ring-4 ring-ink">
-              <svg viewBox="0 0 24 24" aria-hidden className="h-7 w-7" fill="currentColor">
+            <span className="-mt-[26px] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_6px_16px_rgba(122,154,31,0.4)] ring-4 ring-ink">
+              <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
                 <rect x="10.6" y="4.5" width="2.8" height="15" rx="1.4" />
                 <rect x="4.5" y="10.6" width="15" height="2.8" rx="1.4" />
               </svg>
             </span>
-            <span className="text-[11px] font-medium leading-none text-accent-ink">Start</span>
+            <span className="text-[10.5px] font-extrabold leading-none text-lime-ink">Start</span>
           </button>
         </li>
 

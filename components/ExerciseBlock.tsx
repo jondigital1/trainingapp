@@ -7,7 +7,8 @@ import { fmtDate, isEmptySet, topSet, uid } from '@/lib/format'
 import { beatsLast, PR_LABEL, prsFor, volumePr, type Bests } from '@/lib/gamify'
 import { isFullSet, restFor } from '@/lib/rest'
 import { fmtTime } from '@/lib/format'
-import SetRow, { SetHeader } from './SetRow'
+import SetRow, { SetHeader, type SetState } from './SetRow'
+import CoachChip from './CoachChip'
 import type { Exercise, Goal, SetEntry } from '@/lib/types'
 
 export interface LastSession {
@@ -37,9 +38,9 @@ export default function ExerciseBlock({
   last,
   bests,
   live,
+  active = false,
   onRest,
   label,
-  nested,
   restSeconds,
   effort = 1,
   lighter = false,
@@ -55,9 +56,11 @@ export default function ExerciseBlock({
   last: LastSession | null
   bests: Bests
   live: boolean
+  // The exercise holding the set you are on. Gets the outline, so a session
+  // with ten movements in it still says where you are.
+  active?: boolean
   onRest: (exerciseId: string, name: string, seconds: number) => void
   label?: string
-  nested?: boolean
   restSeconds?: number
   effort?: number
   // The plan's lighter version: one set fewer on everything.
@@ -108,14 +111,22 @@ export default function ExerciseBlock({
   }
 
   return (
-    <div className={`rounded-2xl p-3 ring-1 ring-edge ${nested ? 'bg-ink' : 'bg-card'}`}>
+    <div
+      className={`rounded-[18px] bg-card p-3.5 ${
+        active ? 'ring-2 ring-accent-ink' : 'ring-1 ring-edge'
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold leading-snug">
-            {label ? <span className="num mr-2 text-xs text-accent-ink">{label}</span> : null}
+          <h3 className="font-display text-[16.5px] font-semibold leading-snug">
+            {label ? (
+              <span className="num mr-2 inline-grid h-6 w-6 place-items-center rounded-md bg-accent-ink align-middle text-[11px] font-extrabold text-card">
+                {label}
+              </span>
+            ) : null}
             {exercise.name}
             {volumePr(exercise, bests) ? (
-              <span className="ml-2 align-middle rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-on-accent">
+              <span className="ml-2 align-middle rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold text-on-accent">
                 Best session
               </span>
             ) : null}
@@ -123,23 +134,23 @@ export default function ExerciseBlock({
           {/* What the plan asks for, then the date. What you did is on the
               rows themselves now, where set three sits beside set three
               instead of being summarised into a line you have to parse. */}
-          <p className="num mt-0.5 text-xs text-muted">
+          <p className="num mt-0.5 text-xs font-bold text-faint">
             {asked ? <span className="text-accent-ink">{fmtPrescription(asked)}</span> : null}
             {asked && last ? ' \u00b7 ' : ''}
             {last ? `Last ${fmtDate(last.date)}` : asked ? '' : 'First time logging this'}
           </p>
         </div>
         <div className="flex shrink-0 items-center">
-          <button onClick={() => onMove(-1)} aria-label="Move up" className="px-1.5 py-1 text-sm text-muted">
+          <button onClick={() => onMove(-1)} aria-label="Move up" className="px-1.5 py-1 text-sm text-faint">
             &uarr;
           </button>
-          <button onClick={() => onMove(1)} aria-label="Move down" className="px-1.5 py-1 text-sm text-muted">
+          <button onClick={() => onMove(1)} aria-label="Move down" className="px-1.5 py-1 text-sm text-faint">
             &darr;
           </button>
           <button
             onClick={() => (confirm ? onRemove() : setConfirm(true))}
             aria-label={confirm ? 'Confirm remove exercise' : 'Remove exercise'}
-            className={`ml-0.5 rounded-lg px-1.5 py-1 text-sm ${confirm ? 'bg-accent text-on-accent' : 'text-muted'}`}
+            className={`ml-0.5 rounded-lg px-1.5 py-1 text-sm ${confirm ? 'bg-alert text-white' : 'text-faint'}`}
           >
             {confirm ? 'Sure?' : '\u00d7'}
           </button>
@@ -152,10 +163,20 @@ export default function ExerciseBlock({
           // set numbers and the ghost comparison count working rows only, so a
           // drop between sets two and three does not shift everything after it
           const lastWorking = (last?.exercise.sets ?? []).filter((s) => !s.drop)
+          // The row you are on is the first one still empty. Everything before
+          // it is done, everything after is waiting.
+          const firstEmpty = exercise.sets.findIndex((s) => isEmptySet(s, exercise.type))
           let workingIndex = -1
-          return exercise.sets.map((set) => {
+          return exercise.sets.map((set, position) => {
           if (!set.drop) workingIndex += 1
           const i = workingIndex
+          // Only the exercise you are on gets a current row. Ten movements
+          // showing ten outlined rows would be ten places to look.
+          const state: SetState = !isEmptySet(set, exercise.type)
+            ? 'done'
+            : active && position === firstEmpty
+              ? 'current'
+              : 'todo'
           const records = prsFor(set, exercise.type, bests, goal)
           const beat = !set.drop && records.length === 0 && beatsLast(set, lastWorking[i], exercise.type)
           return (
@@ -166,15 +187,16 @@ export default function ExerciseBlock({
                 type={exercise.type}
                 previous={lastWorking[i]}
                 showPrevious={!!last}
+                state={state}
                 onChange={(patch) => patchSet(set.id, patch)}
                 onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((s) => s.id !== set.id) })}
               />
               {records.length ? (
-                <p className="pl-6 text-[11px] font-medium leading-tight text-accent-ink">
-                  PR &middot; {records.map((k) => PR_LABEL[k]).join(', ')}
+                <p className="pl-[27px] text-[11.5px] font-extrabold leading-tight text-accent-ink">
+                  PR &middot; {records.map((k) => PR_LABEL[k].toLowerCase()).join(', ')}
                 </p>
               ) : beat ? (
-                <p className="pl-6 text-[11px] leading-tight text-muted">Up on last time</p>
+                <p className="pl-[27px] text-[11.5px] font-bold leading-tight text-faint">Up on last time</p>
               ) : null}
             </div>
           )
@@ -183,24 +205,24 @@ export default function ExerciseBlock({
       </div>
 
       {advice ? (
-        <p className="mt-2 text-xs leading-snug text-accent-ink">
+        <CoachChip className="mt-2.5">
           {fromLast ? 'Next set, ' : ''}
           {advice}
-        </p>
+        </CoachChip>
       ) : null}
 
-      <div className="mt-2.5 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={() => onChange({ ...exercise, sets: [...exercise.sets, seedSet(exercise, last)] })}
-          className="flex-1 rounded-lg bg-ink py-1.5 text-xs text-muted ring-1 ring-edge"
+          className="flex-1 rounded-full bg-track py-2.5 text-[13px] font-extrabold text-bright"
         >
-          Add set
+          + Add set
         </button>
         {onSwap ? (
           <button
             onClick={onSwap}
             aria-label={`Swap out ${exercise.name}`}
-            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+            className="px-2.5 py-2 text-[13px] font-extrabold text-muted"
           >
             Swap
           </button>
@@ -209,7 +231,7 @@ export default function ExerciseBlock({
           <button
             onClick={onSuperset}
             aria-label={`Superset ${exercise.name} with another movement`}
-            className="rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+            className="px-2.5 py-2 text-[13px] font-extrabold text-muted"
           >
             Superset
           </button>
@@ -217,7 +239,7 @@ export default function ExerciseBlock({
         {live && rest > 0 && restOnComplete ? (
           <button
             onClick={() => onRest(exercise.id, exercise.name, rest)}
-            className="num rounded-lg bg-ink px-3 py-1.5 text-xs text-muted ring-1 ring-edge"
+            className="num px-2.5 py-2 text-[13px] font-extrabold text-accent-ink"
           >
             Rest {fmtTime(rest)}
           </button>

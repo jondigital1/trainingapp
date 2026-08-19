@@ -93,7 +93,9 @@ export default function CustomBuilder({
               setGroup(group === g ? null : g)
               setQuery('')
             }}
-            className={`rounded-full px-3 py-1 text-xs ${group === g ? 'bg-accent text-on-accent' : 'bg-ink text-muted ring-1 ring-edge'}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+              group === g ? 'bg-midnight text-frost' : 'surface text-muted ring-1 ring-edge'
+            }`}
           >
             {g}
           </button>
@@ -110,7 +112,7 @@ export default function CustomBuilder({
       <button
         onClick={() => setSuperset(superset ? null : uid())}
         className={`mt-3 flex w-full items-center justify-between rounded-xl px-4 py-3 text-left ring-1 ${
-          superset ? 'bg-accent text-on-accent ring-accent' : 'bg-ink ring-edge'
+          superset ? 'bg-tint-cool ring-[1.5px] ring-accent-ink' : 'surface ring-edge'
         }`}
       >
         <span className="text-sm">Superset</span>

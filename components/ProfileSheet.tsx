@@ -22,6 +22,7 @@ import { blockWeek, mondayOf } from '@/lib/block'
 import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
 type Focus = 'minutes' | 'sore' | 'all'
@@ -154,13 +155,23 @@ export default function ProfileSheet({
         ) : null
       }
     >
-      <div className="rounded-2xl surface p-3 ring-1 ring-edge">
-        <p className="text-xs uppercase tracking-wide text-accent-ink">{plan.program}</p>
-        <p className="mt-1 text-sm">
-          {name.trim() ? `${name.trim()}, on ` : ''}
-          {plan.splitName}, {plan.days} days a week
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-muted">{blurb}</p>
+      {/* The one dark surface in the app, which is where Cyan is allowed to be
+          text. It is the summary of who the plan thinks you are, so it earns
+          being the loudest thing on the page. */}
+      <div className="flex items-start gap-3 rounded-[20px] bg-midnight p-4">
+        <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-navy">
+          <LiftyMark size={30} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-cyan">
+            {plan.program}
+          </p>
+          <p className="mt-1 font-display text-base font-semibold text-frost">
+            {name.trim() ? `${name.trim()}, on ` : ''}
+            {plan.splitName}, {plan.days} days a week
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[#9FB0C4]">{blurb}</p>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -169,8 +180,10 @@ export default function ProfileSheet({
             key={s.id}
             onClick={() => setSection(s.id)}
             aria-current={section === s.id ? 'page' : undefined}
-            className={`rounded-full px-3 py-2 text-sm ring-1 ${
-              section === s.id ? 'bg-accent text-on-accent ring-accent' : 'surface text-muted ring-edge'
+            className={`rounded-full px-3.5 py-2 text-sm font-bold ${
+              section === s.id
+                ? 'bg-midnight text-frost'
+                : 'surface text-muted ring-1 ring-edge'
             }`}
           >
             {s.label}
@@ -459,7 +472,7 @@ function SaveButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="mt-6 w-full rounded-xl bg-accent py-3 text-sm font-medium text-on-accent"
+      className="mt-6 w-full rounded-xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
     >
       Save
     </button>

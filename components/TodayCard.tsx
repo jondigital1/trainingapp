@@ -58,17 +58,17 @@ export default function TodayCard({
 
   return (
     <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide text-muted">Today</p>
-          <p className="mt-0.5 truncate text-lg font-semibold tracking-tight">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Today</p>
+          <p className="mt-0.5 truncate font-display text-[21px] font-semibold tracking-tight">
             {doneToday ? 'Done' : day ? day.name : 'Rest day'}
           </p>
         </div>
         {streak > 0 ? (
           <div className="shrink-0 text-right">
-            <p className="num text-lg font-semibold leading-none text-accent-ink">{streak}</p>
-            <p className="text-[11px] text-muted">week{streak === 1 ? '' : 's'} in a row</p>
+            <p className="num font-display text-xl font-bold leading-none text-accent-ink">{streak}</p>
+            <p className="text-[11px] font-bold text-faint">week{streak === 1 ? '' : 's'} in a row</p>
           </div>
         ) : null}
       </div>
@@ -76,7 +76,7 @@ export default function TodayCard({
       {/* Every day is a button. Tapping Thursday starts Thursday's session,
           which is the other way into a workout: the Start button picks any of
           them, this picks the one the week says. */}
-      <div className="mt-3 flex gap-1">
+      <div className="mt-3 grid grid-cols-7 gap-1.5">
         {week.map((d) => {
           const its = d.dayId ? dayById(d.dayId) : null
           return (
@@ -89,19 +89,26 @@ export default function TodayCard({
                   ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`
                   : `${d.label}, rest${d.done ? ', trained anyway' : ''}`
               }
-              className="flex-1 text-center disabled:cursor-default"
+              className="text-center disabled:cursor-default"
             >
-              <span className={`block text-[10px] uppercase ${d.today ? 'text-bright' : 'text-muted'}`}>
+              <span
+                className={`block text-[10px] font-extrabold uppercase ${
+                  d.today ? 'text-bright' : 'text-faint'
+                }`}
+              >
                 {d.label}
               </span>
+              {/* Trained is the only filled state, because lime means done.
+                  Planned is an outline, rest is a hairline, and today is the
+                  one with a thicker ring around whatever it already was. */}
               <span
-                className={`mx-auto mt-1 flex h-9 items-center justify-center rounded-md px-0.5 text-[9px] leading-tight ring-1 ${
+                className={`mt-1 flex h-9 items-center justify-center rounded-[10px] px-0.5 text-[9px] font-extrabold uppercase leading-tight ${
                   d.done
-                    ? 'bg-accent text-on-accent ring-accent'
+                    ? 'bg-accent text-on-accent'
                     : d.dayId
-                      ? 'bg-transparent text-accent-ink ring-accent-ink'
-                      : 'bg-transparent text-muted ring-edge'
-                } ${d.today ? 'ring-2' : ''}`}
+                      ? 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
+                      : 'ring-1 ring-edge'
+                } ${d.today ? 'ring-2 ring-accent-ink' : ''}`}
               >
                 <span className="line-clamp-2 overflow-hidden">{its ? its.name : ''}</span>
               </span>
@@ -113,7 +120,7 @@ export default function TodayCard({
       {day && !doneToday ? (
         <button
           onClick={() => onStart(planned!)}
-          className="mt-3 w-full rounded-xl bg-accent py-2.5 text-sm font-medium text-on-accent"
+          className="mt-3 w-full rounded-xl bg-accent py-3 font-display text-[15px] font-bold text-on-accent"
         >
           Start {day.name}
         </button>

@@ -45,9 +45,7 @@ export default function StartSheet({
     <Sheet title="Start a workout" onClose={onClose}>
       {planDays.length ? (
         <div className="mb-5">
-          <h3 className="text-xs uppercase tracking-wide text-muted">
-            Your plan &middot; {plan!.splitName}
-          </h3>
+          <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Your plan &middot; {plan!.splitName}</h3>
           <div className="mt-2 flex flex-col gap-2">
             {planDays.map((day, i) => {
               // What is actually in it and what it will cost you, so the choice
@@ -58,15 +56,15 @@ export default function StartSheet({
                 <button
                   key={`${day!.id}-${i}`}
                   onClick={() => onStart(day!.name, items, true, day!.id)}
-                  className="rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
+                  className="surface rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
                 >
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm">{day!.name}</span>
-                    <span className="num shrink-0 text-xs text-muted">
+                    <span className="text-sm font-bold">{day!.name}</span>
+                    <span className="num shrink-0 text-xs font-bold text-accent-ink">
                       {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
                     </span>
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-muted">
+                  <p className="mt-0.5 truncate text-xs text-faint">
                     {items.slice(0, 3).map((it) => it.name).join(', ')}
                   </p>
                 </button>
@@ -78,35 +76,37 @@ export default function StartSheet({
 
       <button
         onClick={onBuild}
-        className="w-full rounded-xl bg-ink py-3 text-sm ring-1 ring-edge"
+        className="w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted"
       >
         Build one from scratch
       </button>
 
       {customWorkouts.length ? (
         <div className="mt-5">
-          <h3 className="text-xs uppercase tracking-wide text-muted">My workouts</h3>
+          <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">My workouts</h3>
           <div className="mt-2 flex flex-col gap-2">
             {customWorkouts.map((w) => (
               <div key={w.id} className="flex items-center gap-2">
                 <button
                   onClick={() => onStart(w.name, w.items)}
-                  className="flex-1 rounded-xl bg-ink px-3 py-3 text-left ring-1 ring-edge"
+                  className="surface flex-1 rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
                 >
-                  <span className="text-sm">{w.name}</span>
-                  <span className="ml-2 text-xs text-muted num">{w.items.length}</span>
+                  <span className="text-sm font-bold">{w.name}</span>
+                  <span className="num ml-2 text-xs text-faint">{w.items.length}</span>
                 </button>
                 <button
                   onClick={() => onEdit(w.id)}
                   aria-label={`Edit ${w.name}`}
-                  className="rounded-xl px-2 py-3 text-xs text-muted"
+                  className="px-2 py-3 text-[12.5px] font-extrabold text-muted"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => (confirm === w.id ? onDelete(w.id) : setConfirm(w.id))}
                   aria-label={`Delete ${w.name}`}
-                  className={`rounded-xl px-2 py-3 text-xs ${confirm === w.id ? 'bg-accent text-on-accent' : 'text-muted'}`}
+                  className={`px-2 py-3 text-[12.5px] font-extrabold ${
+                    confirm === w.id ? 'rounded-lg bg-alert text-white' : 'text-muted'
+                  }`}
                 >
                   {confirm === w.id ? 'Sure?' : 'Delete'}
                 </button>
@@ -117,19 +117,19 @@ export default function StartSheet({
       ) : null}
 
       <div className="mt-5">
-        <h3 className="text-xs uppercase tracking-wide text-muted">Templates</h3>
+        <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Templates</h3>
         <div className="mt-2 flex flex-col gap-2">
           {SPLITS.map((split) => (
-            <div key={split.id} className="rounded-xl bg-ink ring-1 ring-edge">
+            <div key={split.id} className="surface overflow-hidden rounded-[14px] ring-1 ring-edge">
               <button
                 onClick={() => setOpenSplit(openSplit === split.id ? null : split.id)}
                 className="flex w-full items-center justify-between px-3 py-3 text-left"
               >
                 <span>
-                  <span className="text-sm">{split.name}</span>
-                  <span className="ml-2 text-xs text-muted">{split.note}</span>
+                  <span className="text-sm font-bold">{split.name}</span>
+                  <span className="ml-2 text-xs text-faint">{split.note}</span>
                 </span>
-                <span className="text-xs text-muted num">{split.days.length}</span>
+                <span className="num text-xs text-faint">{split.days.length}</span>
               </button>
               {openSplit === split.id ? (
                 <div className="flex flex-col border-t border-edge">
@@ -142,15 +142,15 @@ export default function StartSheet({
                         onClick={() => onStart(day.name, dayItems(day))}
                         className="min-w-0 flex-1 px-3 py-3 text-left"
                       >
-                        <span className="block text-sm text-bright">{day.name}</span>
-                        <span className="block truncate text-xs text-muted">
+                        <span className="block text-sm font-bold text-bright">{day.name}</span>
+                        <span className="block truncate text-xs text-faint">
                           {dayNames(day).slice(0, 2).join(', ')}
                         </span>
                       </button>
                       <button
                         onClick={() => onCopy(day.name, dayItems(day))}
                         aria-label={`Make my own version of ${day.name}`}
-                        className="shrink-0 px-3 py-3 text-xs text-muted"
+                        className="shrink-0 px-3 py-3 text-[12.5px] font-extrabold text-muted"
                       >
                         Copy
                       </button>

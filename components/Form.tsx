@@ -1,11 +1,17 @@
 'use client'
 
+import CoachChip from './CoachChip'
+
 // One form vocabulary, used by the questionnaire and by the profile page that
 // edits the same answers afterwards. A question should not look like one thing
 // on the way in and something else on the way back.
 
-const PILL = 'rounded-xl px-3 py-2.5 text-sm ring-1 text-left leading-snug'
-const ON = 'bg-accent text-on-accent ring-accent'
+// Selection is an outline, never a fill. Lime means "this is the one thing to
+// press on this screen", and a list of six chosen answers is not six primary
+// actions. So a picked option is the card colour with an accent-ink edge and a
+// check, and the eye still finds it instantly because nothing else has an edge.
+const PILL = 'relative rounded-xl px-3 py-2.5 pr-9 text-sm ring-1 text-left leading-snug'
+const ON = 'bg-card text-bright ring-[1.5px] ring-accent-ink'
 const OFF = 'surface text-bright ring-edge'
 
 // 16px, always. Anything smaller and iOS zooms the page on focus, which on a
@@ -58,11 +64,8 @@ export function Options<T extends string | number>({
           className={`${PILL} ${value === o.v ? ON : OFF}`}
         >
           <span className="block">{o.label}</span>
-          {o.note ? (
-            <span className={`mt-0.5 block text-xs ${value === o.v ? 'opacity-80' : 'text-muted'}`}>
-              {o.note}
-            </span>
-          ) : null}
+          {o.note ? <span className="mt-0.5 block text-xs text-muted">{o.note}</span> : null}
+          {value === o.v ? <Check /> : null}
         </button>
       ))}
     </div>
@@ -86,8 +89,13 @@ export function Chips({
           type="button"
           aria-pressed={selected.includes(o)}
           onClick={() => onToggle(o)}
-          className={`rounded-full px-3 py-2 text-sm ring-1 ${selected.includes(o) ? ON : 'surface text-muted ring-edge'}`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm ring-1 ${
+            selected.includes(o)
+              ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+              : 'surface text-muted ring-edge'
+          }`}
         >
+          {selected.includes(o) ? <Tick /> : null}
           {o}
         </button>
       ))}
@@ -153,8 +161,31 @@ export function NumberInput({
   )
 }
 
+// A note is the bot talking, so it looks like the bot talking.
 export function Note({ children }: { children: React.ReactNode }) {
+  return <CoachChip bubble className="mt-3">{children}</CoachChip>
+}
+
+// The check that says which one is picked, since the fill no longer does.
+function Check() {
   return (
-    <p className="mt-3 border-l-2 border-accent-ink pl-3 text-xs leading-relaxed text-muted">{children}</p>
+    <span className="absolute right-3 top-1/2 grid h-[18px] w-[18px] -translate-y-1/2 place-items-center rounded-full bg-accent-ink">
+      <Tick on />
+    </span>
+  )
+}
+
+function Tick({ on }: { on?: boolean }) {
+  return (
+    <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden className="flex-none">
+      <path
+        d="M2.5 6.2 4.8 8.5 9.5 3.8"
+        fill="none"
+        stroke={on ? 'var(--color-card)' : 'var(--color-accent-ink)'}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }

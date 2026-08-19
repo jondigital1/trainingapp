@@ -44,7 +44,9 @@ export default function ScheduleCard({
                 aria-label={`${WEEKDAY_NAMES[i]}, ${day ? day.name : 'rest'}`}
                 className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
               >
-                <span className="w-9 shrink-0 text-xs uppercase tracking-wide text-muted">{short}</span>
+                <span className="w-9 shrink-0 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+                  {short}
+                </span>
                 <span className={`min-w-0 flex-1 truncate text-sm ${day ? '' : 'text-muted'}`}>
                   {day ? day.name : 'Rest'}
                 </span>
@@ -58,7 +60,9 @@ export default function ScheduleCard({
                   <button
                     onClick={() => set(i, null)}
                     className={`rounded-full px-3 py-1.5 text-xs ring-1 ${
-                      schedule[i] === null ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
+                      schedule[i] === null
+                        ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+                        : 'surface text-muted ring-edge'
                     }`}
                   >
                     Rest
@@ -71,7 +75,9 @@ export default function ScheduleCard({
                         key={`${id}-${n}`}
                         onClick={() => set(i, id)}
                         className={`rounded-full px-3 py-1.5 text-xs ring-1 ${
-                          schedule[i] === id ? 'bg-accent text-on-accent ring-accent' : 'bg-ink text-muted ring-edge'
+                          schedule[i] === id
+                            ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+                            : 'surface text-muted ring-edge'
                         }`}
                       >
                         {d.name}

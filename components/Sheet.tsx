@@ -32,7 +32,7 @@ export default function Sheet({
     return (
       <section className="frame-page">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">{title}</h2>
           {action}
         </div>
         {children}
@@ -46,12 +46,15 @@ export default function Sheet({
         className="frame-sheet max-h-[88vh] overflow-y-auto rounded-t-3xl bg-card px-4 pb-safe-lg pt-3 ring-1 ring-edge"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 -mx-4 mb-3 flex items-center justify-between bg-card px-4 pb-3 pt-1">
-          <div className="absolute inset-x-0 -top-1 mx-auto h-1 w-10 rounded-full bg-edge" />
-          <h2 className="text-base font-semibold">{title}</h2>
-          <button onClick={onClose} className="rounded-lg px-3 py-1 text-sm text-muted">
-            Done
-          </button>
+        {/* The grabber says this is a sheet before you have read a word of it. */}
+        <div className="sticky top-0 -mx-4 mb-3 bg-card px-4 pb-3 pt-2">
+          <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-edge" />
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold">{title}</h2>
+            <button onClick={onClose} className="px-2 py-1 text-[12.5px] font-extrabold text-muted">
+              Done
+            </button>
+          </div>
         </div>
         {children}
       </div>

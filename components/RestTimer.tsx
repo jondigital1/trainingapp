@@ -142,26 +142,32 @@ export default function RestBar({
   const pct = Math.max(0, Math.min(100, (remaining / rest.total) * 100))
 
   return (
-    <div className="above-nav fixed inset-x-0 z-40 mx-auto max-w-lg px-4">
-      <div
-        className={`overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ${done ? 'ring-accent-ink' : 'ring-edge'}`}
-      >
-        <div className="h-1 bg-ink">
-          <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
+    <div className="above-nav fixed inset-x-0 z-40 mx-auto max-w-lg px-3">
+      <div className="overflow-hidden rounded-2xl bg-card shadow-[0_12px_32px_rgba(11,18,29,0.16)] ring-1 ring-edge">
+        {/* The strip is the clock you read without reading. */}
+        <div className="h-1 bg-track">
+          <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${pct}%` }} />
         </div>
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-muted">{done ? 'Rest is up' : 'Resting'}</p>
-            <p className="truncate text-sm">{rest.name}</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-[1px] text-faint">
+              {done ? 'Rest is up' : 'Resting'}
+            </p>
+            <p className="truncate text-[13px] font-bold">{rest.name}</p>
           </div>
-          <span className={`text-2xl num ${done ? 'text-accent-ink' : ''}`}>{fmtTime(remaining)}</span>
+          <span className={`num font-display text-2xl font-bold ${done ? 'text-accent-ink' : 'text-accent-ink'}`}>
+            {fmtTime(remaining)}
+          </span>
           <button
             onClick={() => onExtend(30)}
-            className="rounded-xl bg-ink px-3 py-2 text-xs text-muted ring-1 ring-edge"
+            className="rounded-[10px] px-2.5 py-[7px] text-xs font-extrabold text-muted ring-[1.5px] ring-edge"
           >
             +30s
           </button>
-          <button onClick={onStop} className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent">
+          <button
+            onClick={onStop}
+            className="rounded-[10px] bg-accent px-3.5 py-2 text-[12.5px] font-extrabold text-on-accent"
+          >
             {done ? 'Done' : 'Skip'}
           </button>
         </div>
