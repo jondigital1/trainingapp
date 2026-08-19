@@ -534,12 +534,17 @@ export default function App({
     }
   }
 
-  async function finishOnboarding({ profile, goal, startDayId, build, weight }: OnboardingResult) {
+  async function finishOnboarding({ profile, goal, startDayId, build, weight, nudge }: OnboardingResult) {
     const stamp = new Date().toISOString()
-    setData((prev) => ({ ...prev, settings: { ...prev.settings, goal, profile, onboardedAt: stamp } }))
+    setData((prev) => ({ ...prev, settings: { ...prev.settings, goal, profile, onboardedAt: stamp, nudge } }))
     try {
       await db.saveProfile(sb, userId, profile, stamp)
       await db.saveGoal(sb, userId, goal)
+      // The day is saved, the browser is not asked. Spending the permission
+      // prompt here, before anybody has trained, is spending it where it is
+      // most likely to be refused, and a refusal cannot be taken back. The
+      // finish screen asks, once there is something to be checked in on.
+      if (nudge.day !== null) await db.saveNudge(sb, userId, nudge)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your answers')
     }
@@ -1068,6 +1073,7 @@ export default function App({
         <DoneSheet
           workout={scoringWorkout}
           summary={summarise(data.workouts, scoringWorkout, data.settings.goal, weeklyTarget)}
+          nudge={data.settings.nudge}
           onClose={() => {
             setScoring(null)
             setSheet(null)

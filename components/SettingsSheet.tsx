@@ -7,6 +7,7 @@ import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
 import { disablePush, enableNudge, enablePush, pushState, type PushState } from '@/lib/push'
 import { NUDGE_DAYS } from '@/lib/nudge'
+import { HOURS } from './NudgeField'
 import PasswordChange from './PasswordChange'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
@@ -24,13 +25,6 @@ function Radio({ on }: { on: boolean }) {
     </span>
   )
 }
-
-// Whole hours only. Nobody needs to be nudged at 18:45, and a list of 24 is
-// short enough to scroll on a phone.
-const HOURS = Array.from({ length: 24 }, (_, h) => ({
-  v: h,
-  label: h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`,
-}))
 
 function Switch({ on }: { on: boolean }) {
   return (

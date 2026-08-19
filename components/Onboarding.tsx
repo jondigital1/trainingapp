@@ -22,6 +22,7 @@ import { mondayOf } from '@/lib/block'
 import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
+import { NudgeField, type NudgePref } from './NudgeField'
 import LiftyMark from './LiftyMark'
 import type { Goal } from '@/lib/types'
 
@@ -45,6 +46,9 @@ export interface OnboardingResult {
   build?: boolean
   // Day one bodyweight, in pounds, or null if they did not give one.
   weight: number | null
+  // Whether they want a weekly check in, and when. Intent only: the browser is
+  // not asked anything here.
+  nudge: NudgePref
 }
 
 // A number in pounds, back into the box in whatever unit is on screen.
@@ -114,6 +118,10 @@ export default function Onboarding({
 
   const goal: Goal = GOAL_FROM_CHOICE[profile.goalChoice ?? 'muscle'] ?? 'muscle'
 
+  // Off unless somebody says otherwise, and Sunday evening if they do, because
+  // that is the edge of the week the whole app counts in.
+  const [nudge, setNudge] = useState<NudgePref>({ day: null, hour: 18 })
+
   function finish(startDayId: string | null, build?: boolean) {
     const w = num(weight)
     const plan = planFor(full, goal)
@@ -127,6 +135,7 @@ export default function Onboarding({
       startDayId,
       build,
       weight: w != null ? toPounds(w, unit) : null,
+      nudge,
     })
   }
 
@@ -402,7 +411,17 @@ export default function Onboarding({
             </>
           ) : null}
 
-          {current.id === 'plan' ? <PlanReview profile={full} goal={goal} unit={unit} /> : null}
+          {current.id === 'plan' ? (
+            <>
+              <PlanReview profile={full} goal={goal} unit={unit} />
+              {/* Last, after the plan is on screen, so it reads as an offer
+                  about something that now exists rather than as one more
+                  question standing between somebody and their first session. */}
+              <div className="mt-6 flex flex-col gap-4">
+                <NudgeField value={nudge} onChange={setNudge} />
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 

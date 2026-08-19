@@ -2290,6 +2290,28 @@ check('the two switches are two switches', () => {
   assert.ok(!off.includes('unsubscribe'), 'turning rest alerts off must not take the nudge down with them')
 })
 
+check('the questionnaire takes the intent and never spends the prompt', () => {
+  // The browser's notification prompt is one shot: a no cannot be taken back
+  // from inside the app, only from the browser's own settings, which nobody
+  // opens. Asking during a questionnaire, before anybody has trained or had a
+  // week, is asking where it is most likely to be refused, and on an iPhone it
+  // cannot be granted at all until the app is on the home screen.
+  //
+  // So the questionnaire stores a day and the finish screen asks the browser.
+  // Nothing in the onboarding path is allowed to touch permission.
+  const onboarding = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
+  const field = readFileSync(new URL('../components/NudgeField.tsx', import.meta.url), 'utf8')
+  for (const [name, source] of [['Onboarding', onboarding], ['NudgeField', field]] as const) {
+    assert.ok(!/requestPermission|enableNudge|enablePush/.test(source), `${name} must not ask the browser anything`)
+  }
+
+  // And the finish screen only offers when the question has never been put to
+  // this browser, because 'default' is the only state that is still ours.
+  const push = readFileSync(new URL('../lib/push.ts', import.meta.url), 'utf8')
+  const askable = push.slice(push.indexOf('export function nudgeAskable'))
+  assert.match(askable, /Notification\.permission !== 'default'/)
+})
+
 check('the two kinds of push cannot replace each other in the tray', () => {
   const rest = JSON.parse(alertBody({ endpoint: 'https://x/y', p256dh: 'a', auth: 'b', seconds: 60, name: 'Squat' }))
   const weekly = JSON.parse(nudgeBody('2 of 4', 'two days left'))

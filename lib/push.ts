@@ -20,6 +20,10 @@
 // than one.
 
 export const PUSH_KEY = 'training-log-push'
+// Somebody who said not now on the finish screen is not asked again on this
+// phone. The switch in settings is still there, and that is the difference
+// between an offer and a nag.
+export const ASK_KEY = 'training-log-push-asked'
 
 export type PushState = 'unsupported' | 'off' | 'on' | 'denied'
 
@@ -208,5 +212,35 @@ export function zoneOf(): string {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
   } catch {
     return 'UTC'
+  }
+}
+
+// Whether the finish screen should offer to turn the nudge on.
+//
+// The permission prompt is one shot: a browser that has been told no cannot be
+// asked again from inside the app, only from its own settings, which nobody
+// opens. So it is spent at the best moment there is rather than the earliest,
+// and 'default' is the whole test: it means the question has never been put to
+// this browser and is still ours to ask.
+//
+// There is only one prompt for the whole site, not one per feature. Granting
+// it here is what makes the rest alert switch work later without a second
+// dialog, which is why the questionnaire never spends it.
+export function nudgeAskable(): boolean {
+  if (!pushSupported()) return false
+  if (Notification.permission !== 'default') return false
+  try {
+    return localStorage.getItem(ASK_KEY) !== 'no'
+  } catch {
+    return true
+  }
+}
+
+export function dismissNudgeAsk() {
+  try {
+    localStorage.setItem(ASK_KEY, 'no')
+  } catch {
+    // No storage means it may be offered again next time, which is a smaller
+    // failure than never offering it at all.
   }
 }

@@ -566,6 +566,7 @@ Postgres wants uuids and the artifact did not use them.
     lib/exercises.ts      226 movements across 14 muscle groups, each typed
     lib/onboarding.ts     the questions, the scoring, the three programs, the swaps
     lib/nudge.ts          what the weekly message says, and the rules it says it under
+    components/NudgeField.tsx  the question, which is a preference and never a prompt
     lib/nudgeWeek.ts      the week counted in days trained, and your own average
     lib/units.ts          pounds in the database, kilos on the screen
     lib/body.ts           bodyweight against day one, the goal, and a weekly average
@@ -947,6 +948,34 @@ that everything they logged is where they left it. After three of those in a
 row with no training in between, the app stops talking. Somebody who has not
 trained in two months is not being helped by a fourth reminder that they have
 not trained in two months.
+
+### Where the question is asked, and where the prompt is spent
+
+These are two different things and the app treats them that way.
+
+The questionnaire asks whether somebody wants a weekly check in, and on which
+day. It stores the answer and asks the browser nothing at all. The finish
+screen of a session is where the notification permission is actually
+requested, in a card that names the day they picked.
+
+The reason is that the browser's prompt is one shot. A browser that has been
+told no cannot be asked again from inside the app, only from its own settings,
+which nobody opens. Spending that one chance during a questionnaire means
+spending it before anybody has rested between sets or had a week to be checked
+in on, which is where it is most likely to be refused. On an iPhone it is
+worse than unlikely: web push only works once the app is on the home screen, so
+the prompt during onboarding in Safari cannot be granted at all.
+
+The finish screen is the opposite of that moment. They have just trained, and
+the screen has just told them something true about it. So the offer sits under
+the records, says which day they asked for, and has a Not now that means not
+ever on that phone rather than not this time. The switch in settings is still
+there, which is the difference between an offer and a nag.
+
+There is one prompt for the whole site rather than one per feature, which is
+why the questionnaire never spends it and why granting it here makes the rest
+alert switch work later without a second dialog. A check reads the source of
+the questionnaire to make sure nothing in that path ever touches permission.
 
 ### What had to change underneath
 

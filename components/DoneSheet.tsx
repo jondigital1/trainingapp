@@ -3,6 +3,9 @@
 import { fmtDuration, intensityLabel } from '@/lib/session'
 import { recordText, type Summary } from '@/lib/summary'
 import { shareWorkout } from '@/lib/share'
+import { dismissNudgeAsk, enableNudge, nudgeAskable } from '@/lib/push'
+import { NUDGE_DAYS } from '@/lib/nudge'
+import { useEffect, useState } from 'react'
 import LiftyMark from './LiftyMark'
 import type { Workout } from '@/lib/types'
 import Sheet from './Sheet'
@@ -18,14 +21,38 @@ import Sheet from './Sheet'
 export default function DoneSheet({
   workout,
   summary,
+  nudge,
   onClose,
 }: {
   workout: Workout
   summary: Summary
+  // What they said in the questionnaire. A day means they asked for the weekly
+  // check in and the browser has still never been asked to allow it.
+  nudge: { day: number | null; hour: number }
   onClose: () => void
 }) {
   const duration = fmtDuration(summary.duration)
   const feel = intensityLabel(summary.intensity)
+
+  // The one moment worth spending the permission prompt on. They have just
+  // trained, they have just been told something true about it, and the prompt
+  // is one shot: a no can never be taken back from inside the app. Read after
+  // mount because permission and localStorage do not exist on the server.
+  const [ask, setAsk] = useState(false)
+  const [asking, setAsking] = useState(false)
+  useEffect(() => setAsk(nudge.day !== null && nudgeAskable()), [nudge.day])
+
+  async function allow() {
+    setAsking(true)
+    await enableNudge()
+    setAsk(false)
+    setAsking(false)
+  }
+
+  function never() {
+    dismissNudgeAsk()
+    setAsk(false)
+  }
 
   // Sets and reps share a card and sit at opposite ends of it, because two
   // numbers this close together in meaning blur into one if they are only a
@@ -105,6 +132,30 @@ export default function DoneSheet({
             {summary.beat === 1 ? 'set was' : 'sets were'} up on the same{' '}
             {summary.beat === 1 ? 'set' : 'sets'} last time out.
           </p>
+        ) : null}
+
+        {ask ? (
+          <section className="surface mt-5 rounded-2xl px-3.5 py-3 ring-[1.5px] ring-accent-ink">
+            <p className="text-sm font-bold leading-snug">
+              You asked me to check in on your {NUDGE_DAYS[nudge.day ?? 0].label}s.
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Your phone has to allow it before I can reach you. One message a week, and nothing
+              else.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => void allow()}
+                disabled={asking}
+                className="flex-1 rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent disabled:opacity-45"
+              >
+                Allow it
+              </button>
+              <button onClick={never} className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-muted">
+                Not now
+              </button>
+            </div>
+          </section>
         ) : null}
 
         <div className="mt-6 flex gap-2">
