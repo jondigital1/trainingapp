@@ -25,6 +25,7 @@ import { scheduledDays } from '@/lib/schedule'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
+import { FocusField } from './FocusField'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -251,6 +252,8 @@ export default function ProfileSheet({
               />
             </Field>
             <GoalPicker goals={goalsOf(draft)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
+
+            <FocusField profile={draft} onChange={set} />
             {plan.goalCoverage ? <Note>{plan.goalCoverage}</Note> : plan.goalNote ? <Note>{plan.goalNote}</Note> : null}
           </>
         ) : null}
@@ -444,17 +447,6 @@ export default function ProfileSheet({
                   { v: 'no' as const, label: 'No' },
                   { v: 'yes' as const, label: 'Yes' },
                   { v: 'skip' as const, label: 'Rather not say' },
-                ]}
-              />
-            </Field>
-            <Field label="When you push yourself, do you get chest pain, dizziness, blackouts or breathlessness out of proportion to the effort?">
-              <Options
-                columns={2}
-                value={draft.symptoms}
-                onPick={(v) => set({ symptoms: v })}
-                options={[
-                  { v: 'no' as const, label: 'No' },
-                  { v: 'yes' as const, label: 'Yes' },
                 ]}
               />
             </Field>

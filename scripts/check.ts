@@ -42,6 +42,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
+import { defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
@@ -284,11 +285,11 @@ check('somebody rebuilding is a note, not a beginner course', () => {
 })
 
 check('a flagged health answer changes the plan, not just the wording', () => {
-  const flagged = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'yes' }, 'muscle')
+  const flagged = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', condition: 'yes' }, 'muscle')
   assert.equal(flagged.cleared, true)
   assert.equal(flagged.block, false, 'no block either')
   assert.equal(flagged.sets, '2 to 3')
-  const clear = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', symptoms: 'no' }, 'muscle')
+  const clear = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', condition: 'no' }, 'muscle')
   assert.equal(clear.block, true)
 })
 
@@ -2370,6 +2371,102 @@ check('a movement has a screen of its own, and it says what happened', () => {
   })) as unknown as Parameters<typeof historyFor>[0]
   assert.equal(historyFor(many, 'Bench Press').length, 12)
   assert.equal(historyFor(many, 'Bench Press', 3).length, 3)
+})
+
+check('the app says what it assumed, and one tap corrects it', () => {
+  // The sex answer does exactly one thing: it ticks the starting answer to
+  // the question underneath it. It is a default, on screen, not a rule
+  // working quietly in the background.
+  assert.deepEqual(defaultFocus('female'), ['Glutes', 'Hamstrings'])
+  assert.deepEqual(defaultFocus('male'), [])
+  assert.deepEqual(defaultFocus('skip'), [])
+  assert.deepEqual(defaultFocus(undefined), [])
+
+  // An answer somebody gave by hand is never overwritten by the assumption,
+  // including the answer "none of them".
+  assert.deepEqual(focusOf({ sex: 'female' }), ['Glutes', 'Hamstrings'])
+  assert.deepEqual(focusOf({ sex: 'female', focus: ['Back'] }), ['Back'])
+  assert.deepEqual(focusOf({ sex: 'female', focus: [] }), [])
+
+  // A group the library has never heard of steers nothing.
+  assert.deepEqual(focusOf({ focus: ['Glutes', 'Vibes'] }), ['Glutes'])
+
+  // And it is said out loud rather than done quietly.
+  const note = focusNote(['Glutes', 'Hamstrings'])!
+  assert.match(note, /glutes and hamstrings come first/i)
+  assert.match(note, /last thing dropped/i)
+  assert.equal(focusNote([]), null)
+})
+
+check('bringing something up changes the order, not the split', () => {
+  const items = [
+    { name: 'Barbell Bench Press', type: 'W' as const, superset: null },
+    { name: 'Hip Thrust', type: 'W' as const, superset: null },
+    { name: 'Lying Leg Curl', type: 'W' as const, superset: null },
+  ]
+
+  // Nothing asked for, nothing moved: the template comes back as written.
+  assert.deepEqual(emphasise(items, []), items)
+
+  // Asked for, and it goes first. Everything is still there, because bringing
+  // something up is not dropping something else.
+  const moved = emphasise(items, ['Glutes'])
+  assert.equal(moved[0].name, 'Hip Thrust')
+  assert.equal(moved.length, items.length)
+  assert.deepEqual(
+    [...moved].map((i) => i.name).sort(),
+    [...items].map((i) => i.name).sort(),
+  )
+
+  // Stable within each half, so two prioritised movements keep the order the
+  // template put them in rather than being shuffled.
+  const two = emphasise(items, ['Glutes', 'Hamstrings'])
+  assert.deepEqual(two.map((i) => i.name), ['Hip Thrust', 'Lying Leg Curl', 'Barbell Bench Press'])
+
+  // A superset moves as one unit. Half a circuit at the front and half at the
+  // back is not a circuit.
+  const circuit = [
+    { name: 'Barbell Bench Press', type: 'W' as const, superset: 'a' },
+    { name: 'Hip Thrust', type: 'W' as const, superset: 'a' },
+    { name: 'Lat Pulldown', type: 'W' as const, superset: null },
+  ]
+  const kept = emphasise(circuit, ['Glutes'])
+  assert.deepEqual(kept.map((i) => i.name), ['Barbell Bench Press', 'Hip Thrust', 'Lat Pulldown'])
+  assert.equal(kept.filter((i) => i.superset === 'a').length, 2)
+})
+
+check('what you are bringing up is the last thing the clock takes', () => {
+  // Half an hour is four movements. The day still has to lose the rest, and
+  // what it loses is never the thing somebody said they came for.
+  const long = { days: 5, minutes: 30 as const, sex: 'female' as const }
+  for (const dayId of planFor(long, 'muscle').dayIds) {
+    const built = buildDay(dayById(dayId)!, long)
+    assert.ok(built.length <= 4, `${dayId} came back over the time budget`)
+  }
+
+  // A leg day built for somebody bringing up glutes opens on the glutes.
+  const legs = planFor(long, 'muscle').dayIds.map((id) => buildDay(dayById(id)!, long))
+  const asked = new Set(['Glutes', 'Hamstrings'])
+  const withFocus = legs.find((day) => day.some((i) => asked.has(groupOf(i.name) ?? '')))
+  if (withFocus) {
+    assert.ok(asked.has(groupOf(withFocus[0].name) ?? ''), 'the day opens on what was asked for')
+  }
+
+  // And the same week without the answer is not reordered.
+  const plain = { days: 5, minutes: 30 as const }
+  const before = planFor(plain, 'muscle').dayIds.map((id) => buildDay(dayById(id)!, plain))
+  assert.ok(before.length > 0)
+})
+
+check('a sensitive answer stays out of every screen that is not theirs', () => {
+  // The admin screen reads the profile jsonb, so it could see this by
+  // accident. It takes two fields off it by name and this is not one of them,
+  // and the same goes for a share link, which carries a session's shape and
+  // nothing about the person at all.
+  const admin = readFileSync(new URL('../lib/adminData.ts', import.meta.url), 'utf8')
+  assert.ok(!/\bsex\b/.test(admin), 'the admin screen must never read this')
+  const share = readFileSync(new URL('../lib/share.ts', import.meta.url), 'utf8')
+  assert.ok(!/\bsex\b|\bfocus\b/.test(share), 'a share link carries a workout, not a person')
 })
 
 void (async () => {

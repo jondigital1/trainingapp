@@ -22,6 +22,7 @@ import { mondayOf } from '@/lib/block'
 import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
+import { FocusField } from './FocusField'
 import { NudgeField, type NudgePref } from './NudgeField'
 import LiftyMark from './LiftyMark'
 import type { Goal } from '@/lib/types'
@@ -187,6 +188,8 @@ export default function Onboarding({
                 </div>
               </div>
               <GoalPicker goals={goalsOf(profile)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
+
+              <FocusField profile={full} onChange={set} />
 
               {/* Said here, where the choice is made, rather than four steps
                   later on the plan screen. */}
@@ -394,17 +397,6 @@ export default function Onboarding({
                     { v: 'no' as const, label: 'No' },
                     { v: 'yes' as const, label: 'Yes' },
                     { v: 'skip' as const, label: 'Rather not say' },
-                  ]}
-                />
-              </Field>
-              <Field label="Chest pain, dizziness, blackouts or odd breathlessness when you push?">
-                <Options
-                  columns={2}
-                  value={profile.symptoms}
-                  onPick={(v) => set({ symptoms: v })}
-                  options={[
-                    { v: 'no' as const, label: 'No' },
-                    { v: 'yes' as const, label: 'Yes' },
                   ]}
                 />
               </Field>

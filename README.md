@@ -259,6 +259,42 @@ While in there, a small lie the screen told every time: leaning out advertised
 always did. It shows 6 to 12 now, the same as building muscle, because that is
 the same training and cannot honestly advertise two ranges.
 
+## Asking what you are, and doing something with the answer
+
+A questionnaire that asks your age, your height, your weight, your injuries and
+four goals, and never asks this, does not read as neutral. It reads as an app
+whose default person is a man. So it asks: female, male, rather not say.
+
+The rule it is built under is that asking and then handing out the identical
+week is worse than never asking, because now the person knows it asked and
+ignored them. So the answer does exactly one thing, and it does it in the open.
+
+It ticks the starting answer to the question underneath it, "anything you want
+to bring up", which is on the same screen with the muscle groups on it and is
+one tap to change. Female starts with glutes and hamstrings ticked. Everything
+else starts with nothing ticked. An answer given by hand is never overwritten
+by the assumption, including the answer "none of them".
+
+The assumption is not physiology. Rep ranges, rest tiers and split structure
+are not sex dependent in anything worth defending. It is about emphasis: the
+template distribution here, like most of them, gives the hips and hamstrings
+less room than women consistently say they want, and a first session with two
+chest movements and no glute work is where somebody decides an app was not
+built for them.
+
+What bringing something up actually does is order. Those movements come first
+in the session, and they are the last thing dropped when the time budget bites.
+Order rather than addition, on purpose: adding a hip thrust to a push day would
+break the split, while putting the hip thrust that is already on leg day first
+changes what actually gets done, because the first thing in a session is the
+thing you do freshest and the thing you never skip. A superset moves as one
+unit, since half a circuit at the front and half at the back is not a circuit,
+and a day with nothing prioritised comes back exactly as the template wrote it.
+
+It is said out loud on the plan screen rather than working quietly in the
+background, and there is a check that reads the source of the admin screen and
+the share link to make sure neither can ever see the answer.
+
 ## One leg day or two
 
 A question, in the questionnaire next to how many days a week, and on the
@@ -562,6 +598,7 @@ Postgres wants uuids and the artifact did not use them.
     components/App.tsx    tabs, state, the debounced writer
     components/           editor, exercise block, set row, picker, builder, sheets
     components/Form.tsx   the form vocabulary the questionnaire and profile share
+    components/FocusField.tsx  what you are, and what you want brought up
     components/ExerciseSheet.tsx  one movement: the note, the chart, every outing
     components/GoalPicker.tsx  goals in the order you want them, shared by both
     components/BottomNav.tsx   four destinations and the start button

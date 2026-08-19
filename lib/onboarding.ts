@@ -22,7 +22,6 @@ export interface Profile {
   heightIn?: number
   goalWeight?: number
   condition?: 'no' | 'yes' | 'skip'
-  symptoms?: 'no' | 'yes'
   years?: 'never' | 'under6' | 'sixToTwo' | 'overTwo'
   before?: 'no' | 'thisYear' | 'longAgo'
   // The most honest experience question there is. Somebody who can name the
@@ -39,6 +38,15 @@ export interface Profile {
   // plans hand out unless somebody says otherwise. Plenty of people train legs
   // once and that is a preference, not an oversight to correct.
   legDays?: 1 | 2
+  // Asked because a plan that never asks reads as a plan built for one default
+  // person. It does exactly one thing, and it does it in the open: it ticks
+  // the starting answer to the question below, which is then shown and can be
+  // changed. Nothing is inferred silently and nothing else reads it.
+  sex?: 'female' | 'male' | 'skip'
+  // Muscle groups to bring up. What this changes is order: they come first in
+  // the session, while there is something left in the tank, and they are the
+  // last thing dropped when the clock runs out.
+  focus?: string[]
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still
@@ -401,14 +409,16 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     })
   }
 
+  const ordered = emphasise(out, focusOf(profile))
+
   const cap = BUDGET[profile.minutes ?? 60] ?? 8
-  if (out.length <= cap) return out
+  if (ordered.length <= cap) return ordered
 
   // The cap never slices through a superset: half a circuit is not a circuit.
   // Tagged groups are kept whole while at least two other movements still fit,
   // otherwise the whole group is dropped and singles fill the day.
   const groups = new Map<string, PlannedItem[]>()
-  for (const item of out) {
+  for (const item of ordered) {
     if (!item.superset) continue
     if (!groups.has(item.superset)) groups.set(item.superset, [])
     groups.get(item.superset)!.push(item)
@@ -425,7 +435,7 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
 
   const trimmed: PlannedItem[] = []
   let singles = 0
-  for (const item of out) {
+  for (const item of ordered) {
     if (item.superset) {
       if (kept.has(item.superset)) trimmed.push(item)
       continue
@@ -436,6 +446,51 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     }
   }
   return trimmed
+}
+
+// What somebody said they want to bring up, moved to the front.
+//
+// Order is the whole mechanism, and it is chosen over adding movements on
+// purpose. Adding a hip thrust to a push day would break the split; putting
+// the hip thrust that is already on leg day first changes what actually gets
+// done, because the first thing in a session is the thing you do freshest and
+// the thing you never skip. It is also what falls off last when the time
+// budget bites, since the trim below walks this order.
+//
+// Stable within each half, so a day with nothing prioritised comes back
+// exactly as the template wrote it. A superset moves as one unit, positioned
+// by its first member, because half a circuit at the front and half at the
+// back is not a circuit.
+export function emphasise(items: PlannedItem[], focus: string[]): PlannedItem[] {
+  if (!focus.length || !items.length) return items
+
+  const wanted = new Set(focus)
+  const hit = (item: PlannedItem) => {
+    const group = groupOf(item.name)
+    return !!group && wanted.has(group)
+  }
+
+  // Units: a run of items sharing a superset tag, or a single movement.
+  const units: PlannedItem[][] = []
+  const byTag = new Map<string, PlannedItem[]>()
+  for (const item of items) {
+    if (!item.superset) {
+      units.push([item])
+      continue
+    }
+    const existing = byTag.get(item.superset)
+    if (existing) {
+      existing.push(item)
+      continue
+    }
+    const unit = [item]
+    byTag.set(item.superset, unit)
+    units.push(unit)
+  }
+
+  const front = units.filter((u) => u.some(hit))
+  const back = units.filter((u) => !u.some(hit))
+  return [...front, ...back].flat()
 }
 
 export interface Plan {
@@ -450,6 +505,10 @@ export interface Plan {
   // this week is actually doing.
   goals: GoalChoice[]
   goalCoverage: string | null
+  // What they are bringing up, and what that does. Said on the plan screen so
+  // the assumption is visible rather than working quietly in the background.
+  focus: string[]
+  focusNote: string | null
   perMuscle: string
   exercises: number
   reps: string
@@ -496,6 +555,41 @@ export const GOAL_FROM_CHOICE: Record<NonNullable<Profile['goalChoice']>, Goal> 
 // that would fork the prescriptions and give the coach two masters, every
 // option says what it does, and the note afterwards says plainly what the
 // choice does not cost you.
+// The groups worth offering. Not every group in the library: nobody opens an
+// app to bring up their forearms, and carries and cardio are not a body part.
+export const FOCUS_GROUPS = [
+  'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps',
+  'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Core',
+]
+
+// What the sex answer ticks to start with.
+//
+// This is the only thing that answer does, and it is deliberately a default
+// rather than a rule: it is shown on the same screen, with the reason written
+// underneath, and one tap changes it. A plan that quietly programmes different
+// training for somebody based on a box they ticked is not the same thing as a
+// plan that says what it assumed and offers to be corrected.
+//
+// The assumption itself is not physiology. The template distribution in this
+// app, like most of them, gives the hips and hamstrings less room than women
+// consistently say they want, and a first session with two chest movements and
+// no glute work is where somebody decides an app was not built for them.
+export function defaultFocus(sex: Profile['sex']): string[] {
+  return sex === 'female' ? ['Glutes', 'Hamstrings'] : []
+}
+
+// What they said, or what was assumed for them until they say otherwise.
+export function focusOf(p: Profile): string[] {
+  if (p.focus) return p.focus.filter((g) => FOCUS_GROUPS.includes(g))
+  return defaultFocus(p.sex)
+}
+
+export function focusNote(focus: string[]): string | null {
+  if (!focus.length) return null
+  const names = list(focus.map((g) => g.toLowerCase()))
+  return `${cap(names)} come first in the session, while there is something left in the tank, and they are the last thing dropped when the clock runs out. Everything else in the week is unchanged.`
+}
+
 export const GOAL_CHOICES: {
   v: NonNullable<Profile['goalChoice']>
   label: string
@@ -638,7 +732,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   const days = Math.min(Math.max(asked, MIN_DAYS), MAX_DAYS)
   // A flagged health answer is not a note, it is a lighter plan: fewer sets,
   // no effort targets to chase and no wave, whatever the experience score says.
-  const cleared = profile.condition === 'yes' || profile.symptoms === 'yes'
+  const cleared = profile.condition === 'yes'
   const choice = profile.goalChoice
   const legs = legDaysOf({ ...profile, days })
   const dayIds =
@@ -656,6 +750,8 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     legDays: legs,
     goals: goalsOf(profile),
     goalCoverage: goalCoverage(profile),
+    focus: focusOf(profile),
+    focusNote: focusNote(focusOf(profile)),
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
