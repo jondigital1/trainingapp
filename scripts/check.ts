@@ -24,6 +24,9 @@ import {
   MIN_DAYS,
   planFor,
   program,
+  GOAL_CHOICES,
+  GOAL_FROM_CHOICE,
+  goalNoteFor,
   legDaysOf,
   returning,
   selfDirected,
@@ -280,10 +283,13 @@ check('a flagged health answer changes the plan, not just the wording', () => {
 })
 
 check('a stated goal is never quietly rewritten', () => {
-  assert.equal(planFor({ goalChoice: 'lean' }, 'muscle').reps, '8 to 15')
+  // Leaning out shows what building muscle shows, because it prescribes what
+  // building muscle prescribes. It used to advertise 8 to 15 and hand out
+  // 8 to 12, which is the sort of gap nobody notices until they count.
+  assert.equal(planFor({ goalChoice: 'lean' }, 'muscle').reps, '6 to 12')
   assert.ok(planFor({ goalChoice: 'lean' }, 'muscle').goalNote, 'lean says what it maps to')
   assert.ok(planFor({ goalChoice: 'health' }, 'endurance').goalNote, 'health says what it maps to')
-  assert.equal(planFor({ goalChoice: 'muscle' }, 'muscle').goalNote, null)
+  assert.ok(planFor({ goalChoice: 'muscle' }, 'muscle').goalNote, 'and so does every other one')
   assert.equal(planFor({ goalChoice: 'strength' }, 'strength').reps, '3 to 6')
 })
 
@@ -1737,6 +1743,47 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('every goal says what it does, and what it does not cost you', () => {
+  // People asked to pick two goals. Almost always the two were building muscle
+  // and leaning out, which is one answer. Multi select would fork the
+  // prescriptions; saying so does not.
+  assert.equal(GOAL_CHOICES.length, 4)
+  for (const c of GOAL_CHOICES) {
+    assert.ok(c.note.length > 0, `${c.v} has no note under it`)
+    const said = goalNoteFor(c.v)
+    assert.ok(said.length > 40, `${c.v} says nothing useful`)
+  }
+
+  // Three of the four used to say nothing at all, which is what made picking
+  // one feel like losing the others.
+  for (const choice of ['muscle', 'strength', 'lean', 'health'] as const) {
+    assert.ok(planFor({ days: 3, goalChoice: choice }, GOAL_FROM_CHOICE[choice]).goalNote)
+  }
+  // And an unanswered goal still says something rather than nothing.
+  assert.ok(planFor({ days: 3 }, 'muscle').goalNote)
+
+  // The two people wanted together are the same training underneath, and the
+  // screen now says the same numbers for both. It used to promise leaning out
+  // 8 to 15 while prescribing 8 to 12.
+  assert.equal(GOAL_FROM_CHOICE.lean, GOAL_FROM_CHOICE.muscle)
+  const lean = planFor({ days: 3, goalChoice: 'lean' }, 'muscle')
+  const muscle = planFor({ days: 3, goalChoice: 'muscle' }, 'muscle')
+  assert.equal(lean.reps, muscle.reps, 'the same training cannot advertise two rep ranges')
+  assert.deepEqual(lean.dayIds, muscle.dayIds)
+  assert.match(muscle.goalNote!, /leaning out/i, 'and picking one names the other')
+  assert.match(lean.goalNote!, /building muscle/i)
+
+  // And the same underneath, movement by movement, which is the actual reason
+  // the two cannot advertise different numbers.
+  for (const name of ['Barbell Bench Press', 'Machine Chest Press', 'Cable Curl']) {
+    assert.deepEqual(
+      prescribe(name, 'W', GOAL_FROM_CHOICE.lean),
+      prescribe(name, 'W', GOAL_FROM_CHOICE.muscle),
+      name,
+    )
+  }
+})
 
 check('one leg day or two is a choice, and both weeks are real weeks', () => {
   for (const program of ['Foundation', 'Build', 'Performance'] as const) {

@@ -5,6 +5,7 @@ import {
   ageBand,
   LONG_SESSION,
   COMMON_DISLIKES,
+  GOAL_CHOICES,
   GOAL_FROM_CHOICE,
   legDaysOf,
   OTHER_TRAINING,
@@ -253,12 +254,7 @@ export default function ProfileSheet({
                 columns={2}
                 value={draft.goalChoice}
                 onPick={(v) => set({ goalChoice: v })}
-                options={[
-                  { v: 'muscle' as const, label: 'Build muscle' },
-                  { v: 'strength' as const, label: 'Get stronger' },
-                  { v: 'lean' as const, label: 'Lean out' },
-                  { v: 'health' as const, label: 'Stay capable' },
-                ]}
+                options={GOAL_CHOICES}
               />
             </Field>
             {plan.goalNote ? <Note>{plan.goalNote}</Note> : null}

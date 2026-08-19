@@ -478,17 +478,45 @@ export const GOAL_FROM_CHOICE: Record<NonNullable<Profile['goalChoice']>, Goal> 
   health: 'endurance',
 }
 
+// People wanted to pick two of these. Almost always the two they wanted were
+// building muscle and leaning out, which is one answer: they are the same
+// training and the difference is what you eat. So rather than a multi select
+// that would fork the prescriptions and give the coach two masters, every
+// option says what it does, and the note afterwards says plainly what the
+// choice does not cost you.
+export const GOAL_CHOICES: {
+  v: NonNullable<Profile['goalChoice']>
+  label: string
+  note: string
+}[] = [
+  { v: 'muscle', label: 'Build muscle', note: 'Moderate reps, weight added as it gets easy' },
+  { v: 'strength', label: 'Get stronger', note: 'Fewer reps, heavier, longer rests' },
+  { v: 'lean', label: 'Lean out', note: 'The same training as build muscle' },
+  { v: 'health', label: 'Stay capable', note: 'Lighter, more reps, kinder on the joints' },
+]
+
 const GOAL_NOTE: Record<NonNullable<Profile['goalChoice']>, string | null> = {
-  muscle: null,
-  strength: null,
-  lean: 'Leaning out runs as muscle work: this holds and builds what you have, the kitchen takes the weight off. Nothing here is a fat burning workout, because that is not a thing a workout does.',
-  health: 'Staying capable runs as endurance work: lighter loads, more reps, kinder joints, and a coach line that stops asking you to grind.',
+  muscle:
+    'Building muscle and leaning out are the same training, so this covers both. What separates them is the kitchen, not the session: eat above what you burn and you gain, below it and you lean out, and either way the work in here is what keeps the muscle.',
+  strength:
+    'Getting stronger builds muscle too, just from the heavier end. If you want size more than numbers, build muscle is the same idea with more reps and shorter rests.',
+  lean:
+    'Leaning out is the same training as building muscle: this holds and builds what you have, and the kitchen takes the weight off. Nothing here is a fat burning workout, because that is not a thing a workout does.',
+  health:
+    'Staying capable runs lighter and longer: easier loads, more reps, kinder joints, and a coach line that stops asking you to grind. It still builds muscle, just not as fast as chasing it would.',
 }
 
+export function goalNoteFor(choice: Profile['goalChoice']): string {
+  return GOAL_NOTE[choice ?? 'muscle'] ?? ''
+}
+
+// What the plan screen promises. Leaning out shows the same range as building
+// muscle because it prescribes the same range: it used to say 8 to 15 while
+// handing out 8 to 12, which is a small lie the screen told every time.
 const REPS: Record<NonNullable<Profile['goalChoice']>, string> = {
   strength: '3 to 6',
   muscle: '6 to 12',
-  lean: '8 to 15',
+  lean: '6 to 12',
   health: '12 to 20',
 }
 
@@ -525,7 +553,9 @@ export function planFor(profile: Profile, goal: Goal): Plan {
       days === 6
         ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done, and the seventh is a rest day on purpose.'
         : null,
-    goalNote: choice ? GOAL_NOTE[choice] : null,
+    // Every choice says something now. Three of the four used to say nothing,
+    // which is what made picking one feel like losing the others.
+    goalNote: GOAL_NOTE[choice ?? 'muscle'],
     selfDirected: selfDirected(profile),
   }
 }

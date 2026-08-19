@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react'
 import {
   buildDay,
   dayById,
+  GOAL_CHOICES,
   GOAL_FROM_CHOICE,
+  goalNoteFor,
   legDaysOf,
   LONG_SESSION,
   planFor,
@@ -172,19 +174,21 @@ export default function Onboarding({
                   </Field>
                 </div>
               </div>
-              <Field label="What is this for?" hint="Sets the rep ranges and what the coach asks of you.">
+              <Field
+                label="What is this for?"
+                hint="Sets the rep ranges and what the coach asks of you. Changeable any time on your profile."
+              >
                 <Options
                   columns={2}
                   value={profile.goalChoice}
                   onPick={(v) => set({ goalChoice: v })}
-                  options={[
-                    { v: 'muscle' as const, label: 'Build muscle' },
-                    { v: 'strength' as const, label: 'Get stronger' },
-                    { v: 'lean' as const, label: 'Lean out' },
-                    { v: 'health' as const, label: 'Stay capable' },
-                  ]}
+                  options={GOAL_CHOICES}
                 />
               </Field>
+              {/* Said here, where the choice is made and where picking one feels
+                  like losing the other three, rather than only four steps later
+                  on the plan screen. */}
+              {profile.goalChoice ? <Note>{goalNoteFor(profile.goalChoice)}</Note> : null}
             </>
           ) : null}
 

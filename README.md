@@ -201,6 +201,28 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
+## One goal, and what it does not cost you
+
+People asked to pick two. Almost always the two they wanted were building muscle
+and leaning out, which is one answer: they are the same training and the
+difference is what you eat.
+
+So it is still one choice, and every option now says what it does underneath it,
+and the answer says plainly what you did not lose. Pick build muscle and it
+names leaning out; pick leaning out and it names building muscle; pick getting
+stronger and it tells you that builds muscle too, from the heavier end. Three of
+the four used to say nothing at all, which is exactly what made picking one feel
+like giving up the others. It is said at the moment of choosing now, not four
+steps later on the plan screen, and the hint says it is changeable any time.
+
+Multi select would have forked the prescription table and given the coach two
+masters on the same set. Saying so does not.
+
+While in there, a small lie the screen told every time: leaning out advertised
+8 to 15 reps and handed out 8 to 12, because it maps to the muscle goal and
+always did. It shows 6 to 12 now, the same as building muscle, because that is
+the same training and cannot honestly advertise two ranges.
+
 ## One leg day or two
 
 A question, in the questionnaire next to how many days a week, and on the
@@ -570,7 +592,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 115 assertions over everything that is pure logic: the movement
+`npm run check` is 116 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
