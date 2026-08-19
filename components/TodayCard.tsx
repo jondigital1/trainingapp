@@ -3,12 +3,11 @@
 import { dayById } from '@/lib/onboarding'
 import {
   scheduledDays,
-  scheduleOf,
   todaysDayId,
   trainedOn,
+  upcomingDays,
   WEEKDAYS,
   weekdayOf,
-  weekStart,
 } from '@/lib/schedule'
 import { weeklyStreak } from '@/lib/gamify'
 
@@ -36,29 +35,23 @@ export default function TodayCard({
   // is its own tap. Browsing Friday must never start Friday's workout.
   onPeek: (dayId: string) => void
 }) {
-  const schedule = scheduleOf(profile)
   const planned = todaysDayId(profile, today)
   const day = planned ? dayById(planned) : null
   const target = scheduledDays(profile) || profile.days || 3
   const streak = weeklyStreak(workouts, today, target)
   const doneToday = trainedOn(workouts, today)
 
-  // The seven days of this week, so the row reads as a week rather than a
-  // list: filled where you trained, outlined where you are meant to.
-  const sunday = weekStart(today)
-  const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(sunday + 'T00:00:00')
-    d.setDate(d.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
-    const weekday = weekdayOf(iso)
-    return {
-      iso,
-      label: WEEKDAYS[weekday],
-      dayId: schedule[weekday] ?? null,
-      done: trainedOn(workouts, iso),
-      today: iso === today,
-    }
-  })
+  // The next ten sessions the schedule holds, with real dates on them. The
+  // fixed Sunday to Saturday grid spent cells on rest days and showed a week
+  // that was mostly over by Friday; what somebody planning their life wants is
+  // what is coming: Mon 25, Tue 26, Thu 28. Today rides along until it is done.
+  const upcoming = upcomingDays(profile, today).map((u) => ({
+    ...u,
+    label: WEEKDAYS[weekdayOf(u.date)],
+    dayNum: Number(u.date.slice(8, 10)),
+    done: trainedOn(workouts, u.date),
+    today: u.date === today,
+  }))
 
   return (
     <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
@@ -77,52 +70,48 @@ export default function TodayCard({
         ) : null}
       </div>
 
-      {/* Every day is a button. Tapping Thursday starts Thursday's session,
-          which is the other way into a workout: the Start button picks any of
-          them, this picks the one the week says. */}
-      <div className="mt-3 grid grid-cols-7 gap-1.5">
-        {week.map((d) => {
-          const its = d.dayId ? dayById(d.dayId) : null
-          return (
-            // Any planned day opens for reading, and starting is its own tap
-            // inside the preview, so what Friday holds is one tap away and
-            // Friday's workout still cannot start by accident.
-            <button
-              key={d.iso}
-              onClick={() => d.dayId && onPeek(d.dayId)}
-              disabled={!d.dayId}
-              aria-label={
-                its
-                  ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`
-                  : `${d.label}, rest${d.done ? ', trained anyway' : ''}`
-              }
-              className="text-center disabled:cursor-default"
-            >
-              <span
-                className={`block text-[10px] font-extrabold uppercase ${
-                  d.today ? 'text-bright' : 'text-faint'
-                }`}
+      {upcoming.length ? (
+        // Sideways, because ten dated sessions deserve more than seven
+        // squeezed columns. Tapping one opens it for reading; starting stays
+        // its own tap inside, so the strip is safe to browse.
+        <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {upcoming.map((u) => {
+            const its = dayById(u.dayId)
+            return (
+              <button
+                key={u.date}
+                onClick={() => onPeek(u.dayId)}
+                aria-label={`${u.label} ${u.dayNum}, ${its?.name ?? ''}${u.done ? ', trained' : ''}`}
+                className="w-[72px] flex-none text-center"
               >
-                {d.label}
-              </span>
-              {/* Trained is the only filled state, because lime means done.
-                  Planned is an outline, rest is a hairline, and today is the
-                  one with a thicker ring around whatever it already was. */}
-              <span
-                className={`mt-1 flex h-9 items-center justify-center rounded-[10px] px-0.5 text-[9px] font-extrabold uppercase leading-tight ${
-                  d.done
-                    ? 'bg-accent text-on-accent'
-                    : d.dayId
-                      ? 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
-                      : 'ring-1 ring-edge'
-                } ${d.today ? 'ring-2 ring-accent-ink' : ''}`}
-              >
-                <span className="line-clamp-2 overflow-hidden">{its ? its.name : ''}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
+                <span
+                  className={`block text-[10px] font-extrabold uppercase ${
+                    u.today ? 'text-bright' : 'text-faint'
+                  }`}
+                >
+                  {u.label} <span className="num">{u.dayNum}</span>
+                </span>
+                {/* Trained is the only filled state, because lime means done.
+                    Today is the one with the thicker ring around whatever it
+                    already was. */}
+                <span
+                  className={`mt-1 flex h-11 items-center justify-center rounded-[10px] px-1 text-[9px] font-extrabold uppercase leading-tight ${
+                    u.done
+                      ? 'bg-accent text-on-accent'
+                      : 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
+                  } ${u.today ? 'ring-2 ring-accent-ink' : ''}`}
+                >
+                  <span className="line-clamp-2 overflow-hidden">{its?.name ?? ''}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Lay your week out on your profile and the next ten sessions appear here, dated.
+        </p>
+      )}
 
       {day && !doneToday ? (
         <button

@@ -87,3 +87,30 @@ export function trainedOn(workouts: Workout[], date: string): boolean {
     (w) => w.date === date && w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type))),
   )
 }
+
+// The next sessions the schedule holds, as dates rather than a fixed
+// Sunday-to-Saturday grid. A week grid shows Tuesday twice as far from Monday
+// on a Sunday as on a Monday and wastes cells on rest days; what somebody
+// planning their life wants is the next few workouts with real dates on them:
+// Mon 25, Tue 26, Thu 28, and on. Today is included, because today's session
+// is the next one until it is done.
+//
+// The horizon caps the scan so a schedule with one day a week does not walk
+// months into the future to fill the count.
+export interface UpcomingDay {
+  date: string
+  dayId: string
+}
+
+export function upcomingDays(profile: Profile, today: string, count = 10, horizon = 28): UpcomingDay[] {
+  const schedule = scheduleOf(profile)
+  const out: UpcomingDay[] = []
+  for (let i = 0; i < horizon && out.length < count; i += 1) {
+    const d = new Date(today + 'T00:00:00')
+    d.setDate(d.getDate() + i)
+    const iso = d.toISOString().slice(0, 10)
+    const dayId = schedule[weekdayOf(iso)]
+    if (dayId) out.push({ date: iso, dayId })
+  }
+  return out
+}

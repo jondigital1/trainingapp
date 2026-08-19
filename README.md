@@ -34,12 +34,17 @@ the sessions across the days most people train and leaves the weekend clear
 until there are more sessions than weekdays, and every day can then be moved by
 hand.
 
-The Calendar tab opens on what today asks of you, the week as seven named
-blocks filled where you trained and outlined where you meant to, and the streak
-beside it. Every block is a button: tapping Thursday starts Thursday's session. The streak was three taps deep before, which is no use for a number whose
-whole job is that you do not want to see it end. Once a schedule exists the
-streak counts against the days it asks for rather than the number the
-questionnaire once took.
+The Calendar tab opens on what today asks of you, the next ten sessions the
+schedule holds with real dates on them, and the streak beside it. The strip
+used to be a fixed Sunday to Saturday grid, which spent cells on rest days and
+was mostly over by Friday; it now rolls forward, Mon 25, Tue 26, Thu 28,
+skipping rest days entirely, today riding along until it is done. Every cell
+opens its day for reading, with Start as its own tap inside, so what next
+Thursday holds is one tap away and cannot start by accident. The streak was
+three taps deep before, which is no use for a number whose whole job is that
+you do not want to see it end. Once a schedule exists the streak counts
+against the days it asks for rather than the number the questionnaire once
+took.
 
 Nothing about it is a rule. Training on a rest day is fine and a session on the
 wrong day still counts toward the week: the schedule is a plan, not a gate.

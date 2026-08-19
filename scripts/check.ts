@@ -47,7 +47,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
+import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
@@ -2880,6 +2880,28 @@ check('a red flag stops the swaps too, and lifts when it is cleared', () => {
   for (const o of OTHER_TRAINING) {
     assert.ok((OTHER_NOTES[o] ?? '').length > 20, `${o} is collected and says nothing`)
   }
+})
+
+check('the strip shows the next ten sessions with dates, not a week grid', () => {
+  // Mon Wed Fri from a Wednesday: today counts (Wednesday's session is the
+  // next one until it is done), then the pattern rolls forward with real
+  // dates, skipping rest days entirely.
+  const mwf = { schedule: ['', 'ppl-push', '', 'ppl-pull', '', 'ppl-legs', ''].map((x) => x || null) }
+  const out = upcomingDays(mwf, '2026-08-19')
+  assert.equal(out.length, 10)
+  assert.deepEqual(out.slice(0, 4).map((u) => u.date), ['2026-08-19', '2026-08-21', '2026-08-24', '2026-08-26'])
+  assert.equal(out[0].dayId, 'ppl-pull', 'Wednesday is a pull day in this schedule')
+  assert.equal(out[1].dayId, 'ppl-legs', 'Friday is legs')
+  // Dates only ever move forward and stay unique.
+  for (let i = 1; i < out.length; i += 1) assert.ok(out[i].date > out[i - 1].date)
+
+  // One day a week does not walk months into the future to fill the count:
+  // the horizon caps it at four.
+  const sparse = { schedule: [null, 'ppl-push', null, null, null, null, null] }
+  assert.equal(upcomingDays(sparse, '2026-08-19').length, 4)
+
+  // No schedule, no strip, and no crash.
+  assert.deepEqual(upcomingDays({}, '2026-08-19'), [])
 })
 
 void (async () => {
