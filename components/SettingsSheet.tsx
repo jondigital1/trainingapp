@@ -200,16 +200,25 @@ export default function SettingsSheet({
         ))}
       </div>
 
-      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Rest alerts</h3>
+      {/* One heading, two switches. They are two decisions on purpose, because
+          they are two different promises: a tool that fires while you train,
+          and a message that arrives when you are not here. But they are the
+          same subject, and two headings for two switches read like sprawl.
+
+          The browser's own state is said once, at the top, because it applies
+          to both of them and there is one permission for the whole site. */}
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+        Notifications
+      </h3>
       {alerts === 'unsupported' ? (
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          This browser cannot receive alerts. On an iPhone it works once the app is added to the
-          home screen and opened from there.
+          This browser cannot receive notifications. On an iPhone they work once the app is added
+          to the home screen and opened from there.
         </p>
       ) : alerts === 'denied' ? (
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Notifications are blocked for this site. Turn them back on in the browser settings and
-          this becomes available again.
+          these become available again.
         </p>
       ) : (
         <>
@@ -226,19 +235,12 @@ export default function SettingsSheet({
             The buzz and the beep need the app awake. This one is sent from outside the phone, so it
             reaches you with the screen locked and the phone in your pocket. On for this phone only.
           </p>
-        </>
-      )}
 
-      {alerts === 'unsupported' || alerts === 'denied' ? null : (
-        <>
-          <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-            Weekly nudge
-          </h3>
           <button
             onClick={() => void toggleNudge()}
             disabled={busy}
             aria-pressed={nudge.day !== null}
-            className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
+            className="surface mt-4 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
           >
             <span className="font-bold">Nudge me about my week</span>
             <Switch on={nudge.day !== null} />

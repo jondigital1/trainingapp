@@ -993,6 +993,15 @@ turn the other on. Turning on a weekly message must not start a phone buzzing
 between sets, and there is a check that reads the source to make sure neither
 function ever touches the other's gate.
 
+They do sit under one heading, though. Two switches is the right number of
+decisions and two headings was the wrong amount of furniture, so Settings has
+one Notifications section with both inside it. The browser's own state is said
+once at the top of it, because there is one permission for the whole site and
+saying it twice implied there were two. What the app does not add is a master
+off switch: the phone already has one, everybody knows where it is, and
+duplicating it only creates a state where the app says on and the phone says
+off.
+
 Timezones travel as IANA names rather than offsets, because an offset is wrong
 twice a year and this only ever fires in the evening. The job asks who is
 overdue rather than who is due exactly now, so it does the right thing whether
