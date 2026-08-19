@@ -11,7 +11,7 @@
 // What this does not do is make the data offline. That is the app's job, and
 // it keeps its own copy of the last load in localStorage.
 
-const VERSION = 'v3'
+const VERSION = 'v4'
 const SHELL = `shell-${VERSION}`
 const ASSETS = `assets-${VERSION}`
 
@@ -109,14 +109,20 @@ self.addEventListener('push', (event) => {
     // A push with an unreadable body still has to show something, because
     // every browser requires a visible notification for every push.
   }
+  // The tag decides what this replaces in the tray. A rest alert carries the
+  // same tag as the on-device one, so a phone that woke up and fired both shows
+  // one notification rather than two. The weekly nudge carries its own, so it
+  // can never push a rest alert out of the way or be pushed out by one.
+  const tag = payload.tag === 'training-log-nudge' ? 'training-log-nudge' : 'training-log-rest'
+  const rest = tag === 'training-log-rest'
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Rest is up', {
       body: payload.body || 'Next set',
-      // Same tag as the on-device one, so a phone that woke up and fired both
-      // shows one notification rather than two.
-      tag: 'training-log-rest',
-      renotify: true,
-      silent: false,
+      tag,
+      renotify: rest,
+      // A message about your week is not worth a noise. The rest alert is: it
+      // is the one you are standing there waiting for.
+      silent: !rest,
     }),
   )
 })

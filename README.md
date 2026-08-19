@@ -302,13 +302,14 @@ outside the knee pattern, because they are what a knee swaps to.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0011. Clear the editor before each paste: a partial paste fails in confusing
-   places. They create the seven tables, the indexes, one row level security
+   0012. Clear the editor before each paste: a partial paste fails in confusing
+   places. They create the eight tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
    table, the start, end and score on a session, and what a custom exercise
    knows about itself, the note on a session, the function that deletes
-   your account, the admins table, and shared workouts.
+   your account, the admins table, shared workouts, and the push endpoints and
+   nudge settings behind the weekly nudge.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.
@@ -318,7 +319,13 @@ outside the knee pattern, because they are what a knee swaps to.
    public key goes in twice, once for the browser and once for the server.
    Leaving them blank turns the feature off cleanly rather than breaking
    anything.
-6. `npm install` then `npm run dev`.
+6. For the weekly nudge, set `CRON_SECRET` to any long random string. Vercel
+   signs its own cron requests with it, and without it the endpoint refuses
+   everybody, which is the right behaviour for a fork that has not set one up.
+   `vercel.json` asks for the job hourly; on a plan that only allows a daily
+   cron it still works, because the job sends to whoever is overdue rather than
+   to whoever is due this exact hour.
+7. `npm install` then `npm run dev`.
 
 Deploying to Vercel: import the repo, leave the root directory alone since the
 app is the repo, add the same environment variables, done. Set the framework
@@ -558,6 +565,8 @@ Postgres wants uuids and the artifact did not use them.
     components/BottomNav.tsx   four destinations and the start button
     lib/exercises.ts      226 movements across 14 muscle groups, each typed
     lib/onboarding.ts     the questions, the scoring, the three programs, the swaps
+    lib/nudge.ts          what the weekly message says, and the rules it says it under
+    lib/nudgeWeek.ts      the week counted in days trained, and your own average
     lib/units.ts          pounds in the database, kilos on the screen
     lib/body.ts           bodyweight against day one, the goal, and a weekly average
     lib/gamify.ts         records, beat the ghost, coverage, the grid, the streak
@@ -898,6 +907,74 @@ last movement in the group, since not resting between them is the point.
 The bar counts to an end timestamp rather than ticking a number down, so
 locking the phone or reloading the page gives back the right number. It buzzes
 and beeps once at zero. Editing a past session never starts anything.
+
+## The weekly nudge
+
+One message a week, on a day and at an hour you pick, comparing the week you
+said you wanted against the week you have had. Off until you turn it on.
+
+It is deliberately not a streak. A streak punishes a rest day, and this is a
+lifting app where the rest day is part of the program: the six day plan already
+says out loud that the seventh is a rest day on purpose, and a notification
+telling somebody not to break their run on that day would be the app arguing
+with its own training. Nothing here counts consecutive anything.
+
+What it counts instead is days trained this week against the days you said you
+train, taken from the schedule if you have laid one out, because moving a
+session onto Thursday by hand is a more recent statement of intent than
+anything said during signup.
+
+Three rules, and every line obeys them.
+
+Never say they failed. A week that can no longer reach the target is a week
+with sessions in it, and the sentence names those rather than the shortfall.
+Two of four on a Friday reads one more makes it three, and three is a week that
+counts.
+
+Never invent a comparison. Anything it claims about your other weeks is
+computed from your own logged sessions or it is not said at all. It will tell
+you a session would put this week above your usual, and it only says that when
+the average it is comparing against is real and the claim is true.
+
+Never use guilt. If a sentence would work as well on a billboard, it is the
+wrong sentence. There is no crushing it, no no excuses, and nothing that reads
+like it was bought in bulk.
+
+Two states get their own handling. A week that is met is praised once and then
+leaves you alone, because nothing is owed. And somebody who has not trained in
+three weeks gets no numbers at all: no week, no target, no scoreboard, just
+that everything they logged is where they left it. After three of those in a
+row with no training in between, the app stops talking. Somebody who has not
+trained in two months is not being helped by a fourth reminder that they have
+not trained in two months.
+
+### What had to change underneath
+
+The rest alert stores nothing. Its subscription is handed over at the moment a
+set is logged and used inside the same request, which is why there was never a
+table of push endpoints in this app. A message sent on a Friday evening to
+somebody who has not opened the app since Tuesday cannot work that way, so the
+endpoint is written down. It is written down only when the nudge is switched
+on, deleted when it is switched off, and deleted again when the push service
+reports the browser has replaced it.
+
+The two features are two switches for the same reason. They need the same
+permission and go down the same pipe, so it would have been easy to have one
+turn the other on. Turning on a weekly message must not start a phone buzzing
+between sets, and there is a check that reads the source to make sure neither
+function ever touches the other's gate.
+
+Timezones travel as IANA names rather than offsets, because an offset is wrong
+twice a year and this only ever fires in the evening. The job asks who is
+overdue rather than who is due exactly now, so it does the right thing whether
+it runs every hour or once a day: late is a worse message, but never is a bug.
+Running it twice in a row sends nothing twice, because the first run stamps
+everybody it reached and six days have to pass before that stamp clears.
+
+Both notifications carry a tag, so a nudge can never replace a rest alert in
+the tray and a rest alert can never replace a nudge. The nudge is silent. A
+message about your week is not worth a noise; the rest alert is, because it is
+the one you are standing there waiting for.
 
 ## Training blocks
 

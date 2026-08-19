@@ -109,6 +109,9 @@ export interface Settings {
   goal: Goal
   profile: import('./onboarding').Profile
   onboardedAt: string | null
+  // The one message a week. A null day is off, which is what everybody is
+  // until they say otherwise.
+  nudge: { day: number | null; hour: number }
 }
 
 export interface TrainingData {
@@ -124,5 +127,5 @@ export const EMPTY_DATA: TrainingData = {
   custom: [],
   customWorkouts: [],
   bodyWeights: [],
-  settings: { goal: 'muscle', profile: {}, onboardedAt: null },
+  settings: { goal: 'muscle', profile: {}, onboardedAt: null, nudge: { day: null, hour: 18 } },
 }

@@ -1,5 +1,6 @@
 // Plain assertions over the pure logic: library, templates, coaching, the
 // artifact importer and CSV export. Run with npm run check.
+import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
@@ -9,7 +10,7 @@ import { fmtDate, fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } fr
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import { buildPdf } from '../lib/pdf'
-import { MAX_WAIT, alertRequest, parseAlert, pushConfigured, wait } from '../lib/alert'
+import { MAX_WAIT, alertBody, alertRequest, nudgeBody, parseAlert, pushConfigured, wait } from '../lib/alert'
 // aliased: lib/body exports a summarise of its own, for bodyweight
 import { summarise as summariseSession } from '../lib/summary'
 import { HEALTH_LABEL, health, isAdmin, matches, neverStarted, sortUsers, toCsv as adminCsv, totals, type AdminUser } from '../lib/admin'
@@ -43,6 +44,9 @@ import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
+import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
+import { averageWeek, weekOf } from '../lib/nudgeWeek'
+import { parseDevice } from '../lib/device'
 import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import { equipmentOf } from '../lib/exercises'
@@ -2138,6 +2142,160 @@ check('the admin export is a spreadsheet, not a shrug', () => {
   assert.match(row, /^"a,b@x.com"/, 'a comma in a field is quoted, not left to break the file')
   assert.match(row, /,1235,/, 'volume is rounded')
   assert.match(row, /Never started$/)
+})
+
+check('the nudge fires on their day, in their clock, and once a week', () => {
+  const prefs = { day: 5, hour: 18, nudgedAt: null, misses: 0 }
+  const friday = { dow: 5, hour: 18, date: '2026-08-21' }
+  const now = new Date('2026-08-21T18:00:00Z')
+
+  assert.ok(nudgeDue(prefs, friday, now))
+  assert.ok(!nudgeDue(prefs, { ...friday, hour: 17 }, now), 'not before the hour they picked')
+  assert.ok(!nudgeDue(prefs, { ...friday, dow: 4 }, now), 'not on another day')
+  assert.ok(!nudgeDue({ ...prefs, day: null }, friday, now), 'off is off')
+
+  // Overdue rather than exactly on the hour, so the job does the right thing
+  // whether it runs hourly or once a day. Late is a worse message; never is a
+  // bug.
+  assert.ok(nudgeDue(prefs, { ...friday, hour: 23 }, now))
+
+  // Once a week, whatever the job's schedule is.
+  const yesterday = new Date('2026-08-20T18:00:00Z').toISOString()
+  assert.ok(!nudgeDue({ ...prefs, nudgedAt: yesterday }, friday, now))
+  const lastWeek = new Date('2026-08-14T18:00:00Z').toISOString()
+  assert.ok(nudgeDue({ ...prefs, nudgedAt: lastWeek }, friday, now))
+
+  // And it stops talking to somebody who has stopped answering.
+  assert.ok(!nudgeDue({ ...prefs, misses: MAX_MISSES }, friday, now))
+})
+
+check('their clock, not the server\'s', () => {
+  // Half nine at night in London is half four in the afternoon in New York and
+  // half past six the next morning in Auckland. All three are the same instant.
+  const instant = new Date('2026-08-21T20:30:00Z')
+  assert.deepEqual(localNow('Europe/London', instant), { dow: 5, hour: 21, date: '2026-08-21' })
+  assert.deepEqual(localNow('America/New_York', instant), { dow: 5, hour: 16, date: '2026-08-21' })
+  assert.deepEqual(localNow('Pacific/Auckland', instant), { dow: 6, hour: 8, date: '2026-08-22' })
+
+  // Midnight is hour zero, not hour twenty four.
+  assert.equal(localNow('UTC', new Date('2026-08-21T00:10:00Z')).hour, 0)
+
+  // A stored zone that is no longer a place still has to produce a time.
+  assert.equal(localNow('Mars/Olympus', instant).date, '2026-08-21')
+})
+
+check('the week is counted in days trained, not sessions logged', () => {
+  // Two workouts on the Tuesday is a Tuesday.
+  const week = weekOf(['2026-08-18', '2026-08-18', '2026-08-20'], '2026-08-21', 4)
+  assert.equal(week.done, 2)
+  assert.equal(week.left, 2, 'Friday leaves Friday and Saturday, because today is still available')
+  assert.equal(week.lastDate, '2026-08-20')
+
+  // The week runs Sunday to Saturday, the same one the streak uses, so last
+  // Saturday is not this week.
+  assert.equal(weekOf(['2026-08-15'], '2026-08-21', 4).done, 0)
+  assert.equal(weekOf(['2026-08-16'], '2026-08-21', 4).done, 1, 'Sunday starts the week')
+
+  // Sunday is the whole week still to come.
+  assert.equal(weekOf([], '2026-08-16', 4).left, 7)
+
+  // The average is over finished weeks only, because comparing a whole week
+  // against a week in progress is a lie about somebody.
+  assert.equal(averageWeek(['2026-08-20'], '2026-08-16'), null, 'nothing before this week to average')
+  const four = ['2026-07-20', '2026-07-22', '2026-07-27', '2026-08-03', '2026-08-10', '2026-08-12']
+  const avg = averageWeek(four, '2026-08-16')!
+  assert.ok(avg > 0 && avg <= 7)
+})
+
+check('the nudge is a coach, and a coach does not use guilt', () => {
+  const base = { target: 4, done: 0, left: 3, average: null, lastDate: '2026-08-18', today: '2026-08-21' }
+
+  // Nobody who has never logged anything gets chased about a week they have
+  // not had.
+  assert.equal(nudgeFor({ ...base, lastDate: null }), null)
+
+  // A week that is met is praised and then leaves them alone.
+  const met = nudgeFor({ ...base, done: 4 })!
+  assert.match(met.body, /nothing owed/i)
+
+  // A week that is beaten says so without inventing a number.
+  const beat = nudgeFor({ ...base, done: 5 })!
+  assert.match(beat.body, /5 sessions against the 4/i)
+
+  // On track names what is left, not what is missing.
+  const on = nudgeFor({ ...base, done: 2, left: 3 })!
+  assert.match(on.title, /2 of 4/)
+  assert.match(on.body, /3 days left and 2 sessions to go/i)
+
+  // A week that can no longer reach the target never says so. It counts what
+  // is in the week.
+  const short = nudgeFor({ ...base, done: 1, left: 1 })!
+  assert.match(short.body, /one more makes it 2/i)
+  assert.ok(!/behind|missed|failed|only|should/i.test(short.body), 'no scolding')
+
+  // The comparison to their own weeks is only made when it is true.
+  const better = nudgeFor({ ...base, done: 1, left: 1, average: 1.5 })!
+  assert.match(better.body, /above your usual 1.5/i)
+  const notBetter = nudgeFor({ ...base, done: 1, left: 1, average: 4 })!
+  assert.ok(!/above your usual/i.test(notBetter.body), 'never claims a week beat an average it did not')
+
+  // Nothing logged this week, with the target still on and with it gone.
+  const openWeek = nudgeFor({ ...base, done: 0, left: 5 })!
+  assert.match(openWeek.body, /nothing logged yet/i)
+  assert.match(openWeek.body, /5 days left/i)
+  const tightWeek = nudgeFor({ ...base, done: 0, left: 2 })!
+  assert.ok(!/the 4 you set/.test(tightWeek.body), 'does not dangle a target that cannot be reached')
+
+  // Somebody who stopped gets no numbers at all.
+  const lapsed = nudgeFor({ ...base, lastDate: '2026-06-01' })!
+  assert.match(lapsed.body, /nothing since June 1/i)
+  assert.ok(!/\bweek\b|\btarget\b|[0-9] of [0-9]/i.test(lapsed.body), 'no scoreboard for somebody who left')
+
+  // Nothing anywhere reads like a billboard.
+  for (const state of [met, on, short, openWeek, tightWeek, lapsed]) {
+    assert.ok(!/crush|beast|no excuses|no pain|grind|warrior|let.s go/i.test(state.body), state.body)
+    assert.ok(state.body.length < 200, 'it is a notification, not an essay')
+  }
+})
+
+check('a phone has to say what it is before it is written down', () => {
+  const good = {
+    subscription: { endpoint: 'https://push.example.com/x', keys: { p256dh: 'a', auth: 'b' } },
+    zone: 'Europe/London',
+  }
+  const parsed = parseDevice(good)
+  assert.ok(parsed.ok && parsed.device.zone === 'Europe/London')
+
+  assert.ok(!parseDevice({}).ok)
+  assert.ok(!parseDevice({ subscription: { endpoint: 'http://push.example.com/x', keys: { p256dh: 'a', auth: 'b' } } }).ok, 'TLS or nothing')
+
+  // A zone is a place name or it is UTC. It is interpolated into a date format
+  // on the server and stored, so it does not get to be a sentence.
+  const junk = parseDevice({ ...good, zone: 'x'.repeat(200) })
+  assert.ok(junk.ok && junk.device.zone === 'UTC')
+  const worse = parseDevice({ ...good, zone: '../../etc/passwd' })
+  assert.ok(worse.ok && worse.device.zone === 'UTC')
+})
+
+check('the two switches are two switches', () => {
+  // The rest alert and the weekly nudge both need notification permission and
+  // both go down the same pipe, which is exactly why turning one on must not
+  // turn the other on. The rest alert is gated by a flag kept on the phone;
+  // the nudge is gated by a day kept on the account. Neither function touches
+  // the other's gate.
+  const source = readFileSync(new URL('../lib/push.ts', import.meta.url), 'utf8')
+  const nudge = source.slice(source.indexOf('export async function enableNudge'))
+  assert.ok(!nudge.includes('PUSH_KEY'), 'switching the nudge on must not start the rest alerts')
+  const off = source.slice(source.indexOf('export async function disablePush'), source.indexOf('async function subscribe'))
+  assert.ok(!off.includes('unsubscribe'), 'turning rest alerts off must not take the nudge down with them')
+})
+
+check('the two kinds of push cannot replace each other in the tray', () => {
+  const rest = JSON.parse(alertBody({ endpoint: 'https://x/y', p256dh: 'a', auth: 'b', seconds: 60, name: 'Squat' }))
+  const weekly = JSON.parse(nudgeBody('2 of 4', 'two days left'))
+  assert.equal(rest.tag, 'training-log-rest')
+  assert.equal(weekly.tag, 'training-log-nudge')
+  assert.notEqual(rest.tag, weekly.tag)
 })
 
 void (async () => {

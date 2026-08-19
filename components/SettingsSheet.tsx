@@ -5,7 +5,8 @@ import { GOALS } from '@/lib/coach'
 import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
-import { disablePush, enablePush, pushState, type PushState } from '@/lib/push'
+import { disablePush, enableNudge, enablePush, pushState, type PushState } from '@/lib/push'
+import { NUDGE_DAYS } from '@/lib/nudge'
 import PasswordChange from './PasswordChange'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
@@ -23,6 +24,13 @@ function Radio({ on }: { on: boolean }) {
     </span>
   )
 }
+
+// Whole hours only. Nobody needs to be nudged at 18:45, and a list of 24 is
+// short enough to scroll on a phone.
+const HOURS = Array.from({ length: 24 }, (_, h) => ({
+  v: h,
+  label: h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`,
+}))
 
 function Switch({ on }: { on: boolean }) {
   return (
@@ -44,6 +52,7 @@ export default function SettingsSheet({
   data,
   email,
   onGoal,
+  onNudge,
   onImport,
   onEditProfile,
   onRerunQuestionnaire,
@@ -55,6 +64,7 @@ export default function SettingsSheet({
   data: TrainingData
   email: string
   onGoal: (goal: Goal) => void
+  onNudge: (nudge: { day: number | null; hour: number }) => void
   onEditProfile: () => void
   onRerunQuestionnaire: () => void
   onHelp: () => void
@@ -81,6 +91,25 @@ export default function SettingsSheet({
   async function toggleAlerts() {
     setBusy(true)
     setAlerts(alerts === 'on' ? await disablePush() : await enablePush())
+    setBusy(false)
+  }
+
+  const nudge = data.settings.nudge
+  // Sunday, because it is the start of the week the whole app counts in, and
+  // the evening, because that is when somebody can still do something about
+  // what it says.
+  async function toggleNudge() {
+    setBusy(true)
+    if (nudge.day === null) {
+      // The permission prompt happens here rather than on the save, so a
+      // refusal leaves the switch off instead of leaving a day set against an
+      // account that can never be sent anything.
+      const state = await enableNudge()
+      if (state === 'denied' || state === 'unsupported') setAlerts(state)
+      if (state === 'on') onNudge({ day: 0, hour: nudge.hour })
+    } else {
+      onNudge({ day: null, hour: nudge.hour })
+    }
     setBusy(false)
   }
 
@@ -202,6 +231,63 @@ export default function SettingsSheet({
           <p className="mt-2 text-xs leading-relaxed text-muted">
             The buzz and the beep need the app awake. This one is sent from outside the phone, so it
             reaches you with the screen locked and the phone in your pocket. On for this phone only.
+          </p>
+        </>
+      )}
+
+      {alerts === 'unsupported' || alerts === 'denied' ? null : (
+        <>
+          <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            Weekly nudge
+          </h3>
+          <button
+            onClick={() => void toggleNudge()}
+            disabled={busy}
+            aria-pressed={nudge.day !== null}
+            className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
+          >
+            <span className="font-bold">Nudge me about my week</span>
+            <Switch on={nudge.day !== null} />
+          </button>
+          {nudge.day !== null ? (
+            <>
+              <div className="mt-2 grid grid-cols-7 gap-1">
+                {NUDGE_DAYS.map((d) => (
+                  <button
+                    key={d.v}
+                    onClick={() => onNudge({ day: d.v, hour: nudge.hour })}
+                    aria-pressed={nudge.day === d.v}
+                    aria-label={d.label}
+                    className={`rounded-lg py-2 text-xs font-bold ${
+                      nudge.day === d.v
+                        ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+                        : 'surface text-muted ring-1 ring-edge'
+                    }`}
+                  >
+                    {d.short}
+                  </button>
+                ))}
+              </div>
+              <label className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ring-edge">
+                <span className="font-bold">At</span>
+                <select
+                  value={nudge.hour}
+                  onChange={(e) => onNudge({ day: nudge.day, hour: Number(e.target.value) })}
+                  className="bg-transparent text-sm font-bold text-bright outline-none"
+                >
+                  {HOURS.map((h) => (
+                    <option key={h.v} value={h.v}>
+                      {h.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            One message a week, comparing the days you said you train against the days you have.
+            It is not a streak: nothing here counts a rest day against you, and it never arrives
+            twice.
           </p>
         </>
       )}

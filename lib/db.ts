@@ -65,7 +65,11 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
     sb.from('custom_exercises').select('id,name,type,muscle_group,rest_tier,default_sets').order('name'),
     sb.from('custom_workouts').select('id,name,items').order('created_at'),
     sb.from('body_weights').select('date,weight').order('date'),
-    sb.from('settings').select('goal,profile,onboarded_at').eq('user_id', userId).maybeSingle(),
+    sb
+      .from('settings')
+      .select('goal,profile,onboarded_at,nudge_day,nudge_hour')
+      .eq('user_id', userId)
+      .maybeSingle(),
   ])
 
   const err =
@@ -95,6 +99,10 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
       goal: (settings.data?.goal as Goal) ?? 'muscle',
       profile: (settings.data?.profile as Profile) ?? {},
       onboardedAt: (settings.data?.onboarded_at as string) ?? null,
+      nudge: {
+        day: (settings.data?.nudge_day as number) ?? null,
+        hour: (settings.data?.nudge_hour as number) ?? 18,
+      },
     },
   }
 }
@@ -203,6 +211,19 @@ export async function deleteCustomWorkout(sb: SupabaseClient, id: string) {
 
 export async function saveGoal(sb: SupabaseClient, userId: string, goal: Goal) {
   const res = await sb.from('settings').upsert({ user_id: userId, goal })
+  if (res.error) throw res.error
+}
+
+// The day and hour somebody wants their one message a week, or a null day for
+// no message at all, which is what everybody starts as.
+export async function saveNudge(
+  sb: SupabaseClient,
+  userId: string,
+  nudge: { day: number | null; hour: number },
+) {
+  const res = await sb
+    .from('settings')
+    .upsert({ user_id: userId, nudge_day: nudge.day, nudge_hour: nudge.hour })
   if (res.error) throw res.error
 }
 

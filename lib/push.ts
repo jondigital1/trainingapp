@@ -8,9 +8,16 @@
 // and the server sends the alert when the rest is up whether the phone is
 // awake or not.
 //
-// The subscription is never stored anywhere. It is handed over at the moment a
-// set is logged and forgotten when the alert fires, so there is no table of
-// endpoints to leak and nothing to clean up when somebody changes phone.
+// The rest alert stores nothing. Its subscription is handed over at the moment
+// a set is logged and forgotten when the alert fires, so there is no table of
+// endpoints behind it and nothing to clean up when somebody changes phone.
+//
+// The weekly nudge cannot work that way. A message sent on a Friday evening to
+// somebody who has not opened the app since Tuesday has nowhere to be sent
+// from unless the endpoint is on disk. So turning the nudge on writes this
+// phone down, and turning it off deletes it. That is the whole of the
+// difference, and it is why the two live behind two separate switches rather
+// than one.
 
 export const PUSH_KEY = 'training-log-push'
 
@@ -47,9 +54,11 @@ export function pushState(): PushState {
   return pushWanted() ? 'on' : 'off'
 }
 
-// Turning it on is the one moment a permission prompt is fair: they just asked
-// for the thing the prompt is about.
-export async function enablePush(): Promise<PushState> {
+// Permission and a live subscription, and nothing else. Two features want
+// this and only one of them is the rest alert, so it deliberately does not
+// touch the flag that says the rest alert is wanted: switching the weekly
+// nudge on must not quietly start buzzing somebody between sets.
+async function ready(): Promise<'on' | 'denied' | 'unsupported'> {
   if (!pushSupported()) return 'unsupported'
   if (Notification.permission === 'default') {
     try {
@@ -59,8 +68,14 @@ export async function enablePush(): Promise<PushState> {
     }
   }
   if (Notification.permission !== 'granted') return 'denied'
-  const subscription = await subscribe()
-  if (!subscription) return 'denied'
+  return (await subscribe()) ? 'on' : 'denied'
+}
+
+// Turning it on is the one moment a permission prompt is fair: they just asked
+// for the thing the prompt is about.
+export async function enablePush(): Promise<PushState> {
+  const state = await ready()
+  if (state !== 'on') return state
   try {
     localStorage.setItem(PUSH_KEY, 'on')
   } catch {
@@ -69,18 +84,15 @@ export async function enablePush(): Promise<PushState> {
   return 'on'
 }
 
+// Only the rest alert. The subscription itself stays, because the weekly nudge
+// may still be on and unsubscribing here would take it down with it. The flag
+// is what stops the alerts, and it always did; unsubscribing was only ever
+// tidiness.
 export async function disablePush(): Promise<PushState> {
   try {
     localStorage.setItem(PUSH_KEY, 'off')
   } catch {
     // ignore
-  }
-  try {
-    const registration = await navigator.serviceWorker.ready
-    const existing = await registration.pushManager.getSubscription()
-    await existing?.unsubscribe()
-  } catch {
-    // Unsubscribing is tidiness. The flag above is what stops the alerts.
   }
   return 'off'
 }
@@ -144,4 +156,57 @@ function urlBase64ToBytes(value: string): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(new ArrayBuffer(raw.length))
   for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i)
   return out
+}
+
+// The nudge, which is a different promise from the rest alert and so a
+// different switch: it needs the same permission, and it also needs this phone
+// written down on the server.
+export async function enableNudge(): Promise<PushState> {
+  const state = await ready()
+  if (state !== 'on') return state
+  const subscription = await subscribe()
+  if (!subscription) return 'denied'
+  try {
+    await fetch('/api/device', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ subscription, zone: zoneOf() }),
+    })
+  } catch {
+    // Offline. The switch is still on and the next time it is touched, or the
+    // next time push is enabled, the endpoint goes up again.
+  }
+  return 'on'
+}
+
+// Forgetting the phone is the point, so this runs even when there is no
+// subscription left to read: without an endpoint the server drops every device
+// on the account, because off has to mean off.
+export async function forgetNudge(): Promise<void> {
+  let endpoint: string | null = null
+  try {
+    const registration = await navigator.serviceWorker.ready
+    endpoint = (await registration.pushManager.getSubscription())?.endpoint ?? null
+  } catch {
+    // No worker, no endpoint, and the request below takes the lot.
+  }
+  try {
+    await fetch('/api/device', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ endpoint }),
+    })
+  } catch {
+    // Offline. The day is already null on the server side of the next save,
+    // and a nudge is only ever sent to somebody with a day set.
+  }
+}
+
+// An IANA name, so the evening stays the evening through a clock change.
+export function zoneOf(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    return 'UTC'
+  }
 }

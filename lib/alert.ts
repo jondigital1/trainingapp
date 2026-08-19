@@ -96,7 +96,39 @@ export function alertBody(alert: Alert): string {
   return JSON.stringify({
     title: 'Rest is up',
     body: alert.name ? `Next set of ${alert.name}` : 'Next set',
+    tag: 'training-log-rest',
   })
+}
+
+// The weekly nudge goes down the same pipe with a different tag, so a nudge
+// can never replace a rest alert in the tray and a rest alert can never
+// replace a nudge.
+export function nudgeBody(title: string, body: string): string {
+  return JSON.stringify({ title, body, tag: 'training-log-nudge' })
+}
+
+// Not urgent, and worth holding for a phone that is off. A day is the point at
+// which it stops being this week's message.
+const WEEKLY = { TTL: 86400, urgency: 'normal' as const }
+
+export async function sendNudge(
+  device: { endpoint: string; p256dh: string; auth: string },
+  title: string,
+  body: string,
+): Promise<'sent' | 'gone'> {
+  configure()
+  try {
+    await webpush.sendNotification(
+      { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
+      nudgeBody(title, body),
+      WEEKLY,
+    )
+    return 'sent'
+  } catch (e) {
+    const status = (e as { statusCode?: number }).statusCode
+    if (status === 404 || status === 410) return 'gone'
+    throw e
+  }
 }
 
 // No point delivering this in ten minutes. If it cannot go now it is already

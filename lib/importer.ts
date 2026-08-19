@@ -181,6 +181,8 @@ export function importArtifactData(input: unknown): TrainingData {
       goal: valid.includes(goal) ? goal : 'muscle',
       profile: (source.settings?.profile as TrainingData['settings']['profile']) ?? {},
       onboardedAt: (source.settings?.onboardedAt as string) ?? null,
+      // The artifact never sent anybody a message, so nothing is imported on.
+      nudge: { day: null, hour: 18 },
     },
   }
 }
