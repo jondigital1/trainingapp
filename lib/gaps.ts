@@ -71,3 +71,16 @@ export function gapReport(
     })
     .sort((a, b) => b.users - a.users || a.name.localeCompare(b.name))
 }
+
+// The other thing the filter above learns and used to throw away: people who
+// created a movement the library already has. That is not a gap in the
+// library, it is a failed search, and how many people it happens to is the
+// measure of whether the picker's search needs work.
+export function failedSearches(rows: { userId: string; name: string }[]): number {
+  const people = new Set<string>()
+  for (const row of rows) {
+    const name = row.name.trim()
+    if (name && inLibrary(name)) people.add(row.userId)
+  }
+  return people.size
+}

@@ -172,3 +172,55 @@ export function toCsv(users: AdminUser[], today: string): string {
 function quote(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
+
+// One bar per week for the last dozen, every workout by everybody, empty weeks
+// included because a gap is the shape worth seeing. This is the number that
+// answers "is this working": every stat above it is a snapshot, and a snapshot
+// cannot tell growing from dying.
+export interface WeekBar {
+  start: string
+  sessions: number
+}
+
+export function weeklyTrend(dates: string[], today: string, weeks = 12): WeekBar[] {
+  const bars: WeekBar[] = []
+  const thisWeek = weekStartOf(today)
+  for (let i = weeks - 1; i >= 0; i -= 1) {
+    bars.push({ start: shiftDays(thisWeek, -7 * i), sessions: 0 })
+  }
+  const first = bars[0].start
+  for (const date of dates) {
+    const start = weekStartOf(date.slice(0, 10))
+    if (start < first || start > thisWeek) continue
+    const bar = bars.find((b) => b.start === start)
+    if (bar) bar.sessions += 1
+  }
+  return bars
+}
+
+// The same Sunday week everything else counts in, without importing the
+// schedule module into a file the checks load standalone.
+function weekStartOf(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay())
+  return d.toISOString().slice(0, 10)
+}
+
+function shiftDays(iso: string, days: number): string {
+  return new Date(Date.parse(iso + 'T00:00:00Z') + days * 86400000).toISOString().slice(0, 10)
+}
+
+// People who were regulars and stopped. The chip about never-started catches
+// the leak at the front door; this is the leak out the back, and at the scale
+// of this app the fix is not a system, it is a personal message to somebody
+// you know by name. Ten days is stopped for a regular; past sixty they are not
+// quiet, they are gone, and a different conversation.
+export function wentQuiet(users: AdminUser[], today: string): AdminUser[] {
+  return users
+    .filter((u) => {
+      if (u.sessions < 5 || !u.lastWorkout) return false
+      const gap = daysBetween(u.lastWorkout, today)
+      return gap >= 10 && gap <= 60
+    })
+    .sort((a, b) => (a.lastWorkout! < b.lastWorkout! ? 1 : -1))
+}

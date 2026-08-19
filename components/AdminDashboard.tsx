@@ -16,6 +16,8 @@ import {
 } from '@/lib/admin'
 import CoachChip from './CoachChip'
 import type { GapRow } from '@/lib/gaps'
+import type { AdminLogRow } from '@/lib/adminData'
+import type { WeekBar } from '@/lib/admin'
 import LiftyMark from './LiftyMark'
 
 const LABEL = 'text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint'
@@ -34,6 +36,11 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
   // for on the way past.
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [gaps, setGaps] = useState<GapRow[]>([])
+  const [missed, setMissed] = useState(0)
+  const [trend, setTrend] = useState<WeekBar[]>([])
+  const [quietIds, setQuietIds] = useState<string[]>([])
+  const [adoption, setAdoption] = useState<Record<string, number>>({})
+  const [log, setLog] = useState<AdminLogRow[]>([])
   const [failed, setFailed] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<Sort>('recent')
@@ -53,12 +60,25 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
               : 'Could not load the list. Check that SUPABASE_SERVICE_ROLE_KEY is set.',
           )
         }
-        return (await res.json()) as { users: AdminUser[]; gaps?: GapRow[] }
+        return (await res.json()) as {
+          users: AdminUser[]
+          gaps?: GapRow[]
+          failedSearches?: number
+          trend?: WeekBar[]
+          quiet?: string[]
+          adoption?: Record<string, number>
+          log?: AdminLogRow[]
+        }
       })
       .then((body) => {
         if (!alive) return
         setUsers(body.users)
         setGaps(body.gaps ?? [])
+        setMissed(body.failedSearches ?? 0)
+        setTrend(body.trend ?? [])
+        setQuietIds(body.quiet ?? [])
+        setAdoption(body.adoption ?? {})
+        setLog(body.log ?? [])
       })
       .catch((e) => alive && setFailed(e instanceof Error ? e.message : 'Could not load the list.'))
     return () => {
@@ -69,6 +89,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
   const live = useMemo(() => (users ?? []).filter((u) => !gone.includes(u.id)), [users, gone])
   const sums = useMemo(() => totals(live, today), [live, today])
   const cold = useMemo(() => neverStarted(live), [live])
+  const quiet = useMemo(() => live.filter((u) => quietIds.includes(u.id)), [live, quietIds])
   const shown = useMemo(
     () => sortUsers(live.filter((u) => matches(u, query)), sort, today),
     [live, query, sort, today],
@@ -136,6 +157,53 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
         </dl>
       </section>
 
+      {/* The line every snapshot above cannot draw: sessions per week, twelve
+          weeks, empty weeks included because a gap is the shape worth seeing. */}
+      {trend.some((b) => b.sessions > 0) ? (
+        <section className="mt-4">
+          <h3 className={LABEL}>Sessions by week</h3>
+          <div className="mt-2 flex h-16 items-end gap-1">
+            {trend.map((bar) => {
+              const max = Math.max(...trend.map((b) => b.sessions), 1)
+              return (
+                <div key={bar.start} className="flex-1" title={`${fmtDate(bar.start)}: ${bar.sessions}`}>
+                  <div
+                    className="w-full rounded-t bg-accent-ink"
+                    style={{ height: `${Math.max(bar.sessions ? 8 : 2, (bar.sessions / max) * 64)}px` }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] font-bold text-faint">
+            <span>{fmtDate(trend[0].start)}</span>
+            <span>this week</span>
+          </div>
+        </section>
+      ) : null}
+
+      {/* The leak out the back. The chip below catches people who never
+          started; these are regulars who stopped, and at this scale the fix is
+          a personal message, not a system. */}
+      {quiet.length ? (
+        <section className="mt-4">
+          <h3 className={LABEL}>Went quiet</h3>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {quiet.map((u) => (
+              <li
+                key={u.id}
+                className="flex items-baseline justify-between gap-3 rounded-2xl bg-card px-3.5 py-2.5 ring-1 ring-edge"
+              >
+                <span className="min-w-0 truncate text-sm font-bold">{u.email}</span>
+                <span className="num shrink-0 text-xs font-bold text-muted">
+                  {u.sessions} sessions, last {fmtDate(u.lastWorkout!)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {cold.length ? (
         <CoachChip bubble className="mt-4">
           <strong>{cold.length}</strong> {cold.length === 1 ? 'person has' : 'people have'} signed up
@@ -145,6 +213,19 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           . That is the leak worth fixing before anything else.
         </CoachChip>
       ) : null}
+
+      {/* Whether anything shipped lately has been touched by anybody. This is
+          what decides what gets built next. */}
+      <section className={`mt-6 ${users === null ? 'hidden' : ''}`}>
+        <h2 className={LABEL}>Are the features being used</h2>
+        <dl className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <Stat label="Shared" value={adoption.shares ?? 0} note="workout links" />
+          <Stat label="Own workouts" value={adoption.customWorkouts ?? 0} note="built by hand" />
+          <Stat label="Notes" value={adoption.notes ?? 0} note="on movements" />
+          <Stat label="Nudges on" value={adoption.nudgesOn ?? 0} note="weekly check ins" />
+          <Stat label="Phones" value={adoption.devices ?? 0} note="taking push" />
+        </dl>
+      </section>
 
       <section className={`mt-6 ${users === null ? 'hidden' : ''}`}>
         <div className="flex items-center justify-between gap-3">
@@ -230,6 +311,34 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           {gaps.length > 20 ? (
             <p className="mt-1.5 text-xs text-muted">And {gaps.length - 20} more, below two users each.</p>
           ) : null}
+        </section>
+      ) : null}
+
+      {/* The gap report's other finding: people who created a movement the
+          library already has did not fail to find a gap, they failed to find
+          the search. */}
+      {missed > 0 ? (
+        <p className="mt-3 text-xs leading-relaxed text-muted">
+          {missed === 1 ? '1 person has' : `${missed} people have`} created movements the library
+          already has. That is the picker's search failing, not a gap.
+        </p>
+      ) : null}
+
+      {/* Who did what, to whom, when. Admin can be granted from this screen,
+          and the moment a second admin exists, a ban with no record is a
+          hole. */}
+      {log.length ? (
+        <section className="mt-6">
+          <h3 className={LABEL}>Recent admin activity</h3>
+          <ul className="mt-2 flex flex-col gap-1">
+            {log.map((row, i) => (
+              <li key={`${row.at}-${i}`} className="text-xs leading-relaxed text-muted">
+                <span className="font-bold text-fg">{row.actorEmail}</span> {row.action}{' '}
+                <span className="font-bold text-fg">{row.targetEmail}</span>
+                <span className="text-faint"> &middot; {fmtDate(row.at)}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
     </div>

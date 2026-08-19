@@ -13,7 +13,7 @@ import { buildPdf } from '../lib/pdf'
 import { MAX_WAIT, alertBody, alertRequest, nudgeBody, parseAlert, pushConfigured, wait } from '../lib/alert'
 // aliased: lib/body exports a summarise of its own, for bodyweight
 import { summarise as summariseSession } from '../lib/summary'
-import { HEALTH_LABEL, health, isAdmin, matches, neverStarted, sortUsers, toCsv as adminCsv, totals, type AdminUser } from '../lib/admin'
+import { HEALTH_LABEL, health, isAdmin, matches, neverStarted, sortUsers, toCsv as adminCsv, totals, weeklyTrend, wentQuiet, type AdminUser } from '../lib/admin'
 import { workoutFilename, workoutLines, workoutText } from '../lib/share'
 import {
   buildDay,
@@ -44,7 +44,7 @@ import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
 import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
-import { gapReport } from '../lib/gaps'
+import { failedSearches, gapReport } from '../lib/gaps'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
@@ -2580,6 +2580,76 @@ check('the library hears about what it is missing, and never lies about how loud
 
   // Blank names are nobody asking for anything.
   assert.deepEqual(gapReport([row('a', '   ')]), [])
+})
+
+check('the trend is drawn in weeks, and an empty week is a bar at zero', () => {
+  // Twelve bars whatever the data, oldest first, current week last, bucketed
+  // into the same Sunday week everything else counts in.
+  const empty = weeklyTrend([], '2026-08-19')
+  assert.equal(empty.length, 12)
+  assert.ok(empty.every((b) => b.sessions === 0))
+  assert.equal(empty[11].start, '2026-08-16', 'the last bar is this week, which started Sunday')
+  assert.equal(empty[0].start, '2026-05-31', 'the first bar is eleven weeks before that')
+
+  // A workout lands in its week, two same-week workouts are one bar of two,
+  // and anything older than the window is not silently pulled into bar one.
+  const drawn = weeklyTrend(['2026-08-17', '2026-08-18', '2026-08-10', '2020-01-01'], '2026-08-19')
+  assert.equal(drawn[11].sessions, 2)
+  assert.equal(drawn[10].sessions, 1)
+  assert.equal(drawn.reduce((n, b) => n + b.sessions, 0), 3, 'ancient history stays out of the window')
+
+  // Timestamps count the same as dates, because the workouts table hands back
+  // whatever it was given.
+  assert.equal(weeklyTrend(['2026-08-17T09:30:00Z'], '2026-08-19')[11].sessions, 1)
+})
+
+check('went quiet means was a regular, and stopped recently enough to reach', () => {
+  const u = (over: Partial<AdminUser>): AdminUser => ({
+    admin: false, rootAdmin: false, id: over.email ?? 'x', email: 'x@y.z', createdAt: '2026-01-01',
+    lastSignInAt: null, confirmedAt: null, bannedUntil: null, sessions: 0, sets: 0, volume: 0,
+    lastWorkout: null, firstWorkout: null, onboardedAt: null, goal: null, program: null, days: null,
+    ...over,
+  })
+  const today = '2026-08-19'
+  const list = wentQuiet(
+    [
+      u({ email: 'regular@x', sessions: 12, lastWorkout: '2026-08-05' }),
+      u({ email: 'fresher@x', sessions: 8, lastWorkout: '2026-08-08' }),
+      u({ email: 'active@x', sessions: 30, lastWorkout: '2026-08-18' }),
+      u({ email: 'tourist@x', sessions: 2, lastWorkout: '2026-08-01' }),
+      u({ email: 'gone@x', sessions: 40, lastWorkout: '2026-04-01' }),
+      u({ email: 'never@x', sessions: 0 }),
+    ],
+    today,
+  )
+  assert.deepEqual(list.map((x) => x.email), ['fresher@x', 'regular@x'], 'freshest lapse first')
+  // The active are not quiet, tourists were never regulars, and past sixty
+  // days somebody is not quiet, they are gone, which is a different
+  // conversation.
+})
+
+check('a failed search is counted in people, and only when the library already had it', () => {
+  assert.equal(
+    failedSearches([
+      { userId: 'a', name: 'Barbell Bench Press' },
+      { userId: 'a', name: 'Leg Extensions' },
+      { userId: 'b', name: 'leg extension' },
+      { userId: 'c', name: 'Viking Press' },
+      { userId: 'd', name: '  ' },
+    ]),
+    2,
+    'a is one person twice, b found by plural, c invented something real, d typed nothing',
+  )
+})
+
+check('every admin action is stamped before it returns', () => {
+  // The audit trail is only a trail if there are no exceptions. The route has
+  // one success return per action; each must log first.
+  const route = readFileSync(new URL('../app/api/admin/route.ts', import.meta.url), 'utf8')
+  const oks = route.match(/return NextResponse\.json\(\{ ok:/g) ?? []
+  const stamps = route.match(/await stamp\(\)/g) ?? []
+  assert.ok(oks.length >= 7, 'the action list shrank, update this check')
+  assert.equal(stamps.length, oks.length, 'an action returns without landing in the audit trail')
 })
 
 void (async () => {

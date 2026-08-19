@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { resolveAdmin } from '@/lib/adminAuth'
-import { loadGapRows, loadUsers } from '@/lib/adminData'
-import { gapReport } from '@/lib/gaps'
+import { loadAdminLog, loadGapRows, loadPulse, loadUsers, logAdminAction } from '@/lib/adminData'
+import { failedSearches, gapReport } from '@/lib/gaps'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { weeklyTrend, wentQuiet } from '@/lib/admin'
 import { supabaseServer } from '@/lib/supabase/server'
 
 // Everything the admin screen can do to somebody else's account.
@@ -26,8 +27,28 @@ export async function GET() {
     return new NextResponse('Not found', { status: 404 })
   }
   try {
-    const [users, gapRows] = await Promise.all([loadUsers(), loadGapRows()])
-    return NextResponse.json({ users: users ?? [], gaps: gapReport(gapRows) })
+    const [users, gapRows, pulse, log] = await Promise.all([
+      loadUsers(),
+      loadGapRows(),
+      loadPulse(),
+      loadAdminLog(),
+    ])
+    const today = new Date().toISOString().slice(0, 10)
+    return NextResponse.json({
+      users: users ?? [],
+      gaps: gapReport(gapRows),
+      failedSearches: failedSearches(gapRows),
+      trend: weeklyTrend(pulse.dates, today),
+      quiet: wentQuiet(users ?? [], today).map((u) => u.id),
+      adoption: {
+        shares: pulse.shares,
+        customWorkouts: pulse.customWorkouts,
+        notes: pulse.notes,
+        nudgesOn: pulse.nudgesOn,
+        devices: pulse.devices,
+      },
+      log,
+    })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'could not load' }, { status: 500 })
   }
@@ -60,6 +81,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'that is your own account' }, { status: 400 })
   }
 
+  // Written before the action returns, whatever the action is, because a
+  // trail with exceptions is not a trail. The email in the body is what the
+  // screen believes; good enough for a log line read by the person who was
+  // sitting at that screen.
+  const stamp = () =>
+    logAdminAction({ id: data.user!.id, email: data.user!.email ?? '' }, action, {
+      id,
+      email: email ?? '',
+    })
+
   try {
     switch (action) {
       case 'reset': {
@@ -71,21 +102,25 @@ export async function POST(request: NextRequest) {
           redirectTo: `${origin}/auth/callback?next=/reset`,
         })
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Reset link sent' })
       }
       case 'confirm': {
         const { error: failed } = await admin.auth.admin.updateUserById(id, { email_confirm: true })
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Email confirmed' })
       }
       case 'ban': {
         const { error: failed } = await admin.auth.admin.updateUserById(id, { ban_duration: '87600h' })
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Signed out and blocked' })
       }
       case 'unban': {
         const { error: failed } = await admin.auth.admin.updateUserById(id, { ban_duration: 'none' })
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Allowed back in' })
       }
       case 'grant': {
@@ -97,6 +132,7 @@ export async function POST(request: NextRequest) {
           .from('admins')
           .upsert({ user_id: id, email, granted_by: data.user!.id })
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Made an admin' })
       }
       case 'revoke': {
@@ -110,6 +146,7 @@ export async function POST(request: NextRequest) {
         }
         const { error: failed } = await admin.from('admins').delete().eq('user_id', id)
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Admin removed' })
       }
       case 'delete': {
@@ -117,6 +154,7 @@ export async function POST(request: NextRequest) {
         // sessions, sets, bodyweight, profile, the lot.
         const { error: failed } = await admin.auth.admin.deleteUser(id)
         if (failed) throw new Error(failed.message)
+        await stamp()
         return NextResponse.json({ ok: 'Account deleted' })
       }
       default:

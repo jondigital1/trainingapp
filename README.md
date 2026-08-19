@@ -201,6 +201,24 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
+Above the people, the line no snapshot can draw: sessions per week for the
+last twelve, empty weeks included because a gap is the shape worth seeing.
+Next to it, who went quiet: five or more sessions, nothing in ten days, not
+yet sixty. The never-started chip catches the leak at the front door; this is
+the leak out the back, and at this scale the fix is not a system, it is a
+personal message to somebody you know by name. And a row of adoption counts,
+one per shipped feature, because the screen could not previously say whether a
+single person had touched any of them.
+
+Every action the admin route takes lands in an audit trail first: who, did
+what, to whom, when, shown at the bottom of the screen. Admin can be granted
+from the screen itself, and the moment a second admin exists, a ban with no
+record of who banned is a hole. The table has row level security enabled with
+no policies at all, which locks it to the service role, and the emails in it
+are stored as text with no foreign keys because a trail has to survive the
+accounts it mentions. There is a check that counts the route's success returns
+against its log writes, so an action cannot quietly gain an exemption.
+
 Under the people, what the library is missing. Every custom exercise is
 somebody who searched the picker, found nothing, and typed the movement in by
 hand, and the report groups those by name across accounts, plurals folded in,
@@ -370,15 +388,15 @@ outside the knee pattern, because they are what a knee swaps to.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0013. Clear the editor before each paste: a partial paste fails in confusing
-   places. They create the nine tables, the indexes, one row level security
+   0014. Clear the editor before each paste: a partial paste fails in confusing
+   places. They create the ten tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
    table, the start, end and score on a session, and what a custom exercise
    knows about itself, the note on a session, the function that deletes
    your account, the admins table, shared workouts, the push endpoints and
-   nudge settings behind the weekly nudge, and the notes kept against a
-   movement.
+   nudge settings behind the weekly nudge, the notes kept against a
+   movement, and the admin audit trail.
 3. In Authentication then URL Configuration, add `https://YOUR-DOMAIN/auth/callback`
    as a redirect URL. That one URL covers all three mail flows: confirmation,
    password reset and the magic link.

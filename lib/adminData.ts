@@ -124,3 +124,88 @@ export async function loadGapRows(): Promise<
     group: (r.muscle_group as string) ?? null,
   }))
 }
+
+// The rest of the overview in one round trip: every workout date for the
+// trend, and a count per feature, because the screen could not say whether a
+// single person had touched anything shipped this month. The workouts read
+// repeats the one in loadUsers, which is deliberate whole-table honesty at
+// this scale; when it hurts, both become one view.
+export interface Pulse {
+  dates: string[]
+  shares: number
+  customWorkouts: number
+  notes: number
+  nudgesOn: number
+  devices: number
+}
+
+export async function loadPulse(): Promise<Pulse> {
+  const sb = supabaseAdmin()
+  if (!sb) return { dates: [], shares: 0, customWorkouts: 0, notes: 0, nudgesOn: 0, devices: 0 }
+  const count = (table: string) => sb.from(table).select('*', { count: 'exact', head: true })
+  const [workouts, shares, customs, notes, nudges, devices] = await Promise.all([
+    sb.from('workouts').select('date'),
+    count('shared_workouts'),
+    count('custom_workouts'),
+    count('exercise_notes'),
+    sb.from('settings').select('*', { count: 'exact', head: true }).not('nudge_day', 'is', null),
+    count('push_devices'),
+  ])
+  if (workouts.error) throw new Error(workouts.error.message)
+  return {
+    dates: (workouts.data ?? []).map((r) => r.date as string),
+    shares: shares.count ?? 0,
+    customWorkouts: customs.count ?? 0,
+    notes: notes.count ?? 0,
+    nudgesOn: nudges.count ?? 0,
+    devices: devices.count ?? 0,
+  }
+}
+
+// The audit trail. Every admin action lands here before its result goes back
+// to the screen, because the moment a second admin exists, a ban with no
+// record of who banned is a hole. Emails are stored as text on purpose: the
+// trail has to survive the accounts it mentions.
+export interface AdminLogRow {
+  at: string
+  actorEmail: string
+  action: string
+  targetEmail: string
+}
+
+export async function logAdminAction(
+  actor: { id: string; email: string },
+  action: string,
+  target: { id: string; email: string },
+): Promise<void> {
+  const sb = supabaseAdmin()
+  if (!sb) return
+  // A trail that can block the action it records is a trail that gets removed
+  // the first time it misfires, so a failed write is swallowed.
+  await sb.from('admin_actions').insert({
+    actor_id: actor.id,
+    actor_email: actor.email,
+    action,
+    target_id: target.id,
+    target_email: target.email,
+  })
+}
+
+export async function loadAdminLog(limit = 20): Promise<AdminLogRow[]> {
+  const sb = supabaseAdmin()
+  if (!sb) return []
+  const { data, error } = await sb
+    .from('admin_actions')
+    .select('at,actor_email,action,target_email')
+    .order('at', { ascending: false })
+    .limit(limit)
+  // The table arrives in migration 0014. An admin screen that predates it
+  // should show no history rather than an error.
+  if (error) return []
+  return (data ?? []).map((r) => ({
+    at: r.at as string,
+    actorEmail: r.actor_email as string,
+    action: r.action as string,
+    targetEmail: r.target_email as string,
+  }))
+}
