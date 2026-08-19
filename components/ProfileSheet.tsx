@@ -36,7 +36,6 @@ type Focus = 'minutes' | 'sore' | 'all'
 // back to change an answer means going to where you gave it.
 const SECTIONS = [
   { id: 'you', label: 'You' },
-  { id: 'experience', label: 'Experience' },
   { id: 'week', label: 'Your week' },
   { id: 'body', label: 'Your body' },
   { id: 'records', label: 'Records' },
@@ -290,59 +289,15 @@ export default function ProfileSheet({
           </>
         ) : null}
 
-        {section === 'experience' ? (
-          <>
-            <Field label="How long have you been lifting?">
-              <Options
-                value={draft.years}
-                onPick={(v) => set({ years: v })}
-                options={[
-                  { v: 'never' as const, label: 'Never done it' },
-                  { v: 'under6' as const, label: 'Under 6 months' },
-                  { v: 'sixToTwo' as const, label: '6 months to 2 years' },
-                  { v: 'overTwo' as const, label: 'Over 2 years' },
-                ]}
-              />
-            </Field>
-            {draft.years === 'never' || draft.years === 'under6' ? (
-              <Field label="Have you trained seriously in the past?">
-                <Options
-                  value={draft.before}
-                  onPick={(v) => set({ before: v })}
-                  options={[
-                    { v: 'no' as const, label: 'No, this is new' },
-                    { v: 'thisYear' as const, label: 'Yes, within the last year' },
-                    { v: 'longAgo' as const, label: 'Yes, longer ago than that' },
-                  ]}
-                />
-              </Field>
-            ) : null}
-            <Field label="Could you name the weight you last used on your main lifts?">
-              <Options
-                value={draft.knows}
-                onPick={(v) => set({ knows: v })}
-                options={[
-                  { v: 'yes' as const, label: 'Yes, to the plate' },
-                  { v: 'roughly' as const, label: 'Roughly' },
-                  { v: 'no' as const, label: 'No idea' },
-                ]}
-              />
-            </Field>
-            <Field label="Barbell lifts">
-              <Options
-                columns={2}
-                value={draft.barbell}
-                onPick={(v) => set({ barbell: v })}
-                options={[
-                  { v: 'confident' as const, label: 'Confident' },
-                  { v: 'rusty' as const, label: 'A bit rusty' },
-                  { v: 'never' as const, label: 'Never tried' },
-                  { v: 'no' as const, label: 'Not interested' },
-                ]}
-              />
-            </Field>
-          </>
-        ) : null}
+        {/* There is no Experience section any more, on purpose. How long you
+            had been lifting, whether you knew your weights and how the barbell
+            felt were questions about the day you signed up, and they were
+            asked to calibrate the starting program. Two years later the honest
+            answer to all of them is the log itself, and an editable snapshot
+            of who somebody used to be is not a setting, it is a trap: change
+            it and the program quietly re-derives from a fiction. Rerunning the
+            questionnaire from Settings is the sanctioned way to be re-read,
+            and it asks these in context, once, again. */}
 
         {section === 'week' ? (
           <>

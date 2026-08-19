@@ -2693,6 +2693,26 @@ check('one goal, whichever door it is edited through', () => {
   assert.ok(!settings.includes('onGoal'), 'Settings grew a second goal editor again')
 })
 
+check('who you were at signup is asked once, and the log answers it after that', () => {
+  // The profile page used to carry an editable copy of the experience
+  // questions. Those calibrated the starting program on day one; two years in,
+  // the honest answer to all of them is the log, and an editable snapshot of
+  // who somebody used to be quietly re-derives the program from a fiction.
+  // The rerun questionnaire in Settings is the one way to be re-read.
+  const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  for (const question of [
+    'How long have you been lifting',
+    'Have you trained seriously in the past',
+    'Could you name the weight',
+    'Barbell lifts',
+  ]) {
+    assert.ok(!profile.includes(question), `the profile page re-asks "${question}"`)
+  }
+  // And the questionnaire still asks them, because day one still needs them.
+  const onboarding = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
+  assert.ok(onboarding.includes('How long have you been lifting'), 'onboarding lost the experience question')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

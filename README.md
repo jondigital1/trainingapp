@@ -275,6 +275,15 @@ questionnaire used, and the finish screen only says Nice one when a set was
 actually logged. Checks pin the load-bearing ones: directions must name real
 tabs, and the goal must stay a single edited state.
 
+The Experience section is gone from the profile page for the same reason. How
+long somebody had been lifting, whether they knew their weights and how the
+barbell felt were questions about the day they signed up, asked to calibrate
+the starting program. Two years later the honest answer to all of them is the
+log itself, and an editable snapshot of who somebody used to be is not a
+setting, it is a trap: change it and the program quietly re-derives from a
+fiction. Rerunning the questionnaire from Settings is the one way to be
+re-read, and it asks these in context, once, again.
+
 ## Everything you want, in the order you want it## Everything you want, in the order you want it
 
 Goals are an ordered list. Pick as many as you like, because wanting to build
