@@ -26,6 +26,7 @@ import {
   program,
   returning,
   selfDirected,
+  type Profile,
 } from '../lib/onboarding'
 import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
@@ -75,11 +76,11 @@ check('library has 14 groups and 200 plus movements', () => {
   assert.equal(new Set(LIBRARY.map((e) => e.name)).size, LIBRARY.length)
 })
 
-check('six splits, twenty four days, every movement is in the library', () => {
+check('six splits, twenty six days, every movement is in the library', () => {
   assert.equal(SPLITS.length, 6)
   assert.equal(
     SPLITS.reduce((n, s) => n + s.days.length, 0),
-    24,
+    26,
   )
   for (const split of SPLITS) {
     for (const day of split.days) {
@@ -88,18 +89,21 @@ check('six splits, twenty four days, every movement is in the library', () => {
   }
 })
 
-check('his splits carry the core circuit and no barbell squat or deadlift', () => {
-  const banned = ['Back Squat', 'Front Squat', 'Deadlift', 'Romanian Deadlift', 'Good Morning']
+check('the 4 and 5 day splits carry the core circuit every day', () => {
   for (const id of ['summer4', 'five']) {
     const split = SPLITS.find((s) => s.id === id)!
     for (const day of split.days) {
       const names = dayNames(day)
       assert.ok(names.includes('Plank'), `${day.name} has no core circuit`)
       assert.ok(names.includes('Hanging Leg Raise'), `${day.name} has no core circuit`)
-      for (const bad of banned) assert.ok(!names.includes(bad), `${day.name} has ${bad}`)
     }
   }
 })
+
+// This check used to assert the opposite: that these two splits contained no
+// barbell squat or deadlift anywhere. That was one person's knee written into
+// what everybody got. The movements are back and the questionnaire decides who
+// sees them, which is checked by name further down.
 
 check('the core circuit is one superset in his template days', () => {
   for (const id of ['summer4', 'five']) {
@@ -329,12 +333,21 @@ check('the days you say are the days you get', () => {
   }
 })
 
-check('a six day week may run the same day twice, and stays distinguishable', () => {
+check('a six day week repeats the upper days and splits the legs', () => {
   const six = planFor({ years: 'sixToTwo', barbell: 'rusty', knows: 'roughly', days: 6 }, 'muscle')
   assert.equal(six.dayIds.length, 6)
-  assert.equal(new Set(six.dayIds).size, 3, 'push pull legs, twice through')
-  // Repeats are why anything rendering these keys by index rather than by id.
-  assert.deepEqual(six.dayIds.slice(0, 3), six.dayIds.slice(3))
+  // It used to be push pull legs twice through, which meant doing the same leg
+  // session on Tuesday and Friday. Push and pull still repeat, because they are
+  // worth repeating; the legs day became two different ones.
+  assert.equal(new Set(six.dayIds).size, 4)
+  const names = six.dayIds.map((id) => dayById(id)?.name ?? '')
+  assert.ok(names.some((n) => /quad/i.test(n)))
+  assert.ok(names.some((n) => /hamstring|glute/i.test(n)))
+  // Repeats are why anything rendering these keys does it by index, not by id.
+  const counts = new Map<string, number>()
+  for (const id of six.dayIds) counts.set(id, (counts.get(id) ?? 0) + 1)
+  assert.equal(counts.get('ppl-push'), 2)
+  assert.equal(counts.get('ppl-pull'), 2)
 })
 
 check('a sore knee changes the movement, not the session', () => {
@@ -344,10 +357,17 @@ check('a sore knee changes the movement, not the session', () => {
   assert.ok(plain.includes('Back Squat'))
   assert.ok(!knee.some((i) => i.name === 'Back Squat'), 'squat survived a bad knee')
   assert.equal(knee.length, plain.length, 'the session lost an exercise instead of swapping it')
-  assert.ok(knee.some((i) => i.swappedFrom === 'Back Squat' && i.name === 'Leg Press'), 'a knee wants the leg press')
-  const backs = buildDay(dayById('ul-lower-a')!, { sore: ['Low back'] })
+  // The quad day already contains the leg press, so the squat cannot swap to
+  // it; what matters is that it swapped to something rather than vanishing.
+  const swap = knee.find((i) => i.swappedFrom === 'Back Squat')
+  assert.ok(swap, 'the squat left without anything taking its place')
+  assert.equal(groupOf(swap!.name), 'Quads', 'and what replaced it still trains quads')
+  assert.ok(!knee.some((i) => /Squat|Lunge|Step Up/.test(i.name)), 'a knee wants none of them')
+
+  // The hinges moved to the posterior day, so that is where a bad back is felt.
+  const backs = buildDay(dayById('ul-lower-b')!, { sore: ['Low back'] })
   assert.ok(!backs.some((i) => /Deadlift|Good Morning/.test(i.name)), 'a hinge survived a bad back')
-  assert.ok(backs.some((i) => i.swappedFrom === 'Romanian Deadlift' && /Curl/.test(i.name)))
+  assert.ok(backs.some((i) => i.swappedFrom === 'Romanian Deadlift'), 'and it was swapped, not dropped')
 })
 
 check('bodyweight only leaves nothing that needs a rack', () => {
@@ -1417,6 +1437,14 @@ check('the coach argues with the prescribed window, not the goal-wide one', () =
   assert.match(coach({ id: 's', w: 40, r: 12 }, 'W', 'strength')!, /top of the range/i)
 })
 
+// Answers that land somebody in each program, so a plan can be asked for by
+// name rather than by guessing at scores.
+const SEED: Record<'Foundation' | 'Build' | 'Performance', Partial<Profile>> = {
+  Foundation: { years: 'never', knows: 'no', barbell: 'never' },
+  Build: { years: 'sixToTwo', knows: 'roughly', barbell: 'rusty' },
+  Performance: { years: 'overTwo', knows: 'yes', barbell: 'confident' },
+}
+
 const SHARED: Workout = {
   id: 'w', date: '2026-08-18', title: 'Push',
   startedAt: '2026-08-18T17:02:00.000Z', endedAt: '2026-08-18T18:09:00.000Z',
@@ -1708,6 +1736,84 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('five days and up gets two leg days, and they are different days', () => {
+  const QUADS = /quad/i
+  const POSTERIOR = /hamstring|glute/i
+
+  for (const program of ['Foundation', 'Build', 'Performance'] as const) {
+    for (const days of [5, 6]) {
+      const profile: Profile = { days, minutes: 60, ...SEED[program] }
+      const plan = planFor(profile, 'muscle')
+      const names = plan.dayIds.map((id) => dayById(id)?.name ?? '')
+      assert.ok(
+        names.some((n) => QUADS.test(n)),
+        `${program} at ${days} days has no quad day: ${names.join(', ')}`,
+      )
+      assert.ok(
+        names.some((n) => POSTERIOR.test(n)),
+        `${program} at ${days} days has no posterior day: ${names.join(', ')}`,
+      )
+      // Upper days may repeat, and at six days a week they should. The leg
+      // days may not: doing the same leg session twice was the complaint.
+      const quad = names.filter((n) => QUADS.test(n)).length
+      const post = names.filter((n) => POSTERIOR.test(n)).length
+      assert.equal(quad, 1, `${program} at ${days} days runs the quad day ${quad} times`)
+      assert.equal(post, 1, `${program} at ${days} days runs the posterior day ${post} times`)
+    }
+  }
+
+  // Three days is the exception, on purpose. A third of your week is not
+  // enough to split the lower body across.
+  for (const program of ['Foundation', 'Build', 'Performance'] as const) {
+    const plan = planFor({ days: 3, minutes: 60, ...SEED[program] }, 'muscle')
+    assert.equal(plan.dayIds.length, 3)
+  }
+
+  // Four days is a split decision rather than a rule. Foundation and Build run
+  // upper lower there, which is two lower days and so two different ones.
+  for (const program of ['Foundation', 'Build'] as const) {
+    const names = planFor({ days: 4, minutes: 60, ...SEED[program] }, 'muscle')
+      .dayIds.map((id) => dayById(id)?.name ?? '')
+    assert.ok(names.some((n) => QUADS.test(n)), `${program} at 4 days has no quad day`)
+    assert.ok(names.some((n) => POSTERIOR.test(n)), `${program} at 4 days has no posterior day`)
+  }
+
+  // Performance at four keeps push, pull, legs and an upper mix: one leg day
+  // and three upper. Two leg days out of four is upper lower, which is what
+  // the other two programs already hand out. Left as a deliberate choice
+  // rather than an oversight.
+  const four = planFor({ days: 4, minutes: 60, ...SEED.Performance }, 'muscle')
+  assert.deepEqual(four.dayIds, ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'])
+})
+
+check('the templates carry a squat, and the knee answer takes it away', () => {
+  // The 4 and 5 day splits used to hardcode one person's knee for everybody.
+  // Now they carry the ordinary movement and the questionnaire decides.
+  const quads = dayById('five-quads')!
+  assert.ok(dayNames(quads).includes('Back Squat'), 'a quad day has a squat on it')
+
+  const fine = buildDay(quads, { minutes: 60 }).map((i) => i.name)
+  assert.ok(fine.includes('Back Squat'))
+
+  const sore = buildDay(quads, { minutes: 60, sore: ['Knee'] }).map((i) => i.name)
+  assert.ok(!sore.includes('Back Squat'), 'a flagged knee never sees it')
+  assert.ok(!sore.includes('Bulgarian Split Squat'), 'nor the split stance one')
+  assert.equal(sore.length, fine.length, 'and gets something in its place rather than a shorter day')
+
+  // Same story on the legs day of the 4 day split.
+  const legs = dayById('summer4-legs')!
+  assert.ok(dayNames(legs).includes('Back Squat'))
+  assert.ok(!buildDay(legs, { minutes: 60, sore: ['Knee'] }).map((i) => i.name).includes('Back Squat'))
+
+  // A sore back takes the hinge out of the posterior day without emptying it.
+  const post = dayById('five-posterior')!
+  const back = buildDay(post, { minutes: 60, sore: ['Low back'] }).map((i) => i.name)
+  assert.ok(!back.includes('Romanian Deadlift'))
+  // Against the same day built without the flag, not against the raw template,
+  // since the minute budget trims both of them the same way.
+  assert.equal(back.length, buildDay(post, { minutes: 60 }).length)
+})
 
 check('somebody who writes their own workouts is not pushed onto a plan', () => {
   const base = { days: 4, minutes: 60 as const, years: 'overTwo' as const, knows: 'yes' as const }

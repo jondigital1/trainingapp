@@ -201,6 +201,43 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
+## Two leg days
+
+Five days a week and up gets a quad and calves day and a hamstrings and glutes
+day, and they are different sessions. Four days gets the same thing on Upper
+Lower, which is what Foundation and Build hand out there. Three days does not,
+because a third of your week is not enough to split the lower body across.
+
+What it replaced: one day called Legs, and at six days a week the same Legs day
+run twice. That was the most common thing new people said was wrong with the
+plans, and they were right.
+
+Performance at four days keeps push, pull, legs and an upper mix. Two leg days
+out of four is upper lower, which the other two programs already give you there.
+That one is a choice rather than an oversight, and it is written down in the
+checks so it stays a choice.
+
+## The knee is a question now, not a template
+
+The 4 and 5 day splits used to carry no barbell squat and no heavy hinge
+anywhere. That was one person's knee written into what everybody got, and it
+went unnoticed until other people started using the app and asked where the
+squats were.
+
+The movements are back where they belong. Somebody who flags a sore knee or a
+bad back in the questionnaire still never sees them: the ban list takes them out
+and the alternative finder puts something else from the same muscle group in
+their place, per person, at the moment the day is built.
+
+Putting them back exposed two real bugs that had been sitting behind the
+omission. A swap could land on a movement already sitting further down the same
+session, which put the leg press in a leg day twice; the used set is seeded with
+the whole day now rather than filled as it goes. And joints were banned by a
+hand written list of names, so banning the back squat for a sore knee let the
+swap land cheerfully on a goblet squat. Families are matched by pattern now, and
+the list stays for the odd ones out. Leg press and leg extension are deliberately
+outside the knee pattern, because they are what a knee swaps to.
+
 ## Setup
 
 1. Create a Supabase project.
@@ -531,7 +568,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 112 assertions over everything that is pure logic: the movement
+`npm run check` is 114 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering

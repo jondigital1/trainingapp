@@ -22,8 +22,11 @@ export interface TemplateSplit {
 // name, so it is a superset by structure: straight through, then rest.
 const CORE: TemplateEntry = ['Hanging Leg Raise', 'Cable Crunch', 'Pallof Press', 'Plank']
 
-// Knee note: the 4 and 5 day splits carry no barbell back squat and no
-// heavy hinge. Quad and hamstring work runs through machines and split stance.
+// These carry the ordinary movements, squats and hinges included. Somebody who
+// flags a sore knee or a bad back in the questionnaire never sees them: banned()
+// takes them out and alternative() puts a leg press or a curl in their place,
+// per person, at the moment the day is built. That is the right place for it.
+// The templates used to hardcode one person's knee for everybody.
 export const SPLITS: TemplateSplit[] = [
   {
     id: 'summer4',
@@ -62,11 +65,11 @@ export const SPLITS: TemplateSplit[] = [
         id: 'summer4-legs',
         name: 'Legs',
         exercises: [
+          'Back Squat',
+          'Romanian Deadlift',
           'Leg Press',
           'Seated Leg Curl',
-          'Leg Extension',
           'Bulgarian Split Squat',
-          'Hip Thrust',
           'Standing Calf Raise',
           CORE,
         ],
@@ -147,6 +150,33 @@ export const SPLITS: TemplateSplit[] = [
           CORE,
         ],
       },
+      {
+        id: 'five-quads',
+        name: 'Quads and Calves',
+        exercises: [
+          'Back Squat',
+          'Leg Press',
+          'Bulgarian Split Squat',
+          'Leg Extension',
+          'Standing Calf Raise',
+          CORE,
+        ],
+      },
+      {
+        id: 'five-posterior',
+        name: 'Hamstrings and Glutes',
+        exercises: [
+          'Romanian Deadlift',
+          'Hip Thrust',
+          'Seated Leg Curl',
+          'Lying Leg Curl',
+          'Seated Calf Raise',
+          CORE,
+        ],
+      },
+      // Kept because somebody's saved week may still point at them. Neither is
+      // handed out by the plan any more: five-legs became the two days above,
+      // and the upper pump day is what made room for the second of them.
       {
         id: 'five-pump',
         name: 'Upper Pump',
@@ -292,12 +322,12 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-a',
-        name: 'Lower A',
+        name: 'Quads and Calves',
         exercises: [
           'Back Squat',
-          'Romanian Deadlift',
+          'Leg Press',
+          'Bulgarian Split Squat',
           'Leg Extension',
-          'Seated Leg Curl',
           'Standing Calf Raise',
           'Hanging Leg Raise',
         ],
@@ -316,12 +346,12 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-b',
-        name: 'Lower B',
+        name: 'Hamstrings and Glutes',
         exercises: [
-          'Leg Press',
-          'Bulgarian Split Squat',
-          'Lying Leg Curl',
+          'Romanian Deadlift',
           'Hip Thrust',
+          'Lying Leg Curl',
+          'Seated Leg Curl',
           'Seated Calf Raise',
           'Cable Crunch',
         ],

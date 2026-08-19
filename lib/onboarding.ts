@@ -139,6 +139,11 @@ export function returning(p: Profile): boolean {
 // A day id can appear twice. Push pull legs run through twice is the standard
 // six day week, not a mistake, so anything rendering these keys by index
 // rather than by id.
+// Four days and up gets two leg days, and they are different days: quads and
+// calves on one, hamstrings and glutes on the other. One Legs day repeated, or
+// worse two identical ones, was the most common thing people said was wrong
+// with the plans. Three days a week is the exception, because a third of your
+// week is not enough to split the lower body across.
 const TABLE: Record<Program, Record<number, string[]>> = {
   Foundation: {
     3: ['fb-a', 'fb-b', 'fb-c'],
@@ -149,14 +154,14 @@ const TABLE: Record<Program, Record<number, string[]>> = {
   Build: {
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['ul-upper-a', 'ul-lower-a', 'ul-upper-b', 'ul-lower-b'],
-    5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
-    6: ['ppl-push', 'ppl-pull', 'ppl-legs', 'ppl-push', 'ppl-pull', 'ppl-legs'],
+    5: ['five-chest', 'five-back', 'five-quads', 'five-shoulders', 'five-posterior'],
+    6: ['ppl-push', 'ppl-pull', 'five-quads', 'ppl-push', 'ppl-pull', 'five-posterior'],
   },
   Performance: {
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
-    5: ['five-chest', 'five-back', 'five-legs', 'five-shoulders', 'five-pump'],
-    6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs', 'summer4-upper'],
+    5: ['five-chest', 'five-back', 'five-quads', 'five-shoulders', 'five-posterior'],
+    6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'five-quads', 'five-posterior'],
   },
 }
 
@@ -203,6 +208,9 @@ const SORE_BANS: Record<string, string[]> = {
   Knee: [
     'Back Squat', 'Front Squat', 'Smith Machine Squat', 'Hack Squat', 'Machine Hack Squat',
     'Cyclist Squat', 'Sissy Squat', 'Walking Lunge', 'Reverse Lunge', 'Curtsy Lunge', 'Step Up',
+    // Split stance is deep knee flexion under load on one leg. It was missing
+    // from this list only because no template that mattered contained one.
+    'Bulgarian Split Squat', 'Split Squat', 'Dumbbell Lunge', 'Barbell Lunge',
   ],
   'Low back': [
     'Deadlift', 'Trap Bar Deadlift', 'Rack Pull', 'Romanian Deadlift', 'Dumbbell Romanian Deadlift',
@@ -231,6 +239,10 @@ const PREFERRED: Record<string, string> = {
   'Cyclist Squat': 'Leg Extension',
   'Sissy Squat': 'Leg Extension',
   'Walking Lunge': 'Leg Press',
+  'Bulgarian Split Squat': 'Leg Extension',
+  'Split Squat': 'Leg Extension',
+  'Dumbbell Lunge': 'Leg Extension',
+  'Barbell Lunge': 'Leg Press',
   'Reverse Lunge': 'Leg Extension',
   'Curtsy Lunge': 'Hip Thrust',
   'Step Up': 'Leg Extension',
@@ -276,10 +288,26 @@ const ACCESS_EQUIPMENT: Record<NonNullable<Profile['access']>, string[]> = {
   body: ['bodyweight'],
 }
 
+// Some joints rule out a whole family of movements rather than a list of them.
+// A hand written list catches the variants somebody remembered: ban the back
+// squat and the front squat for a sore knee and the swap lands cheerfully on a
+// goblet squat, because nobody thought to write that one down. The pattern
+// catches the family; the list above stays for the odd ones out.
+//
+// Leg press and leg extension are deliberately not in the knee pattern. They
+// are what a knee swaps to.
+const SORE_PATTERNS: Record<string, RegExp> = {
+  Knee: /Squat|Lunge|Step Up|Sissy|Nordic|Pistol/i,
+  'Low back': /Deadlift|Good Morning|Back Extension|Barbell Row|Pendlay|Back Squat|Front Squat/i,
+  Shoulder: /Overhead Press|Push Press|Behind (the )?Neck|Upright Row/i,
+}
+
 function banned(profile: Profile): Set<string> {
   const out = new Set<string>()
   for (const joint of profile.sore ?? []) {
     for (const name of SORE_BANS[joint] ?? []) out.add(name)
+    const pattern = SORE_PATTERNS[joint]
+    if (pattern) for (const e of LIBRARY) if (pattern.test(e.name)) out.add(e.name)
   }
   for (const name of profile.dislikes ?? []) out.add(name)
   return out
@@ -315,7 +343,10 @@ const BUDGET: Record<number, number> = { 30: 4, 45: 6, 60: 8, 75: 10, [LONG_SESS
 
 export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
   const bans = banned(profile)
-  const used = new Set<string>()
+  // Seeded with the whole day, not filled as it goes. A swap decided at the
+  // first movement used to be free to pick something sitting three lines
+  // further down, which put the leg press in the session twice.
+  const used = new Set<string>(dayItems(day).map((i) => i.name))
   const out: PlannedItem[] = []
 
   // A swap keeps the superset tag: the pattern stays in the circuit even when
