@@ -12,6 +12,7 @@ export default function ExercisePicker({
   customs,
   replacing,
   onPick,
+  onOpen,
   onCreate,
   onClose,
 }: {
@@ -20,6 +21,10 @@ export default function ExercisePicker({
   // than to add. Picking replaces it in place instead of appending.
   replacing?: string | null
   onPick: (name: string, type: SetType, superset: string | null) => void
+  // Opens the movement's own screen. Wanting to know what something is before
+  // adding it is a different question from adding it, so it gets its own tap
+  // rather than making the row do two jobs.
+  onOpen?: (name: string) => void
   onCreate: (exercise: CustomExercise) => void
   onClose: () => void
 }) {
@@ -129,16 +134,26 @@ export default function ExercisePicker({
 
       <div className="mt-3 flex flex-col">
         {results.map((e) => (
-          <button
-            key={`${e.group}-${e.name}`}
-            onClick={() => pick(e.name, e.type)}
-            className="flex items-center justify-between border-b border-edge py-3 text-left"
-          >
-            <span className="text-sm">{e.name}</span>
-            <span className="text-xs text-muted">
-              {added.includes(e.name) ? 'Added' : e.group}
-            </span>
-          </button>
+          <div key={`${e.group}-${e.name}`} className="flex items-center border-b border-edge">
+            <button
+              onClick={() => pick(e.name, e.type)}
+              className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
+            >
+              <span className="text-sm">{e.name}</span>
+              <span className="shrink-0 text-xs text-muted">
+                {added.includes(e.name) ? 'Added' : e.group}
+              </span>
+            </button>
+            {onOpen ? (
+              <button
+                onClick={() => onOpen(e.name)}
+                aria-label={`About ${e.name}`}
+                className="ml-3 grid h-7 w-7 flex-none place-items-center rounded-full font-display text-xs font-bold text-muted ring-1 ring-edge"
+              >
+                i
+              </button>
+            ) : null}
+          </div>
         ))}
         {results.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nothing matches</p> : null}
       </div>

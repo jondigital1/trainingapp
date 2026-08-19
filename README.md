@@ -923,6 +923,10 @@ Tapping the name of any movement inside a session opens it. The muscle group,
 what it is measured in, what it rests for, a note, the chart, and every time
 you have done it.
 
+It opens from the picker too, from an i beside each row rather than from the
+row itself. Wanting to know what something is before adding it is a different
+question from adding it, and a row that does both jobs does neither cleanly.
+
 The note is the reason the screen exists. A session already carries a note and
 that is the right home for how a session went. It is the wrong home for "seat
 at 4, feet on the plate, elbows tucked", which is true of this movement every

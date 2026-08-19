@@ -1046,6 +1046,7 @@ export default function App({
             }
             addExercise(targetWorkout.id, name, type, superset)
           }}
+          onOpen={setOpenExercise}
           onCreate={(exercise) => void createCustomExercise(exercise)}
           onClose={() => {
             setSheet(null)
