@@ -8,6 +8,7 @@ import {
   goalsOf,
   GOAL_FROM_CHOICE,
   legDaysOf,
+  OTHER_NOTES,
   OTHER_TRAINING,
   planFor,
   PROGRAMS,
@@ -356,9 +357,10 @@ export default function ProfileSheet({
             </Field>
             <Field label="Rest of the week" optional>
               <Chips options={OTHER_TRAINING} selected={draft.other ?? []} onToggle={(v) => toggle('other', v)} />
-              {(draft.other ?? []).includes('Running') ? (
-                <Note>Lift first when both land on the same day.</Note>
-              ) : null}
+              {/* This field's whole job is the advice under it, and until every
+                  answer had a line, four of the five were collected and read by
+                  nothing, which is the exact bug the barbell question had. */}
+              {(draft.other ?? []).map((o) => (OTHER_NOTES[o] ? <Note key={o}>{OTHER_NOTES[o]}</Note> : null))}
             </Field>
             <Field
               label="Training blocks"
@@ -483,7 +485,11 @@ function SoreFields({
             />
           </Field>
           {draft.redFlag ? (
-            <Note>Worth a professional eye before you load it. We will keep suggesting the rest.</Note>
+            <Note>
+              Worth a professional eye before you load it. Sessions drop that joint's work
+              entirely, swaps included, and everything else stays. Flip this back to none of
+              those once you are cleared.
+            </Note>
           ) : null}
         </>
       ) : null}

@@ -105,6 +105,17 @@ export interface Profile {
 
 export const SORE_JOINTS = ['Knee', 'Low back', 'Shoulder', 'Hip', 'Elbow', 'Neck', 'Wrist']
 export const OTHER_TRAINING = ['Running', 'Cycling', 'Sport', 'Classes', 'Walking']
+
+// The whole job of the rest-of-the-week answer is the line under it: how the
+// lifting and the other thing share a week without eating each other. Until
+// every answer had one, four of the five were collected and read by nothing.
+export const OTHER_NOTES: Record<string, string> = {
+  Running: 'Lift first when both land on the same day, and keep the hard runs off leg day.',
+  Cycling: 'Easy spins help leg day recovery more than they cost it. Hard intervals count as leg work.',
+  Sport: 'Match days are training. The day before one is a bad day for heavy legs.',
+  Classes: 'A hard class is a session. Two a week means your lifting days can afford to be heavier, not longer.',
+  Walking: 'Walking costs nothing and helps everything. No planning needed.',
+}
 export const COMMON_DISLIKES = [
   'Burpees', 'Back Squat', 'Deadlift', 'Walking Lunge', 'Overhead Press', 'Plank', 'Run',
 ]
@@ -367,12 +378,41 @@ const SORE_PATTERNS: Record<string, RegExp> = {
   Shoulder: /Overhead Press|Push Press|Behind (the )?Neck|Upright Row/i,
 }
 
+// What a red flag takes on top. The ordinary patterns deliberately spare the
+// gentle machines, because that is what a sore joint swaps to; a red flagged
+// joint does not get the swap either, because pain that wakes you at night or
+// a limb going numb is not something to leg press around. Joints without a
+// row here fall back to their ordinary bans, which for the small joints
+// already cover what loads them.
+const RED_FLAG_PATTERNS: Record<string, RegExp> = {
+  Knee: /Leg Press|Leg Extension|Hack Squat|Wall Sit|Leg Curl|Hip Thrust|Glute Bridge|Sled/i,
+  'Low back': /Row|Rack Pull|Hip Thrust|Glute Bridge|Hyperextension|Leg Press|Squat|Carry|Swing/i,
+  Shoulder: /Press|Raise|Fly|Dip|Pull Up|Chin Up|Pulldown|Pullover|Face Pull|Push Up/i,
+  Hip: /Squat|Lunge|Leg Press|Hip Thrust|Glute Bridge|Deadlift|Abduction|Adduction|Step Up/i,
+  Elbow: /Curl|Extension|Pushdown|Skull Crusher|Press|Dip|Row|Pull/i,
+  Wrist: /Curl|Press|Push Up|Pull Up|Row|Carry|Hang/i,
+  Neck: /Shrug|Overhead|Behind (the )?Neck|Deadlift|Carry/i,
+}
+
 function banned(profile: Profile): Set<string> {
   const out = new Set<string>()
   for (const joint of profile.sore ?? []) {
     for (const name of SORE_BANS[joint] ?? []) out.add(name)
     const pattern = SORE_PATTERNS[joint]
     if (pattern) for (const e of LIBRARY) if (pattern.test(e.name)) out.add(e.name)
+  }
+  // A red flag answer used to be stored and read by nothing, which for a
+  // safety question is the worst kind of ignored. The note beside it promises
+  // "we will keep suggesting the rest", and this is that promise kept: an
+  // ordinary sore joint swaps to its gentle alternative, a red flagged one
+  // does not get the alternative either, because pain that wakes you at night
+  // or a limb going numb is not something to leg press around, it is
+  // something to have looked at. Everything unrelated to the joint stays.
+  if (profile.redFlag) {
+    for (const joint of profile.sore ?? []) {
+      const strict = RED_FLAG_PATTERNS[joint]
+      if (strict) for (const e of LIBRARY) if (strict.test(e.name)) out.add(e.name)
+    }
   }
   for (const name of profile.dislikes ?? []) out.add(name)
   return out

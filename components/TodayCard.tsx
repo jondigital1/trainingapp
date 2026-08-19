@@ -26,11 +26,15 @@ export default function TodayCard({
   workouts,
   today,
   onStart,
+  onPeek,
 }: {
   profile: Profile
   workouts: Workout[]
   today: string
   onStart: (dayId: string) => void
+  // Opens the day for reading: what is in it, what it costs, and a Start that
+  // is its own tap. Browsing Friday must never start Friday's workout.
+  onPeek: (dayId: string) => void
 }) {
   const schedule = scheduleOf(profile)
   const planned = todaysDayId(profile, today)
@@ -80,13 +84,13 @@ export default function TodayCard({
         {week.map((d) => {
           const its = d.dayId ? dayById(d.dayId) : null
           return (
-            // Only today starts a session. The other cells are the week being
-            // read, and reading what Friday holds must not start Friday's
-            // workout right now with a delete-and-Sure? recovery.
+            // Any planned day opens for reading, and starting is its own tap
+            // inside the preview, so what Friday holds is one tap away and
+            // Friday's workout still cannot start by accident.
             <button
               key={d.iso}
-              onClick={() => d.today && d.dayId && onStart(d.dayId)}
-              disabled={!d.today || !d.dayId}
+              onClick={() => d.dayId && onPeek(d.dayId)}
+              disabled={!d.dayId}
               aria-label={
                 its
                   ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`

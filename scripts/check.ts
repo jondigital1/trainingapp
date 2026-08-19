@@ -42,7 +42,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
-import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf, STEP_COUNT } from '../lib/onboarding'
+import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf, OTHER_NOTES, OTHER_TRAINING, STEP_COUNT } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
@@ -2852,6 +2852,34 @@ check('the clock trims the session, never the reason somebody gave for training'
   const core = built.filter((i) => groupOf(i.name) === 'Core')
   assert.ok(core.length >= 1, 'the trim took the focused work')
   assert.equal(core[0].superset, null, 'a rescued movement stops claiming to be a circuit')
+})
+
+check('a red flag stops the swaps too, and lifts when it is cleared', () => {
+  // The red flag answer was stored and read by nothing, which for a safety
+  // question is the worst kind of ignored. A sore knee swaps squats for the
+  // leg press; a red flagged one does not get the leg press either, because
+  // pain that wakes you at night is not something to train around, and the
+  // note beside the question now says exactly that.
+  const sore = { days: 3, minutes: 60 as const, sore: ['Knee'], years: 'overTwo' as const, knows: 'yes' as const }
+  const legsId = planFor(sore, 'muscle').dayIds.find((id) => id.includes('legs'))!
+
+  const swapped = buildDay(dayById(legsId)!, sore)
+  assert.ok(swapped.some((i) => /Leg Press|Leg Extension/.test(i.name)), 'an ordinary sore knee keeps its gentle swap')
+
+  const flagged = buildDay(dayById(legsId)!, { ...sore, redFlag: true })
+  assert.ok(!flagged.some((i) => /Squat|Lunge|Leg Press|Leg Extension/.test(i.name)), 'a red flag must not be leg pressed around')
+  assert.ok(flagged.length > 0, 'the rest of the session survives, as the note promises')
+  assert.ok(flagged.some((i) => /Curl|Hip Thrust|Calf|Raise|Bridge/.test(i.name)), 'unrelated work stays')
+
+  // Cleared is cleared: flipping it back restores the gentle swap.
+  const cleared = buildDay(dayById(legsId)!, { ...sore, redFlag: false })
+  assert.deepEqual(cleared, swapped)
+
+  // And every rest-of-the-week answer earns its line, because four of the
+  // five were collected and read by nothing.
+  for (const o of OTHER_TRAINING) {
+    assert.ok((OTHER_NOTES[o] ?? '').length > 20, `${o} is collected and says nothing`)
+  }
 })
 
 void (async () => {

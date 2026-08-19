@@ -16,6 +16,8 @@ import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
+import Sheet from './Sheet'
+import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import ExerciseSheet from './ExerciseSheet'
 import RestBar, { useRest } from './RestTimer'
 import ExercisePicker from './ExercisePicker'
@@ -121,6 +123,8 @@ export default function App({
   const [swapping, setSwapping] = useState<{ id: string; name: string } | null>(null)
   // The movement whose own screen is open, by name.
   const [openExercise, setOpenExercise] = useState<string | null>(null)
+  // A day opened from the week strip for reading, by template day id.
+  const [peekDay, setPeekDay] = useState<string | null>(null)
   // When the last load failed and this is the copy from the device, the time
   // that copy was taken. Null when the data is live.
   const [offline, setOffline] = useState<string | null>(null)
@@ -835,6 +839,7 @@ export default function App({
             const day = dayById(dayId)
             if (day) reallyStart(day.name, buildDay(day, profile), true)
           }}
+          onPeek={setPeekDay}
         />
       ) : null}
 
@@ -1212,6 +1217,45 @@ export default function App({
           }}
           onSkip={() => setSheet('done')}
         />
+      ) : null}
+
+      {/* A day off the week strip, opened for reading. What is in it after
+          the profile's swaps, what it costs, and a Start that is its own tap:
+          the strip stays safe to browse and one tap short of training. */}
+      {peekDay && dayById(peekDay) ? (
+        (() => {
+          const day = dayById(peekDay)!
+          const items = buildDay(day, profile)
+          const est = fmtEstimate(estimateSeconds(items, data.settings.goal))
+          return (
+            <Sheet title={day.name} onClose={() => setPeekDay(null)}>
+              <p className="num text-xs font-bold text-accent-ink">
+                {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
+              </p>
+              <ul className="mt-3 flex flex-col gap-1.5 pb-2">
+                {items.map((item, i) => (
+                  <li key={`${item.name}-${i}`} className="surface rounded-xl px-3.5 py-2.5 ring-1 ring-edge">
+                    <span className="text-sm">{item.name}</span>
+                    {item.swappedFrom ? (
+                      <span className="ml-2 text-xs text-muted">for {item.swappedFrom}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {items.length ? (
+                <button
+                  onClick={() => {
+                    setPeekDay(null)
+                    reallyStart(day.name, items, true)
+                  }}
+                  className="mb-2 mt-3 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
+                >
+                  Start this today
+                </button>
+              ) : null}
+            </Sheet>
+          )
+        })()
       ) : null}
 
       {/* One movement, everything known about it. Opened from its name inside a

@@ -258,6 +258,24 @@ a circuit that cannot survive the time budget whole used to vanish whole,
 which silently deleted the focused work at thirty minutes. A dropped circuit
 now leaves its first focused movement behind as a single.
 
+The barbell bug prompted a sweep of every profile field against where it is
+read, and two more were being collected and ignored. The red flag question,
+which is the worst kind to ignore because it is a safety question, promised
+"we will keep suggesting the rest" and changed nothing: a red flagged joint
+now loses its work entirely, gentle swaps included, through strict per joint
+patterns, because pain that wakes you at night is not something to leg press
+around, and clearing the flag restores the gentle swap. The rest of the week
+answer had one advisory line for Running and nothing for the other four; its
+whole job is the line under it, so every answer has one now, and a check
+counts them. Height remains stored and shown back without driving anything,
+which is deliberate and marked optional, and is the only field left with no
+job beyond being read back to its owner.
+
+The week strip opens for reading. Tapping any planned day shows what is in it
+after the profile's swaps and what it costs, with Start as its own tap inside,
+so what Friday holds is one tap away and Friday's workout still cannot start
+by accident.
+
 ## The offers the log earns## The offers the log earns
 
 Two cards on the Calendar tab, each made once, each with a no that sticks.
