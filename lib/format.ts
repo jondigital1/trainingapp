@@ -66,8 +66,11 @@ export function today(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+// Takes a date or a timestamp. The auth table hands back full ISO timestamps
+// and everything the app writes is date only, and one of those silently
+// produced "undefined NaN undefined" until it was looked at in a browser.
 export function fmtDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
   const date = new Date(y, m - 1, d)
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

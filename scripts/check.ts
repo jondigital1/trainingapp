@@ -5,13 +5,14 @@ import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/e
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
-import { fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
+import { fmtDate, fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import { buildPdf } from '../lib/pdf'
 import { MAX_WAIT, alertRequest, parseAlert, pushConfigured, wait } from '../lib/alert'
 // aliased: lib/body exports a summarise of its own, for bodyweight
 import { summarise as summariseSession } from '../lib/summary'
+import { HEALTH_LABEL, health, isAdmin, matches, neverStarted, sortUsers, toCsv as adminCsv, totals, type AdminUser } from '../lib/admin'
 import { workoutFilename, workoutLines, workoutText } from '../lib/share'
 import {
   buildDay,
@@ -1693,6 +1694,115 @@ checkAsync('skipping the rest stops the alert, it does not just hang up', async 
   // A wait that runs its course reports that it was not cancelled, which is
   // what tells the route to send.
   assert.equal(await wait(10, new AbortController().signal), false)
+})
+
+function person(over: Partial<AdminUser>): AdminUser {
+  return {
+    id: 'id', email: 'a@example.com', createdAt: '2026-08-01T00:00:00Z',
+    lastSignInAt: null, confirmedAt: null, bannedUntil: null,
+    sessions: 0, sets: 0, volume: 0, lastWorkout: null, firstWorkout: null,
+    onboardedAt: null, goal: null, program: null, days: null,
+    ...over,
+  }
+}
+
+check('a date reads the same whether it arrives as a date or a timestamp', () => {
+  // The auth table hands back full ISO timestamps while everything the app
+  // writes is date only. Mixing them printed "undefined NaN undefined".
+  assert.equal(fmtDate('2026-08-19'), fmtDate('2026-08-19T09:00:00Z'))
+  assert.equal(fmtDate('2026-08-19T23:59:59.999+00:00'), fmtDate('2026-08-19'))
+  assert.match(fmtDate('2026-08-19T09:00:00Z'), /^Wed 19 Aug$/)
+})
+
+check('the admin allowlist fails shut', () => {
+  const saved = process.env.ADMIN_EMAILS
+
+  // No list means nobody, not everybody. This is the direction a mistake here
+  // has to fail in.
+  delete process.env.ADMIN_EMAILS
+  assert.ok(!isAdmin('anyone@example.com'))
+  process.env.ADMIN_EMAILS = ''
+  assert.ok(!isAdmin('anyone@example.com'))
+
+  process.env.ADMIN_EMAILS = ' Boss@Example.com , second@example.com '
+  assert.ok(isAdmin('boss@example.com'), 'case and padding do not matter')
+  assert.ok(isAdmin('  BOSS@EXAMPLE.COM '))
+  assert.ok(isAdmin('second@example.com'))
+  assert.ok(!isAdmin('boss@example.com.evil.com'), 'and it is a match, not a prefix')
+  assert.ok(!isAdmin('other@example.com'))
+  assert.ok(!isAdmin(null))
+  assert.ok(!isAdmin(''))
+
+  if (saved === undefined) delete process.env.ADMIN_EMAILS
+  else process.env.ADMIN_EMAILS = saved
+})
+
+check('the admin screen counts training, not signups', () => {
+  const now = '2026-08-19'
+  const people = [
+    person({ id: '1', email: 'training@x.com', sessions: 20, sets: 200, volume: 100_000,
+      lastWorkout: '2026-08-18', firstWorkout: '2026-05-01', onboardedAt: '2026-05-01T00:00:00Z' }),
+    person({ id: '2', email: 'slipping@x.com', sessions: 4, sets: 40, volume: 9_000,
+      lastWorkout: '2026-08-04', firstWorkout: '2026-07-01', onboardedAt: '2026-07-01T00:00:00Z' }),
+    person({ id: '3', email: 'gone@x.com', sessions: 2, sets: 12, volume: 1_000,
+      lastWorkout: '2026-06-01', firstWorkout: '2026-06-01', onboardedAt: '2026-06-01T00:00:00Z' }),
+    person({ id: '4', email: 'never@x.com', createdAt: '2026-08-17T00:00:00Z' }),
+  ]
+
+  assert.equal(health(people[0], now), 'active')
+  assert.equal(health(people[1], now), 'slipping')
+  assert.equal(health(people[2], now), 'dormant')
+  assert.equal(health(people[3], now), 'never')
+  assert.equal(HEALTH_LABEL.never, 'Never started')
+
+  const t = totals(people, now)
+  assert.equal(t.users, 4)
+  assert.equal(t.everTrained, 3, 'signing up is not training')
+  assert.equal(t.activeWeek, 1)
+  assert.equal(t.activeMonth, 2)
+  assert.equal(t.onboarded, 3)
+  assert.equal(t.sessions, 26)
+  assert.equal(t.signupsThisWeek, 1, 'only the one who joined in the last seven days')
+  assert.equal(t.volume, 110_000)
+
+  // The number worth acting on.
+  assert.deepEqual(neverStarted(people).map((p) => p.email), ['never@x.com'])
+})
+
+check('the people list sorts and searches the way it is read', () => {
+  const now = '2026-08-19'
+  const people = [
+    person({ id: '1', email: 'zoe@x.com', sessions: 3, lastWorkout: '2026-08-01' }),
+    person({ id: '2', email: 'amy@x.com', sessions: 9, lastWorkout: '2026-08-18',
+      createdAt: '2026-08-15T00:00:00Z' }),
+    person({ id: '3', email: 'ben@x.com', sessions: 0 }),
+  ]
+
+  // Most recently trained first, and whoever never trained goes last, because
+  // the list is read to find out who is still here.
+  assert.deepEqual(sortUsers(people, 'recent', now).map((p) => p.email),
+    ['amy@x.com', 'zoe@x.com', 'ben@x.com'])
+  assert.deepEqual(sortUsers(people, 'sessions', now).map((p) => p.email),
+    ['amy@x.com', 'zoe@x.com', 'ben@x.com'])
+  assert.deepEqual(sortUsers(people, 'signup', now)[0].email, 'amy@x.com')
+  assert.deepEqual(sortUsers(people, 'email', now).map((p) => p.email),
+    ['amy@x.com', 'ben@x.com', 'zoe@x.com'])
+  // Sorting never rewrites what it was given.
+  assert.equal(people[0].email, 'zoe@x.com')
+
+  assert.ok(matches(people[0], 'ZOE'))
+  assert.ok(matches(people[0], ''))
+  assert.ok(matches(people[0], '  '))
+  assert.ok(!matches(people[0], 'amy'))
+})
+
+check('the admin export is a spreadsheet, not a shrug', () => {
+  const csv = adminCsv([person({ email: 'a,b@x.com', sessions: 2, volume: 1234.6 })], '2026-08-19')
+  const [head, row] = csv.split('\n')
+  assert.match(head, /^email,id,signed up/)
+  assert.match(row, /^"a,b@x.com"/, 'a comma in a field is quoted, not left to break the file')
+  assert.match(row, /,1235,/, 'volume is rounded')
+  assert.match(row, /Never started$/)
 })
 
 void (async () => {

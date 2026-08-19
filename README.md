@@ -153,6 +153,42 @@ Light is the default rather than System, because a gym is bright and the app
 opening light is the answer more often. Following the device is something you
 opt into.
 
+## Admin
+
+`/admin`, for one person. Not linked from anywhere, and anybody not on the
+allowlist gets a 404 rather than a 403, because a 403 tells somebody poking at
+the app that there is a door here worth coming back for.
+
+Two environment variables switch it on. `ADMIN_EMAILS` is a comma separated
+allowlist; an empty one locks everybody out rather than letting everybody in,
+which is the direction a mistake here has to fail in. `SUPABASE_SERVICE_ROLE_KEY`
+is the only key that can read the auth table at all, and it bypasses row level
+security completely, which is why it lives behind a `server-only` import that
+fails the build if a client component ever pulls it in, and why it has no
+`NEXT_PUBLIC_` prefix for Next to inline it with.
+
+What it shows is the two halves that never meet anywhere else: the auth table,
+which knows who exists and when they last signed in, and the app's own tables,
+which know whether any of that turned into training. So every person carries
+their sessions, sets, weight moved, first and last workout, whether they
+finished the questionnaire, and which program they landed on.
+
+The state on each row counts training rather than sign ins, because opening the
+app and doing nothing is not training. Training is a session in the last ten
+days, slipping is thirty, gone quiet is beyond that, and never started is
+somebody who signed up and never logged a set. That last group gets called out
+above the list on its own, because for an app like this it is the only number
+worth acting on.
+
+Actions, each re-checking the allowlist on the request rather than trusting the
+page that rendered the button: send a password reset, which goes out through
+the ordinary flow so it arrives over the real mail setup and lands on the real
+form; confirm an email by hand; block and unblock sign in; and delete an
+account, which takes everything behind it and so is typed rather than tapped.
+The destructive two refuse to point at your own account, because locking
+yourself out of your own admin screen is a mistake nobody recovers from in a
+hurry. There is a CSV of whatever the list currently shows.
+
 ## Setup
 
 1. Create a Supabase project.
@@ -434,14 +470,15 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 104 assertions over everything that is pure logic: the movement
+`npm run check` is 109 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering
 rules, the check-in gating, unit conversion, the bodyweight summary, the
 lifetime record, the redirect guard, the set row columns, session duration and
 scoring, the six week block, the prescriptions, the shared sheet and the PDF it
-is written into, what the end of a session is allowed to claim,
+is written into, what the end of a session is allowed to claim, the admin
+allowlist and the numbers the admin screen counts,
 what a rest alert request is allowed to contain and what the push it sends puts
 on the wire, and the knowledge base gate. Every program
 is walked across every day count it offers, so a week nobody has tried cannot
