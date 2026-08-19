@@ -2,7 +2,7 @@
 // artifact importer and CSV export. Run with npm run check.
 import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, groupOf, lookupType, similarTo } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, equipmentOf, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
@@ -47,13 +47,12 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
+import { hasSchedule, monthGrid, monthLabel, scheduledDays, scheduleOf, shiftMonth, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
 import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
-import { equipmentOf } from '../lib/exercises'
 import {
   beatsLast, bestsFor, e1rm, LADDERS, lifetime, nextLandmark, prsFor, trainingGrid, volumePr,
   weeklyCoverage, weeklyStreak, weekStart,
@@ -2902,6 +2901,153 @@ check('the strip shows the next ten sessions with dates, not a week grid', () =>
 
   // No schedule, no strip, and no crash.
   assert.deepEqual(upcomingDays({}, '2026-08-19'), [])
+})
+
+check('every plan the app can generate is a real session', () => {
+  // The core and barbell bugs were first-session bugs that a code audit
+  // missed, because the audit read code and not output. This reads output: it
+  // builds thousands of days across the answer space and asserts the boring
+  // things about each one. A deterministic walk rather than a random sample,
+  // so a failure here is reproducible.
+  const kit: Record<string, string[]> = {
+    full: ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'other'],
+    basic: ['dumbbell', 'machine', 'bodyweight', 'other'],
+    home: ['dumbbell', 'bodyweight'],
+    body: ['bodyweight'],
+  }
+  const budget: Record<number, number> = { 30: 4, 45: 6, 60: 8, 75: 10, 90: 12 }
+  const known = new Set(LIBRARY.map((e) => e.name))
+  let built = 0
+
+  for (const years of ['never', 'overTwo'] as const)
+    for (const access of ['full', 'basic', 'home', 'body'] as const)
+      for (const minutes of [30, 60, 90] as const)
+        for (const days of [3, 4, 6])
+          for (const goalChoice of ['muscle', 'strength', 'health'] as const)
+            for (const barbell of ['confident', 'no'] as const)
+              for (const sore of [[], ['Knee'], ['Shoulder'], ['Hip', 'Elbow', 'Wrist']])
+                for (const focus of [[], ['Core'], ['Glutes']])
+                  for (const redFlag of [false, true]) {
+                    const p = { years, access, minutes, days, goalChoice, barbell, sore, focus, redFlag, knows: 'yes' as const }
+                    const goal = GOAL_FROM_CHOICE[goalChoice]
+                    const plan = planFor(p, goal)
+                    const where = `${years}/${access}/${minutes}m/${days}d/${goalChoice}/bb-${barbell}/sore-${sore.join('+') || 'none'}/focus-${focus.join('+') || 'none'}${redFlag ? '/RED' : ''}`
+
+                    for (const id of plan.dayIds) {
+                      const day = dayById(id)
+                      assert.ok(day, `${where}: ${id} does not resolve`)
+                      const items = buildDay(day!, p)
+                      built += 1
+
+                      // A day in the plan is a day with work in it. Days the
+                      // answers emptied are dropped from the plan instead.
+                      assert.ok(items.length > 0, `${where}/${id}: empty day offered as a session`)
+                      assert.ok(items.length <= (budget[minutes] ?? 8), `${where}/${id}: ${items.length} over budget`)
+
+                      const seen = new Set<string>()
+                      for (const item of items) {
+                        assert.ok(!seen.has(item.name), `${where}/${id}: ${item.name} twice`)
+                        seen.add(item.name)
+                        assert.ok(known.has(item.name), `${where}/${id}: unknown movement ${item.name}`)
+                        assert.ok(kit[access].includes(equipmentOf(item.name)), `${where}/${id}: ${item.name} needs kit they do not have`)
+                        if (barbell === 'no') assert.notEqual(equipmentOf(item.name), 'barbell', `${where}/${id}: ${item.name}`)
+                        assert.equal(lookupType(item.name), item.type, `${where}/${id}: ${item.name} is mistyped`)
+                      }
+
+                      // Supersets stay contiguous, because half a circuit at
+                      // the front and half at the back is not a circuit.
+                      const tags = items.map((i) => i.superset ?? null)
+                      for (const t of new Set(tags.filter(Boolean))) {
+                        const first = tags.indexOf(t)
+                        const last = tags.lastIndexOf(t)
+                        assert.equal(last - first + 1, tags.filter((x) => x === t).length, `${where}/${id}: superset ${t} is split`)
+                      }
+
+                      // What somebody asked to bring up leads the day it is in.
+                      if (focus.length && items.some((i) => focus.includes(groupOf(i.name) ?? ''))) {
+                        assert.ok(focus.includes(groupOf(items[0].name) ?? ''), `${where}/${id}: opens on ${items[0].name}`)
+                      }
+                      if (focus.includes('Core')) {
+                        assert.ok(items.some((i) => groupOf(i.name) === 'Core'), `${where}/${id}: core focus with no core`)
+                      }
+
+                      assert.ok(estimateSeconds(items, goal) > 0, `${where}/${id}: estimate is zero`)
+                    }
+                  }
+
+  assert.ok(built > 2000, `only built ${built} days, the sweep shrank`)
+})
+
+check('a red flag stays inside the region it belongs to', () => {
+  // The words these patterns match are not owned by one region: Press is in
+  // Leg Press, Raise is in Calf Raise, Curl is in Leg Curl. Unscoped, a
+  // flagged shoulder took the leg machines away and emptied whole days.
+  const shoulder = { days: 4, minutes: 60 as const, sore: ['Shoulder'], redFlag: true, years: 'overTwo' as const, knows: 'yes' as const }
+  const week = planFor(shoulder, 'muscle').dayIds.flatMap((id) => buildDay(dayById(id)!, shoulder))
+  assert.ok(week.some((i) => i.name === 'Leg Press'), 'a flagged shoulder took the leg press away')
+  assert.ok(week.some((i) => /Squat/.test(i.name)), 'a flagged shoulder took squats away')
+  assert.ok(!week.some((i) => /Bench Press|Overhead Press|Pec Deck|Lateral Raise|Dip/.test(i.name)), 'the shoulder itself is still being loaded')
+
+  // Same for an elbow, which used to ban every leg machine through Curl,
+  // Extension and Press.
+  const elbow = { days: 4, minutes: 60 as const, sore: ['Elbow'], redFlag: true, years: 'overTwo' as const, knows: 'yes' as const }
+  const elbowWeek = planFor(elbow, 'muscle').dayIds.flatMap((id) => buildDay(dayById(id)!, elbow))
+  assert.ok(elbowWeek.some((i) => /Leg Curl|Leg Extension|Leg Press/.test(i.name)), 'a flagged elbow took the leg machines away')
+  assert.ok(!elbowWeek.some((i) => /Bicep Curl|Cable Curl|Pushdown|Skull Crusher/.test(i.name)), 'the elbow itself is still being loaded')
+})
+
+check('a week that came back shorter says why', () => {
+  // A red flagged shoulder on a bodyweight kit genuinely leaves nothing safe
+  // for a chest day. The honest answer is a shorter week with a reason, not a
+  // card promising a workout and opening on nothing.
+  const stuck = { days: 6, minutes: 60 as const, access: 'body' as const, sore: ['Shoulder'], redFlag: true, years: 'overTwo' as const, knows: 'yes' as const }
+  const plan = planFor(stuck, 'muscle')
+  assert.ok(plan.emptied > 0, 'nothing was reported as dropped')
+  assert.equal(plan.dayIds.length + plan.emptied, 6, 'the dropped days do not add up to the week asked for')
+  for (const id of plan.dayIds) assert.ok(buildDay(dayById(id)!, stuck).length > 0)
+
+  // And an ordinary week loses nothing and says nothing.
+  assert.equal(planFor({ days: 4, years: 'overTwo', knows: 'yes' }, 'muscle').emptied, 0)
+})
+
+check('the month reads as a month, whatever the month starts on', () => {
+  // Six by seven, always, so the grid never reflows and the shape on screen is
+  // the shape people already know how to read.
+  const profile = { schedule: [null, 'ppl-push', null, 'ppl-pull', null, 'ppl-legs', null] }
+  const cells = monthGrid(profile, [], '2026-08-01', '2026-08-19')
+  assert.equal(cells.length, 42)
+  assert.equal(cells[0].date, '2026-07-26', 'the grid backs up to the Sunday on or before the first')
+  assert.ok(!cells[0].inMonth, 'days from the month before are marked as such')
+  assert.equal(cells.filter((c) => c.inMonth).length, 31, 'August has 31 days')
+
+  // A month that starts on a Sunday still gets a full leading week rather than
+  // a ragged first row.
+  const feb = monthGrid(profile, [], '2026-02-01', '2026-02-10')
+  assert.equal(feb.length, 42)
+  assert.equal(feb[0].date, '2026-02-01', 'February 2026 starts on a Sunday')
+
+  // Today, the future and the schedule all land where they should.
+  const today = cells.find((c) => c.date === '2026-08-19')!
+  assert.ok(today.today && !today.future)
+  assert.equal(today.dayId, 'ppl-pull', 'the 19th is a Wednesday, which is pull here')
+  assert.ok(cells.find((c) => c.date === '2026-08-20')!.future)
+  // The schedule array is Sunday indexed, so this one trains Mon, Wed, Fri.
+  assert.equal(cells.find((c) => c.date === '2026-08-17')!.dayId, 'ppl-push', 'Monday is push')
+  assert.equal(cells.find((c) => c.date === '2026-08-18')!.dayId, null, 'Tuesday is a rest day here')
+
+  // Trained beats planned, and an empty saved workout is not training.
+  const real = [{ id: 'a', date: '2026-08-18', title: 'x', exercises: [
+    { id: 'e', name: 'Barbell Bench Press', type: 'W' as const, sets: [{ id: 's', w: 100, r: 8, rpe: null, t: null, d: null, raw: null }] },
+  ] }] as unknown as Parameters<typeof monthGrid>[1]
+  assert.ok(monthGrid(profile, real, '2026-08-01', '2026-08-19').find((c) => c.date === '2026-08-18')!.trained)
+  const blank = [{ id: 'a', date: '2026-08-18', title: 'x', exercises: [] }] as unknown as Parameters<typeof monthGrid>[1]
+  assert.ok(!monthGrid(profile, blank, '2026-08-01', '2026-08-19').find((c) => c.date === '2026-08-18')!.trained)
+
+  // Stepping months lands on real months and survives the year boundary.
+  assert.equal(monthLabel('2026-08-01'), 'August 2026')
+  assert.equal(shiftMonth('2026-12-15', 1).slice(0, 7), '2027-01')
+  assert.equal(shiftMonth('2026-01-15', -1).slice(0, 7), '2025-12')
+  assert.equal(monthGrid(profile, [], shiftMonth('2026-08-01', 1), '2026-08-19').filter((c) => c.inMonth).length, 30)
 })
 
 void (async () => {

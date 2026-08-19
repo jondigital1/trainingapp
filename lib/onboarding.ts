@@ -381,15 +381,29 @@ const SORE_PATTERNS: Record<string, RegExp> = {
 // What a red flag takes on top. The ordinary patterns deliberately spare the
 // gentle machines, because that is what a sore joint swaps to; a red flagged
 // joint does not get the swap either, because pain that wakes you at night or
-// a limb going numb is not something to leg press around. Joints without a
-// row here fall back to their ordinary bans, which for the small joints
-// already cover what loads them.
+// a limb going numb is not something to leg press around.
+//
+// Scoped to the muscle groups the joint actually drives, because the words
+// these patterns match are not owned by one region: Press is in Leg Press,
+// Raise is in Calf Raise, Curl is in Leg Curl. Unscoped, a flagged shoulder
+// took the leg machines away and emptied whole days on a small kit, which is
+// not caution, it is a bug wearing caution's clothes.
+const RED_FLAG_GROUPS: Record<string, string[]> = {
+  Knee: ['Quads', 'Hamstrings', 'Glutes', 'Calves'],
+  'Low back': ['Back', 'Hamstrings', 'Glutes', 'Quads', 'Traps', 'Core', 'Carries'],
+  Shoulder: ['Chest', 'Shoulders', 'Back', 'Triceps', 'Traps'],
+  Hip: ['Quads', 'Hamstrings', 'Glutes'],
+  Elbow: ['Biceps', 'Triceps', 'Chest', 'Back', 'Shoulders', 'Forearms'],
+  Wrist: ['Biceps', 'Triceps', 'Forearms', 'Chest', 'Back', 'Carries'],
+  Neck: ['Traps', 'Shoulders', 'Back'],
+}
+
 const RED_FLAG_PATTERNS: Record<string, RegExp> = {
-  Knee: /Leg Press|Leg Extension|Hack Squat|Wall Sit|Leg Curl|Hip Thrust|Glute Bridge|Sled/i,
-  'Low back': /Row|Rack Pull|Hip Thrust|Glute Bridge|Hyperextension|Leg Press|Squat|Carry|Swing/i,
-  Shoulder: /Press|Raise|Fly|Dip|Pull Up|Chin Up|Pulldown|Pullover|Face Pull|Push Up/i,
+  Knee: /Leg Press|Leg Extension|Hack Squat|Wall Sit|Leg Curl|Hip Thrust|Glute Bridge|Sled|Step Up/i,
+  'Low back': /Row|Rack Pull|Hip Thrust|Glute Bridge|Hyperextension|Leg Press|Squat|Carry|Swing|Deadlift/i,
+  Shoulder: /Press|Raise|Fly|Pec Deck|Dip|Pull Up|Chin Up|Pulldown|Pullover|Face Pull|Push Up|Shrug/i,
   Hip: /Squat|Lunge|Leg Press|Hip Thrust|Glute Bridge|Deadlift|Abduction|Adduction|Step Up/i,
-  Elbow: /Curl|Extension|Pushdown|Skull Crusher|Press|Dip|Row|Pull/i,
+  Elbow: /Curl|Extension|Pushdown|Skull Crusher|Press|Dip|Row|Pull|Push Up/i,
   Wrist: /Curl|Press|Push Up|Pull Up|Row|Carry|Hang/i,
   Neck: /Shrug|Overhead|Behind (the )?Neck|Deadlift|Carry/i,
 }
@@ -411,7 +425,12 @@ function banned(profile: Profile): Set<string> {
   if (profile.redFlag) {
     for (const joint of profile.sore ?? []) {
       const strict = RED_FLAG_PATTERNS[joint]
-      if (strict) for (const e of LIBRARY) if (strict.test(e.name)) out.add(e.name)
+      const groups = RED_FLAG_GROUPS[joint]
+      if (!strict || !groups) continue
+      for (const e of LIBRARY) {
+        if (!groups.includes(e.group)) continue
+        if (strict.test(e.name)) out.add(e.name)
+      }
     }
   }
   for (const name of profile.dislikes ?? []) out.add(name)
@@ -699,6 +718,7 @@ export interface Plan {
   capped: boolean
   splitName: string
   dayIds: string[]
+  emptied: number
   legDays: 1 | 2
   // Everything they said they want, and the sentence explaining which of them
   // this week is actually doing.
@@ -944,10 +964,20 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   const cleared = profile.condition === 'yes'
   const choice = profile.goalChoice
   const legs = legDaysOf({ ...profile, days })
-  const dayIds =
+  const wanted =
     back && prog === 'Foundation' && RETURNER_DAYS[days]
       ? RETURNER_DAYS[days]
       : (legs === 1 ? ONE_LEG[prog][days] : undefined) ?? TABLE[prog][days]
+
+  // A day the answers emptied is not a session, so it is not offered as one.
+  // A red flagged shoulder on a bodyweight kit genuinely leaves nothing safe
+  // for a chest day, and the honest response is a shorter week that says so,
+  // rather than a card promising a workout and opening on nothing.
+  const dayIds = wanted.filter((id) => {
+    const day = dayById(id)
+    return day ? buildDay(day, { ...profile, days }).length > 0 : false
+  })
+  const emptied = wanted.length - dayIds.length
 
   return {
     program: prog,
@@ -956,6 +986,9 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     capped: asked > MAX_DAYS,
     splitName: back && prog === 'Foundation' && days === 4 ? 'Full Body, building up' : SPLIT_NAME[prog][days],
     dayIds,
+    // How many days the answers took off the week, so the plan screen can say
+    // it out loud rather than quietly handing somebody a shorter week.
+    emptied,
     legDays: legs,
     goals: goalsOf(profile),
     goalCoverage: goalCoverage(profile),

@@ -236,7 +236,46 @@ points, a person adds the movement properly in lib/exercises.ts, and the
 people who invented it keep their own. Names and counts only. What anybody
 lifted on their own movements stays theirs.
 
-## Answers the plan asks for reach the plan
+## Reading the output, not the code
+
+The core and barbell bugs were first session bugs that a six reviewer code
+audit missed an hour before they were reported, because the audit read code
+and the bugs were in output. So the checks now build the plan across the
+answer space, thousands of days, and assert the boring things about each one:
+every day has work in it, nothing appears twice, nothing needs equipment the
+person does not have, nothing a refused answer removed is present, supersets
+stay contiguous, focused work leads its day, and the count fits the clock.
+
+That sweep found one class of failure, and it was mine, shipped the same day.
+The red flag patterns matched across muscle groups, because the words they
+match are not owned by one region: Press is in Leg Press, Raise is in Calf
+Raise, Curl is in Leg Curl. A flagged shoulder was taking the leg machines
+away, and on a small kit whole days emptied out. The patterns are scoped to
+the groups each joint actually drives now, and a check holds a flagged
+shoulder to leaving the squat rack alone while still refusing to load the
+shoulder.
+
+What remained after that was legitimate: a red flagged shoulder on a
+bodyweight kit really does leave nothing safe for a chest day. So a day the
+answers empty is no longer offered as a session. The plan drops it, counts it,
+and the plan screen says how many days went and why, because a week that comes
+back shorter than the one somebody asked for needs a reason attached rather
+than a card promising a workout and opening on nothing.
+
+## The month
+
+The tab called Calendar showed today and nothing else, which on a rest day was
+a heading, a line of grey text and half a phone of white. A log is worth
+keeping because it accumulates, and the accumulation was three taps away on
+another tab.
+
+It now carries the month: six by seven, filled where you trained, outlined
+where your week asks for something, ringed on today, greyed either side of the
+month so the first row is never ragged. Tapping a filled day opens what you
+logged, tapping a planned one opens what it holds, and a rest day does
+nothing, which is the point of a rest day.
+
+## Answers the plan asks for reach the plan## Answers the plan asks for reach the plan
 
 A user answered Not interested on barbell lifts, picked Core as the thing to
 bring up, and got a first session that opened on a barbell bench press with no

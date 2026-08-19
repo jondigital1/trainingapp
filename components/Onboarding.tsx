@@ -571,6 +571,12 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
   const notes: string[] = []
+  // Said before anything else when it happens, because a week that came back
+  // shorter than the one somebody asked for needs a reason attached to it.
+  if (plan.emptied > 0)
+    notes.push(
+      `${plan.emptied === 1 ? 'One day' : `${plan.emptied} days`} of this week came back empty: between the joints you flagged and the equipment you have, nothing in ${plan.emptied === 1 ? 'it' : 'them'} was safe to give you. That leaves ${plan.dayIds.length} real ${plan.dayIds.length === 1 ? 'session' : 'sessions'}. Clearing a flag once you are seen, or widening the equipment on your profile, brings the rest back.`,
+    )
   // Said first, because it changes what everything under it is for.
   if (plan.selfDirected)
     notes.push(

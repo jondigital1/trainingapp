@@ -14,6 +14,7 @@ import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
+import MonthCalendar from './MonthCalendar'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
 import Sheet from './Sheet'
@@ -1001,6 +1002,22 @@ export default function App({
               onOpenExercise={setOpenExercise}
             />
           ))}
+
+          {/* The month, because a log is worth keeping because it accumulates,
+              and this tab is named after the place that accumulation should
+              live. Before this it showed today and half a phone of white. */}
+          <MonthCalendar
+            profile={profile}
+            workouts={data.workouts}
+            today={now}
+            onOpenDate={(date) => {
+              const hit = data.workouts.find((w) => w.date === date)
+              if (!hit) return
+              setTab('history')
+              setOpenHistory(hit.id)
+            }}
+            onPeek={setPeekDay}
+          />
         </div>
       ) : null}
 
