@@ -215,9 +215,24 @@ The second question only appears when the picks genuinely pull in different
 directions. Building muscle and leaning out are the same training, so being
 asked which comes first would be asking somebody to choose between a thing and
 itself; those two just get told they are covered together and the kitchen is
-what separates them. Muscle and strength do pull apart, so that gets a which
-one first, and the answer explains what is running, what rides along with it,
+what separates them. Muscle and strength do pull apart, so those get the second
+question, and the answer explains what is running, what rides along with it,
 and what is waiting and can be switched to any time.
+
+That answer leads with the list, not with the winner. It opens by saying nothing
+on your list cancels anything else out, and only then names which one is setting
+the reps and the rests. The order is the whole point. Somebody who wants four
+things and is told which one they are getting has been answered; somebody told
+nothing on their list is in conflict has been understood, and those are not the
+same thing. The second question is worded to match: it asks which one sets the
+numbers, and says underneath that you keep all of them. Nothing on that screen
+asks anybody to give something up, because nothing on that screen is being
+given up.
+
+Leaning out says lose fat now, in the words people use for it, instead of
+gesturing at it. The note under it is warmer for the same reason: lifting is
+what keeps the muscle while the fat comes off, so you end up smaller and
+stronger rather than just smaller, and the kitchen does the losing.
 
 Every option also says what it does underneath its label. Three of the four used
 to say nothing at all, which is what made picking one feel like giving up the

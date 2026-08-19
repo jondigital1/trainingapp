@@ -272,7 +272,10 @@ export default function ProfileSheet({
                 build muscle and lean out is one answer, and asking which comes first
                 would be asking somebody to choose between a thing and itself. */}
             {goalsOf(draft).length > 1 && !goalsAgree(goalsOf(draft)) ? (
-              <Field label="Which one first?" hint="The one that sets the rep ranges right now.">
+              <Field
+                label="Which one sets the numbers?"
+                hint="You keep all of them. This only picks the rep ranges you train in right now."
+              >
                 <Options
                   columns={2}
                   value={primaryGoal(draft)}

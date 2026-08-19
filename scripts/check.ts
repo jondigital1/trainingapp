@@ -1780,12 +1780,17 @@ check('you can want several things, and one of them is doing the driving', () =>
   assert.match(both, /^[A-Z]/, 'a sentence starts with a capital letter')
   assert.ok(!/first/i.test(both), 'nothing is queued behind anything here')
 
-  // Two that disagree name what is running and what is waiting, and say the
-  // waiting one can be switched to.
+  // Two that disagree open by saying the list is not in conflict, and only
+  // then name what is setting the numbers and what is waiting. The order is
+  // the point: being told which one you are getting answers the question,
+  // being told nothing on the list is lost answers the person.
   const split = goalCoverage({ goals: ['muscle', 'strength'], goalChoice: 'muscle' })!
-  assert.match(split, /building muscle first/i)
+  assert.match(split, /^Nothing on your list cancels anything else out\./)
+  assert.match(split, /building muscle is what sets the reps and the rests/i)
   assert.match(split, /getting stronger/i)
+  assert.match(split, /waiting rather than gone/i)
   assert.match(split, /switch to it/i)
+  assert.ok(!/\bonly\b|\binstead of\b/i.test(split), 'nothing here is framed as a loss')
 
   // Three, where one rides along and one waits.
   const three = goalCoverage({ goals: ['muscle', 'lean', 'health'], goalChoice: 'muscle' })!
@@ -1795,7 +1800,7 @@ check('you can want several things, and one of them is doing the driving', () =>
   // And the plan carries both, so every screen tells the same story.
   const plan = planFor({ days: 4, goals: ['strength', 'health'], goalChoice: 'strength' }, 'strength')
   assert.deepEqual(plan.goals, ['strength', 'health'])
-  assert.match(plan.goalCoverage!, /getting stronger first/i)
+  assert.match(plan.goalCoverage!, /getting stronger is what sets the reps and the rests/i)
 })
 
 check('every goal says what it does, and what it does not cost you', () => {

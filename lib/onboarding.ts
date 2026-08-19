@@ -503,7 +503,7 @@ export const GOAL_CHOICES: {
 }[] = [
   { v: 'muscle', label: 'Build muscle', note: 'Moderate reps, weight added as it gets easy' },
   { v: 'strength', label: 'Get stronger', note: 'Fewer reps, heavier, longer rests' },
-  { v: 'lean', label: 'Lean out', note: 'The same training as build muscle' },
+  { v: 'lean', label: 'Lean out', note: 'Lose fat, keep the muscle. Same training as build muscle' },
   { v: 'health', label: 'Stay capable', note: 'Lighter, more reps, kinder on the joints' },
 ]
 
@@ -513,7 +513,7 @@ const GOAL_NOTE: Record<NonNullable<Profile['goalChoice']>, string | null> = {
   strength:
     'Getting stronger builds muscle too, just from the heavier end. If you want size more than numbers, build muscle is the same idea with more reps and shorter rests.',
   lean:
-    'Leaning out is the same training as building muscle: this holds and builds what you have, and the kitchen takes the weight off. Nothing here is a fat burning workout, because that is not a thing a workout does.',
+    'Leaning out is the same training as building muscle, and that is the point: lifting is what keeps the muscle while the fat comes off, so you end up smaller and stronger rather than just smaller. The kitchen does the losing. Nothing in here is a fat burning workout, because that is not a thing a workout does.',
   health:
     'Staying capable runs lighter and longer: easier loads, more reps, kinder joints, and a coach line that stops asking you to grind. It still builds muscle, just not as fast as chasing it would.',
 }
@@ -544,7 +544,7 @@ export function goalsAgree(choices: GoalChoice[]): boolean {
 const GOAL_SHORT: Record<GoalChoice, string> = {
   muscle: 'moderate reps and weight added as it gets easy',
   strength: 'fewer reps, heavier, longer rests',
-  lean: 'the same training as building muscle',
+  lean: 'losing fat while the training keeps the muscle',
   health: 'lighter loads, more reps, kinder joints',
 }
 
@@ -565,19 +565,27 @@ export function goalCoverage(p: Profile): string | null {
   if (!first || all.length < 2) return null
 
   if (goalsAgree(all)) {
-    return `${cap(list(all.map((c) => GOAL_LABEL[c])))} are the same training, so this covers all of them at once. What separates them is the kitchen, not the session.`
+    return `${cap(list(all.map((c) => GOAL_LABEL[c])))} are the same training, so you get all of them at once. What separates them is the kitchen, not the session.`
   }
 
   const covered = all.filter((c) => c !== first && GOAL_FROM_CHOICE[c] === GOAL_FROM_CHOICE[first])
   const waiting = all.filter((c) => GOAL_FROM_CHOICE[c] !== GOAL_FROM_CHOICE[first])
 
-  const parts = [`Running ${GOAL_LABEL[first]} first, which sets the reps and the rests.`]
+  // Opens by reflecting the whole list back rather than by naming the one thing
+  // it is doing. Somebody who wants four things and is told which one they are
+  // getting has been answered; somebody told nothing on their list is in
+  // conflict has been understood, which is not the same and is what people
+  // meant when they said the app did not identify with them.
+  const parts = [
+    'Nothing on your list cancels anything else out.',
+    `${cap(GOAL_LABEL[first])} is what sets the reps and the rests.`,
+  ]
   if (covered.length) {
     parts.push(`${cap(list(covered.map((c) => GOAL_LABEL[c])))} comes with it, same training.`)
   }
   if (waiting.length) {
     parts.push(
-      `${cap(list(waiting.map((c) => `${GOAL_LABEL[c]} means ${GOAL_SHORT[c]}`)))}. Switch to it whenever you want on your profile, and nothing you have logged changes.`,
+      `${cap(list(waiting.map((c) => `${GOAL_LABEL[c]} means ${GOAL_SHORT[c]}`)))}, so that one is waiting rather than gone. Switch to it whenever you want on your profile, and nothing you have logged changes.`,
     )
   }
   return parts.join(' ')
