@@ -3,6 +3,7 @@ import { Baloo_2, Nunito_Sans } from 'next/font/google'
 import './globals.css'
 import ServiceWorker from '@/components/ServiceWorker'
 import { LiftySprite } from '@/components/LiftyMark'
+import { Analytics } from '@vercel/analytics/next'
 
 // Round display, sturdy text. Baloo carries the personality and Nunito does
 // the work. Self hosted by next/font, so nothing is fetched from Google at
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LiftySprite />
         <ServiceWorker />
         {children}
+        <Analytics />
       </body>
     </html>
   )
