@@ -82,7 +82,7 @@ export default function CustomBuilder({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Workout name"
-        className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+        className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -104,7 +104,7 @@ export default function CustomBuilder({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Or search every movement"
-        className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+        className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
       <button
@@ -134,7 +134,7 @@ export default function CustomBuilder({
               <span className="num w-4 shrink-0 text-xs text-muted">{i + 1}</span>
               <span className="min-w-0 flex-1 truncate text-sm">
                 {p.superset ? (
-                  <span className="num mr-1.5 text-xs text-accent">{letters.get(p.superset)}</span>
+                  <span className="num mr-1.5 text-xs text-accent-ink">{letters.get(p.superset)}</span>
                 ) : null}
                 {p.name}
               </span>
@@ -176,7 +176,7 @@ export default function CustomBuilder({
               className="flex items-center justify-between border-b border-edge py-3 text-left"
             >
               <span className="text-sm">{e.name}</span>
-              <span className={`text-xs ${on ? 'text-accent' : 'text-muted'}`}>{on ? 'Added' : e.group}</span>
+              <span className={`text-xs ${on ? 'text-accent-ink' : 'text-muted'}`}>{on ? 'Added' : e.group}</span>
             </button>
           )
         })}

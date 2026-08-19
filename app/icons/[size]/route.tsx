@@ -1,8 +1,14 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 
-// The app icon, drawn rather than committed, so there are no binary assets in
-// the repo and every size is generated from one definition. A barbell in the
-// accent on the app's own dark ground: it has to read at 48px on a home screen.
+// The app icon: the LiftyBot mark on Midnight, at the sizes iOS and Android
+// ask for. Rasterised from the one vector rather than committed as binaries,
+// so there is a single definition of the logo in this repo and the PNGs cannot
+// drift away from the SVG.
+//
+// The brand guide asks for the mark alone on the Midnight field with room
+// around it, which is the 12 percent padding below.
 const SIZES = ['180', '192', '512'] as const
 
 export const dynamic = 'force-static'
@@ -16,39 +22,24 @@ export async function GET(_request: Request, { params }: { params: Promise<{ siz
   const n = Number(size)
   if (!Number.isFinite(n) || n <= 0 || n > 1024) return new Response('bad size', { status: 400 })
 
-  // Laid out at 512 and scaled, so the proportions hold at every size.
-  const k = n / 512
-  const px = (v: number) => Math.round(v * k)
-  const bar = { w: 320, h: 22, x: 96 }
-  const inner = { w: 46, h: 168, l: 150, r: 316 }
-  const outer = { w: 30, h: 110, l: 104, r: 378 }
-  const mid = (h: number) => (n - px(h)) / 2
-  const plate = (x: number, w: number, h: number, radius: number) => ({
-    position: 'absolute' as const,
-    left: px(x),
-    top: mid(h),
-    width: px(w),
-    height: px(h),
-    background: '#e8613c',
-    borderRadius: px(radius),
-  })
+  const svg = await readFile(join(process.cwd(), 'public', 'favicon.svg'), 'utf8')
+  const mark = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+  const inner = Math.round(n * 0.76)
 
   return new ImageResponse(
     (
       <div
         style={{
-          position: 'relative',
           display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: n,
           height: n,
-          background: '#0c0e12',
+          background: '#0b121d',
         }}
       >
-        <div style={plate(bar.x, bar.w, bar.h, 11)} />
-        <div style={plate(outer.l, outer.w, outer.h, 12)} />
-        <div style={plate(inner.l, inner.w, inner.h, 16)} />
-        <div style={plate(inner.r, inner.w, inner.h, 16)} />
-        <div style={plate(outer.r, outer.w, outer.h, 12)} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={mark} width={inner} height={inner} alt="" />
       </div>
     ),
     { width: n, height: n },

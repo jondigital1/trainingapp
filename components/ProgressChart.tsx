@@ -74,7 +74,7 @@ export default function ProgressChart({ series }: { series: Series }) {
             <span className="ml-1 text-sm text-muted">{series.unit}</span>
           </p>
           {series.change != null ? (
-            <p className={`text-xs ${series.change >= 0 ? 'text-accent' : 'text-muted'}`}>
+            <p className={`text-xs ${series.change >= 0 ? 'text-accent-ink' : 'text-muted'}`}>
               {series.change >= 0 ? '+' : ''}
               {series.change}% since the first
             </p>

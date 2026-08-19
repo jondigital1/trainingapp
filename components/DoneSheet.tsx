@@ -37,7 +37,7 @@ export default function DoneSheet({
   return (
     <Sheet title={workout.title} onClose={onClose}>
       <div className="pb-2">
-        <h3 className="text-2xl font-semibold leading-tight tracking-tight text-accent">
+        <h3 className="text-2xl font-semibold leading-tight tracking-tight text-accent-ink">
           {summary.headline}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">{summary.line}</p>
@@ -64,9 +64,9 @@ export default function DoneSheet({
             </h4>
             <ul className="mt-2 flex flex-col gap-1.5">
               {summary.records.map((record) => (
-                <li key={record.name} className="rounded-2xl bg-ink px-3 py-2.5 ring-1 ring-accent">
+                <li key={record.name} className="rounded-2xl bg-ink px-3 py-2.5 ring-1 ring-accent-ink">
                   <p className="text-sm font-medium leading-snug">{record.name}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-accent">{recordText(record)}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-accent-ink">{recordText(record)}</p>
                 </li>
               ))}
             </ul>

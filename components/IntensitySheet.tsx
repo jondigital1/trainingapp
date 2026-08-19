@@ -33,7 +33,7 @@ export default function IntensitySheet({
       </p>
 
       <div className="mt-6 text-center">
-        <p className="num text-6xl font-semibold leading-none text-accent">{score}</p>
+        <p className="num text-6xl font-semibold leading-none text-accent-ink">{score}</p>
         <p className="mt-3 text-base">{label}</p>
       </div>
 

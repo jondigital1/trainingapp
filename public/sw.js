@@ -11,7 +11,7 @@
 // What this does not do is make the data offline. That is the app's job, and
 // it keeps its own copy of the last load in localStorage.
 
-const VERSION = 'v2'
+const VERSION = 'v3'
 const SHELL = `shell-${VERSION}`
 const ASSETS = `assets-${VERSION}`
 

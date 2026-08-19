@@ -464,7 +464,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   return (
     <>
       <div className="rounded-2xl bg-card p-4 ring-1 ring-edge">
-        <p className="text-xs uppercase tracking-wide text-accent">{plan.program}</p>
+        <p className="text-xs uppercase tracking-wide text-accent-ink">{plan.program}</p>
         <h2 className="mt-1 text-xl font-semibold tracking-tight">
           {plan.splitName}, {plan.days} days a week
         </h2>

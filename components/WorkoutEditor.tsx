@@ -99,7 +99,7 @@ export default function WorkoutEditor({
             onKeyDown={(e) => {
               if (e.key === 'Enter') setRenaming(false)
             }}
-            className="flex-1 rounded-lg bg-card px-3 py-2 text-base outline-none ring-1 ring-accent"
+            className="flex-1 rounded-lg bg-card px-3 py-2 text-base outline-none ring-1 ring-accent-ink"
           />
         ) : (
           <button
@@ -117,7 +117,7 @@ export default function WorkoutEditor({
               {volume > 0 ? ` · ${Math.round(volume).toLocaleString()} lb` : ''}
               {duration ? ` · ${duration}` : ''}
             </p>
-            {score ? <p className="mt-0.5 text-xs text-accent">Felt like {workout.intensity} of 10, {score.toLowerCase()}</p> : null}
+            {score ? <p className="mt-0.5 text-xs text-accent-ink">Felt like {workout.intensity} of 10, {score.toLowerCase()}</p> : null}
           </button>
         )}
         <div className="flex shrink-0 items-center">
@@ -174,7 +174,7 @@ export default function WorkoutEditor({
           type="date"
           value={workout.date}
           onChange={(e) => onChange({ ...workout, date: e.target.value })}
-          className="w-full rounded-lg bg-card px-3 py-2 text-sm num outline-none ring-1 ring-edge focus:ring-accent"
+          className="w-full rounded-lg bg-card px-3 py-2 text-sm num outline-none ring-1 ring-edge focus:ring-accent-ink"
         />
       ) : null}
 
@@ -219,9 +219,9 @@ export default function WorkoutEditor({
         const letter = supersetLetter(run.index)
 
         return (
-          <div key={run.exercises[0].id} className="rounded-2xl bg-card p-2 ring-1 ring-accent">
+          <div key={run.exercises[0].id} className="rounded-2xl bg-card p-2 ring-1 ring-accent-ink">
             <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
-              <span className="text-[11px] uppercase tracking-wide text-accent">
+              <span className="text-[11px] uppercase tracking-wide text-accent-ink">
                 Superset {letter}
                 <span className="ml-2 normal-case tracking-normal text-muted">
                   rest after {letter}
@@ -273,7 +273,7 @@ export default function WorkoutEditor({
           placeholder="Slept badly, shoulder felt off, gym was heaving"
           aria-label="Note about this session"
           rows={2}
-          className="w-full resize-none rounded-xl bg-card px-3 py-2.5 text-base leading-snug outline-none ring-1 ring-edge focus:ring-accent"
+          className="w-full resize-none rounded-xl bg-card px-3 py-2.5 text-base leading-snug outline-none ring-1 ring-edge focus:ring-accent-ink"
         />
       ) : (
         <button

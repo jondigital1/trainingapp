@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase/client'
+import LiftyMark from './LiftyMark'
 
 // Password first, because a magic link is four steps and assumes the mail is
 // on the phone you are standing in the gym with. The link is still here for
@@ -12,11 +13,13 @@ type Mode = 'signin' | 'signup' | 'magic' | 'forgot'
 const MIN_PASSWORD = 8
 
 const INPUT =
-  'w-full rounded-xl bg-card px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent'
+  'w-full rounded-xl bg-card px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink'
 
-export default function LoginForm({ expired }: { expired?: boolean }) {
+export default function LoginForm({ expired, start }: { expired?: boolean; start?: Mode }) {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('signin')
+  // The homepage has two doors, Sign up and Sign in, and each should open on
+  // the form it named rather than on the tab this happens to default to.
+  const [mode, setMode] = useState<Mode>(start ?? 'signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
@@ -103,7 +106,7 @@ export default function LoginForm({ expired }: { expired?: boolean }) {
     return (
       <Shell>
         <p className="mt-8 rounded-xl bg-card p-4 text-sm leading-relaxed">
-          {body} <span className="text-accent">{email.trim()}</span>
+          {body} <span className="text-accent-ink">{email.trim()}</span>
         </p>
         <button onClick={() => go('signin')} className="mt-4 text-sm text-muted underline">
           Back to sign in
@@ -202,7 +205,7 @@ export default function LoginForm({ expired }: { expired?: boolean }) {
           {busy ? 'One moment' : action}
         </button>
 
-        {error ? <p className="text-sm text-accent">{error}</p> : null}
+        {error ? <p className="text-sm text-accent-ink">{error}</p> : null}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
@@ -229,7 +232,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col justify-center px-6 py-10">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Lifty</h1>
+        <div className="flex items-center gap-2.5">
+          <LiftyMark size={38} />
+          <h1 className="font-display text-2xl font-bold tracking-tight">LiftyBot</h1>
+        </div>
         <p className="mt-2 text-sm text-muted">Log every set. See the last session. Know what to do next.</p>
         {children}
       </div>

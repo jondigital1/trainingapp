@@ -11,7 +11,7 @@ const OFF = 'surface text-bright ring-edge'
 // 16px, always. Anything smaller and iOS zooms the page on focus, which on a
 // form this long is genuinely disorienting.
 const INPUT =
-  'w-full rounded-xl surface px-3 py-3 text-base text-bright ring-1 ring-edge outline-none focus:ring-accent'
+  'w-full rounded-xl surface px-3 py-3 text-base text-bright ring-1 ring-edge outline-none focus:ring-accent-ink'
 
 export function Field({
   label,
@@ -155,6 +155,6 @@ export function NumberInput({
 
 export function Note({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-3 border-l-2 border-accent pl-3 text-xs leading-relaxed text-muted">{children}</p>
+    <p className="mt-3 border-l-2 border-accent-ink pl-3 text-xs leading-relaxed text-muted">{children}</p>
   )
 }

@@ -155,7 +155,7 @@ export default function ProfileSheet({
       }
     >
       <div className="rounded-2xl surface p-3 ring-1 ring-edge">
-        <p className="text-xs uppercase tracking-wide text-accent">{plan.program}</p>
+        <p className="text-xs uppercase tracking-wide text-accent-ink">{plan.program}</p>
         <p className="mt-1 text-sm">
           {name.trim() ? `${name.trim()}, on ` : ''}
           {plan.splitName}, {plan.days} days a week
@@ -430,7 +430,7 @@ function SoreFields({
         <>
           <div className="mt-3 rounded-2xl surface p-3 ring-1 ring-edge">
             <p className="text-sm">
-              Working around it is normal. Keep it at <span className="num text-accent">5 out of 10</span> or
+              Working around it is normal. Keep it at <span className="num text-accent-ink">5 out of 10</span> or
               under while you lift, and it should be back to its usual self the next morning. Worse the next
               day means that was too heavy.
             </p>

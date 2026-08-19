@@ -48,7 +48,7 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
         }}
         placeholder="Ask about training or the app"
         aria-label="Ask about training or the app"
-        className="w-full rounded-xl surface px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+        className="w-full rounded-xl surface px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
       {searching ? (

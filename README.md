@@ -1,4 +1,4 @@
-# Lifty
+# LiftyBot
 
 The artifact build, moved onto Next.js, Supabase and Vercel. Same app: log every
 set, see what you did last time on the line above the inputs, get told what to do
@@ -48,6 +48,16 @@ A week runs Sunday to Saturday, defined once in `lib/schedule.ts` and used by
 the streak, the coverage count and the training block, so the strip and the
 number beside it can never disagree about which week you are in.
 
+## The homepage
+
+Signed out, `/` is a page that says what LiftyBot is. It used to bounce straight
+to the login form, which is a door with no building attached to it. Signed in,
+the same address is the app.
+
+It is light only, on purpose. It is not the app and does not follow the theme
+somebody picked inside it. Sign up and Sign in are the only two things on it,
+and Sign up lands on the create-account tab rather than making you find it.
+
 ## Getting around
 
 Four destinations and one action across the bottom: Calendar, History, Start,
@@ -74,14 +84,42 @@ views there: this week, all time, and the charts.
 The rest timer sits on a shelf just above the bar, off one measurement defined
 once, and the bar itself carries the home indicator inset.
 
+## Brand
+
+The palette, the type and the mark come from the LiftyBot brand guide, and the
+app is drawn from the same tokens as the marketing page rather than a second
+set that drifts.
+
+Midnight `#0B121D` leads and Screen Navy `#131D2B` is the surface, which is the
+robot's own screen. Frost `#F5F8FB` is the light background and the body text on
+dark. Lift Lime `#C7E45A` is action. Coach Cyan `#7FE3F2` supports.
+
+Two accent tokens, not one, because the guide is explicit that Lime and Cyan are
+display colours and neither may be set as text on Frost. So `accent` is the
+action fill, always Lime with Midnight on top, and `accent-ink` is what accent
+text and outlines take: Deep Teal `#0E7F98` on light, Coach Cyan on dark. Every
+button in the app is the same green in both themes; every coach line, record
+label and focus ring changes colour with the theme, because it has to.
+
+Baloo 2 carries headings, the wordmark and buttons; Nunito Sans does the body
+and the UI. Both are self hosted by `next/font`, so nothing is fetched from
+Google at runtime and gym wifi never delays a heading.
+
+The mark is drawn once into the document as a hidden SVG sprite and referenced
+by every place that shows it, which keeps the gradient ids unique however many
+marks are on a page. The app icons are rasterised from that same vector at build
+time rather than committed as PNGs, so there is one definition of the logo in
+this repo and the icons cannot drift away from it.
+
 ## Appearance
 
-Light and dark, from one token set. Light is the default, so a phone set to
-dark still opens this app light. Settings carries Light / Dark / System, and
-following the device is something you opt into rather than the default.
-Whatever is chosen survives reload without a flash, since the only thing the
-pre-paint script has to stamp on is a choice that is not the default. The
-accent darkens in light mode so small accent text keeps its contrast on white.
+Light by default, dark by choice, and System if you want it to follow the phone.
+The choice is stored on the device and applied before first paint, so a dark
+user never gets a white flash on the way in.
+
+Light is the default rather than System, because a gym is bright and the app
+opening light is the answer more often. Following the device is something you
+opt into.
 
 ## Setup
 

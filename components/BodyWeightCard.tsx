@@ -81,7 +81,7 @@ export default function BodyWeightCard({
         </div>
         <div>
           <p className="text-[11px] uppercase tracking-wide text-muted">Current</p>
-          <p className="num mt-0.5 text-sm text-accent">{fmtWeight(body.current, unit)}</p>
+          <p className="num mt-0.5 text-sm text-accent-ink">{fmtWeight(body.current, unit)}</p>
           {body.currentDate ? (
             <p className="num text-[11px] text-muted">{fmtDate(body.currentDate)}</p>
           ) : null}

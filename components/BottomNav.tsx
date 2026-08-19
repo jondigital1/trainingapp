@@ -67,7 +67,7 @@ function Item({ item, on, onPick }: { item: NavItem; on: boolean; onPick: (tab: 
       <button
         onClick={() => onPick(item.id)}
         aria-current={on ? 'page' : undefined}
-        className={`flex w-full flex-col items-center gap-1 py-2 ${on ? 'text-accent' : 'text-muted'}`}
+        className={`flex w-full flex-col items-center gap-1 py-2 ${on ? 'text-accent-ink' : 'text-muted'}`}
       >
         <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
           {item.icon}
@@ -111,7 +111,7 @@ export default function BottomNav({
                 <rect x="4.5" y="10.6" width="15" height="2.8" rx="1.4" />
               </svg>
             </span>
-            <span className="text-[11px] font-medium leading-none text-accent">Start</span>
+            <span className="text-[11px] font-medium leading-none text-accent-ink">Start</span>
           </button>
         </li>
 

@@ -144,7 +144,7 @@ export default function RestBar({
   return (
     <div className="above-nav fixed inset-x-0 z-40 mx-auto max-w-lg px-4">
       <div
-        className={`overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ${done ? 'ring-accent' : 'ring-edge'}`}
+        className={`overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ${done ? 'ring-accent-ink' : 'ring-edge'}`}
       >
         <div className="h-1 bg-ink">
           <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
@@ -154,7 +154,7 @@ export default function RestBar({
             <p className="truncate text-xs text-muted">{done ? 'Rest is up' : 'Resting'}</p>
             <p className="truncate text-sm">{rest.name}</p>
           </div>
-          <span className={`text-2xl num ${done ? 'text-accent' : ''}`}>{fmtTime(remaining)}</span>
+          <span className={`text-2xl num ${done ? 'text-accent-ink' : ''}`}>{fmtTime(remaining)}</span>
           <button
             onClick={() => onExtend(30)}
             className="rounded-xl bg-ink px-3 py-2 text-xs text-muted ring-1 ring-edge"

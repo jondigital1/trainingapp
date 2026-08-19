@@ -206,7 +206,7 @@ export default function SettingsSheet({
         onChange={(e) => setPaste(e.target.value)}
         placeholder='{"workouts":[ ... ]}'
         rows={4}
-        className="mt-2 w-full rounded-xl bg-ink px-3 py-2 text-xs outline-none ring-1 ring-edge focus:ring-accent"
+        className="mt-2 w-full rounded-xl bg-ink px-3 py-2 text-xs outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
       <button
         disabled={!paste.trim()}
@@ -215,7 +215,7 @@ export default function SettingsSheet({
       >
         Import
       </button>
-      {status ? <p className="mt-2 text-xs text-accent">{status}</p> : null}
+      {status ? <p className="mt-2 text-xs text-accent-ink">{status}</p> : null}
 
       <h3 className="mt-6 text-xs uppercase tracking-wide text-muted">Help</h3>
       <button
@@ -248,7 +248,7 @@ export default function SettingsSheet({
             onChange={(e) => setTyped(e.target.value)}
             placeholder="Type DELETE to confirm"
             aria-label="Type DELETE to confirm"
-            className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+            className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
           />
           <div className="mt-2 flex gap-2">
             <button

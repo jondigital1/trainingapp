@@ -8,7 +8,7 @@ import type { SetEntry, SetType } from '@/lib/types'
 // is read at arm's length between efforts, so it wants to be short and
 // unmistakable rather than roomy.
 const FIELD =
-  'w-full rounded-lg bg-ink px-2 py-1.5 text-center text-base num outline-none ring-1 ring-edge focus:ring-accent'
+  'w-full rounded-lg bg-ink px-2 py-1.5 text-center text-base num outline-none ring-1 ring-edge focus:ring-accent-ink'
 
 export function SetHeader({ type, showPrevious }: { type: SetType; showPrevious: boolean }) {
   const columns = columnsFor(type)
@@ -100,7 +100,7 @@ export default function SetRow({
   return (
     <div className="flex items-center gap-2">
       {set.drop ? (
-        <span className="w-4 shrink-0 text-[9px] font-medium uppercase leading-tight tracking-wide text-accent">
+        <span className="w-4 shrink-0 text-[9px] font-medium uppercase leading-tight tracking-wide text-accent-ink">
           drop
         </span>
       ) : (

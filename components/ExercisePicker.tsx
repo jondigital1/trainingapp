@@ -86,7 +86,7 @@ export default function ExercisePicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search movements"
-        className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent"
+        className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
       <button
@@ -141,7 +141,7 @@ export default function ExercisePicker({
       {query.trim() && !exact ? (
         <div className="mt-4 rounded-xl bg-ink p-3 ring-1 ring-edge">
           <p className="text-sm">
-            Create <span className="text-accent">{query.trim()}</span>
+            Create <span className="text-accent-ink">{query.trim()}</span>
           </p>
 
           {/* Four questions, because the answers are what let a movement the

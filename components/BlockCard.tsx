@@ -28,7 +28,7 @@ export default function BlockCard({
 
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-lg font-semibold tracking-tight">{week.name}</span>
-        <span className="text-sm text-accent">{week.rir}</span>
+        <span className="text-sm text-accent-ink">{week.rir}</span>
       </div>
 
       <div className="mt-3 flex gap-1.5">
@@ -56,7 +56,7 @@ export default function BlockCard({
           <span className="text-xs text-muted">nothing scored yet</span>
         ) : (
           <span className="num">
-            <span className={read.verdict === 'on' ? 'text-bright' : 'text-accent'}>{read.average}</span>
+            <span className={read.verdict === 'on' ? 'text-bright' : 'text-accent-ink'}>{read.average}</span>
             <span className="ml-2 text-xs text-muted">
               {read.verdict === 'on'
                 ? 'on target'

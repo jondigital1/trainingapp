@@ -7,6 +7,7 @@ import { supabaseBrowser } from '@/lib/supabase/client'
 import CustomBuilder from './CustomBuilder'
 import Onboarding from './Onboarding'
 import BottomNav, { type Tab } from './BottomNav'
+import LiftyMark from './LiftyMark'
 import HelpSheet from './HelpSheet'
 import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
@@ -661,9 +662,18 @@ export default function App({ userId, email }: { userId: string; email: string }
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-safe pb-nav">
       <header className="flex items-center justify-between pb-4 pt-5">
-        <h1 className="text-xl font-semibold tracking-tight">
-          {tab === 'calendar' ? 'Lifty' : tab === 'history' ? 'History' : ''}
-        </h1>
+        {/* The mark and the wordmark, together, which is the lockup. On the
+            other tabs the heading is what you are looking at instead. */}
+        {tab === 'calendar' ? (
+          <div className="flex items-center gap-2">
+            <LiftyMark size={30} />
+            <span className="font-display text-xl font-bold tracking-tight">LiftyBot</span>
+          </div>
+        ) : (
+          <h1 className="font-display text-xl font-bold tracking-tight">
+            {tab === 'history' ? 'History' : ''}
+          </h1>
+        )}
         {tab === 'calendar' ? (
           <button
             onClick={() => setSheet('settings')}
@@ -681,7 +691,7 @@ export default function App({ userId, email }: { userId: string; email: string }
         </p>
       ) : null}
 
-      {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent ring-1 ring-edge">{error}</p> : null}
+      {error ? <p className="mb-3 rounded-xl bg-card p-3 text-xs text-accent-ink ring-1 ring-edge">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Loading</p> : null}
 
       {!loading && tab === 'calendar' ? (
@@ -820,7 +830,7 @@ export default function App({ userId, email }: { userId: string; email: string }
           {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}
           {past.map((workout) =>
             openHistory === workout.id ? (
-              <div key={workout.id} className="rounded-2xl bg-card p-3 ring-1 ring-accent">
+              <div key={workout.id} className="rounded-2xl bg-card p-3 ring-1 ring-accent-ink">
                 <WorkoutEditor
                   workout={workout}
                   goal={data.settings.goal}

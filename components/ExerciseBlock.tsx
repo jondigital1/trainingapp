@@ -112,7 +112,7 @@ export default function ExerciseBlock({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold leading-snug">
-            {label ? <span className="num mr-2 text-xs text-accent">{label}</span> : null}
+            {label ? <span className="num mr-2 text-xs text-accent-ink">{label}</span> : null}
             {exercise.name}
             {volumePr(exercise, bests) ? (
               <span className="ml-2 align-middle rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-on-accent">
@@ -124,7 +124,7 @@ export default function ExerciseBlock({
               rows themselves now, where set three sits beside set three
               instead of being summarised into a line you have to parse. */}
           <p className="num mt-0.5 text-xs text-muted">
-            {asked ? <span className="text-accent">{fmtPrescription(asked)}</span> : null}
+            {asked ? <span className="text-accent-ink">{fmtPrescription(asked)}</span> : null}
             {asked && last ? ' \u00b7 ' : ''}
             {last ? `Last ${fmtDate(last.date)}` : asked ? '' : 'First time logging this'}
           </p>
@@ -170,7 +170,7 @@ export default function ExerciseBlock({
                 onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((s) => s.id !== set.id) })}
               />
               {records.length ? (
-                <p className="pl-6 text-[11px] font-medium leading-tight text-accent">
+                <p className="pl-6 text-[11px] font-medium leading-tight text-accent-ink">
                   PR &middot; {records.map((k) => PR_LABEL[k]).join(', ')}
                 </p>
               ) : beat ? (
@@ -183,7 +183,7 @@ export default function ExerciseBlock({
       </div>
 
       {advice ? (
-        <p className="mt-2 text-xs leading-snug text-accent">
+        <p className="mt-2 text-xs leading-snug text-accent-ink">
           {fromLast ? 'Next set, ' : ''}
           {advice}
         </p>

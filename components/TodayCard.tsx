@@ -67,7 +67,7 @@ export default function TodayCard({
         </div>
         {streak > 0 ? (
           <div className="shrink-0 text-right">
-            <p className="num text-lg font-semibold leading-none text-accent">{streak}</p>
+            <p className="num text-lg font-semibold leading-none text-accent-ink">{streak}</p>
             <p className="text-[11px] text-muted">week{streak === 1 ? '' : 's'} in a row</p>
           </div>
         ) : null}
@@ -99,7 +99,7 @@ export default function TodayCard({
                   d.done
                     ? 'bg-accent text-on-accent ring-accent'
                     : d.dayId
-                      ? 'bg-transparent text-accent ring-accent'
+                      ? 'bg-transparent text-accent-ink ring-accent-ink'
                       : 'bg-transparent text-muted ring-edge'
                 } ${d.today ? 'ring-2' : ''}`}
               >

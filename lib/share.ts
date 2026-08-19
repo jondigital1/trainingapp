@@ -80,7 +80,7 @@ export function workoutLines(workout: Workout): Line[] {
   }
 
   lines.push({ style: 'gap' })
-  lines.push({ text: 'Logged in Lifty', style: 'muted' })
+  lines.push({ text: 'Logged in LiftyBot', style: 'muted' })
   return lines
 }
 

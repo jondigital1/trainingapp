@@ -52,13 +52,13 @@ export default function PasswordChange() {
         >
           Change password
         </button>
-        {done ? <p className="mt-2 text-xs text-accent">Password changed</p> : null}
+        {done ? <p className="mt-2 text-xs text-accent-ink">Password changed</p> : null}
       </>
     )
   }
 
   const input =
-    'w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent'
+    'w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink'
 
   return (
     <div className="mt-2 flex flex-col gap-2">
@@ -89,7 +89,7 @@ export default function PasswordChange() {
         aria-label="New password again"
         className={input}
       />
-      {error ? <p className="text-xs text-accent">{error}</p> : null}
+      {error ? <p className="text-xs text-accent-ink">{error}</p> : null}
       <div className="flex gap-2">
         <button
           onClick={() => void save()}

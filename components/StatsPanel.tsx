@@ -73,7 +73,7 @@ export default function StatsPanel({
         <p className="mt-3 text-sm">
           {streak > 0 ? (
             <>
-              <span className="num text-accent">{streak}</span>
+              <span className="num text-accent-ink">{streak}</span>
               <span className="text-muted">
                 {' '}
                 {streak === 1 ? 'week' : 'weeks'} running at {target} days or better

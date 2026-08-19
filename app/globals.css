@@ -1,40 +1,72 @@
 @import 'tailwindcss';
 
-/* Light is the default, so a phone set to dark still opens this app light.
-   The accent darkens against white so small accent text keeps its contrast. */
+/* The LiftyBot palette, wired to the app's semantic names.
+   Light is the default, so a phone set to dark still opens this app light.
+
+   Two accent tokens, not one, because the brand guide is explicit: Lime and
+   Cyan are display colours and neither may be set as text on Frost. So accent
+   is the action fill, always Lime with Midnight on top, and accent-ink is the
+   colour accent TEXT and outlines take, which is Deep Teal on light and Coach
+   Cyan on dark. Lime leads action, Cyan supports. */
 @theme {
-  --color-ink: #f1f2f5;
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-baloo), var(--font-nunito), ui-sans-serif, sans-serif;
+
+  --color-ink: #f5f8fb;
   --color-card: #ffffff;
-  --color-edge: #dfe3e9;
-  --color-accent: #c2410c;
-  --color-on-accent: #ffffff;
-  --color-muted: #5c6572;
-  --color-bright: #14181f;
+  --color-edge: #dce4ee;
+  --color-accent: #c7e45a;
+  --color-on-accent: #0b121d;
+  --color-accent-ink: #0e7f98;
+  --color-muted: #5c6b7e;
+  --color-faint: #8e99a8;
+  --color-bright: #0b121d;
+
+  /* Fixed brand values, the same in both modes. The marketing page is light
+     only by design, and these are what it is drawn with. */
+  --color-midnight: #0b121d;
+  --color-navy: #131d2b;
+  --color-frost: #f5f8fb;
+  --color-cyan: #7fe3f2;
+  --color-cyan-tint: #eaf6f9;
+  --color-teal: #0e7f98;
+  --color-lime: #c7e45a;
+  --color-lime-hover: #b3d343;
+  --color-lime-deep: #7a9a1f;
+  --color-lime-tint: #f2f8dc;
+  --color-hair: #e1e8f0;
 }
 
 /* Dark applies two ways: chosen by hand, or System chosen and the device
    asking for it. Following the device is now something you opt into rather
    than the default, which is why the media query is scoped to that choice
-   rather than to the absence of one. */
+   rather than to the absence of one.
+
+   Midnight leads and Screen Navy is the surface, which is the robot's own
+   screen. Body text on dark is always Frost. */
 :root[data-theme='dark'] {
-  --color-ink: #0c0e12;
-  --color-card: #15181e;
-  --color-edge: #232833;
-  --color-accent: #e8613c;
-  --color-on-accent: #0c0e12;
-  --color-muted: #8b93a3;
-  --color-bright: #eef1f6;
+  --color-ink: #0b121d;
+  --color-card: #131d2b;
+  --color-edge: #243349;
+  --color-accent: #c7e45a;
+  --color-on-accent: #0b121d;
+  --color-accent-ink: #7fe3f2;
+  --color-muted: #8e99a8;
+  --color-faint: #8e99a8;
+  --color-bright: #f5f8fb;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme='system'] {
-    --color-ink: #0c0e12;
-    --color-card: #15181e;
-    --color-edge: #232833;
-    --color-accent: #e8613c;
-    --color-on-accent: #0c0e12;
-    --color-muted: #8b93a3;
-    --color-bright: #eef1f6;
+    --color-ink: #0b121d;
+    --color-card: #131d2b;
+    --color-edge: #243349;
+    --color-accent: #c7e45a;
+    --color-on-accent: #0b121d;
+    --color-accent-ink: #7fe3f2;
+    --color-muted: #8e99a8;
+    --color-faint: #8e99a8;
+    --color-bright: #f5f8fb;
   }
 }
 
@@ -47,6 +79,20 @@ body {
 
 body {
   -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-lime);
+  color: var(--color-midnight);
+}
+
+/* Baloo carries the personality, Nunito does the work. Headings and the
+   numbers people read at a glance get the display face. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
 }
 
 .num {

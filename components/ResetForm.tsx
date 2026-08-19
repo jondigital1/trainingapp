@@ -6,7 +6,7 @@ import { supabaseBrowser } from '@/lib/supabase/client'
 
 const MIN_PASSWORD = 8
 const INPUT =
-  'w-full rounded-xl bg-card px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent'
+  'w-full rounded-xl bg-card px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink'
 
 export default function ResetForm({ email }: { email: string }) {
   const router = useRouter()
@@ -72,7 +72,7 @@ export default function ResetForm({ email }: { email: string }) {
           >
             {busy ? 'Saving' : 'Save and carry on'}
           </button>
-          {error ? <p className="text-sm text-accent">{error}</p> : null}
+          {error ? <p className="text-sm text-accent-ink">{error}</p> : null}
         </div>
       </div>
     </main>
