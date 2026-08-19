@@ -1,4 +1,5 @@
 import { LIBRARY, equipmentOf, groupOf, lookupType } from './exercises'
+import { restTier, type RestTier } from './rest'
 import { dayItems, SPLITS, type TemplateDay } from './templates'
 import type { CustomWorkoutItem, Goal, SetType } from './types'
 import type { Unit } from './units'
@@ -491,6 +492,86 @@ export function emphasise(items: PlannedItem[], focus: string[]): PlannedItem[] 
   const front = units.filter((u) => u.some(hit))
   const back = units.filter((u) => !u.some(hit))
   return [...front, ...back].flat()
+}
+
+// A session for wherever you are standing, rather than for the gym on your
+// profile.
+//
+// The travel problem is that equipment is stored as a fact about a person and
+// a hotel makes it a fact about today. Nothing here touches the profile: the
+// override lives for one build and tomorrow is normal. Everything else still
+// applies on the road, deliberately, because a sore knee does not stay home,
+// what you asked to bring up still comes first, and the time budget is the
+// time budget wherever the dumbbells are.
+//
+// The kits are the access levels that already exist, because a hotel gym is a
+// basic gym, a room with dumbbells is a home, and a room is a body.
+export type AwayKit = 'basic' | 'home' | 'body'
+
+export const AWAY_KITS: { v: AwayKit; label: string; note: string }[] = [
+  { v: 'basic', label: 'Hotel gym', note: 'Dumbbells, some machines' },
+  { v: 'home', label: 'Dumbbells only', note: 'A rack and a bench, maybe' },
+  { v: 'body', label: 'Just me', note: 'A floor and a door frame' },
+]
+
+// Today's planned day, rebuilt for today's kit. The same build that made the
+// day makes the away version, so the swaps land where a sore joint would send
+// them and the session keeps its intent: a quad day in a hotel is still a quad
+// day, on whatever the hotel has.
+export function awayDayFor(day: TemplateDay, profile: Profile, kit: AwayKit): PlannedItem[] {
+  return buildDay(day, { ...profile, access: kit })
+}
+
+// The groups a full body session covers, most expensive first, which is the
+// order every template day is written in.
+export const AWAY_FULL_BODY = ['Quads', 'Hamstrings', 'Glutes', 'Chest', 'Back', 'Shoulders', 'Core']
+
+const AWAY_TIERS: RestTier[] = ['heavy', 'compound', 'isolation', 'cable', 'small']
+
+// A session built from muscle groups and a kit, for somebody whose plan does
+// not fit the room they are in.
+//
+// Round robin rather than group by group: every group gets its first movement
+// before any group gets its second, so a short session in a bare room is still
+// a session about everything that was asked for rather than four quad
+// movements and an apology. Within a group the most expensive movement comes
+// first, which is how the template days are written and the order a session
+// should spend its freshness.
+//
+// A group the kit cannot serve is dropped rather than faked: there is no
+// bodyweight biceps isolation worth pretending about, and a session that
+// quietly skips it is more honest than one that invents towel curls.
+export function awaySession(groups: string[], profile: Profile, kit: AwayKit): PlannedItem[] {
+  const p = { ...profile, access: kit }
+  const bans = banned(p)
+
+  const pools = groups
+    .map((group) =>
+      LIBRARY.filter((e) => e.group === group && e.type !== 'C' && allowed(p, e.name, bans)).sort(
+        (a, b) =>
+          AWAY_TIERS.indexOf(restTier(a.name, a.type)) - AWAY_TIERS.indexOf(restTier(b.name, b.type)) ||
+          a.name.localeCompare(b.name),
+      ),
+    )
+    .filter((pool) => pool.length > 0)
+
+  const cap = BUDGET[profile.minutes ?? 60] ?? 8
+  const used = new Set<string>()
+  const out: PlannedItem[] = []
+  while (out.length < cap) {
+    let picked = false
+    for (const pool of pools) {
+      if (out.length >= cap) break
+      const next = pool.find((e) => !used.has(e.name))
+      if (!next) continue
+      used.add(next.name)
+      out.push({ name: next.name, type: next.type, superset: null })
+      picked = true
+    }
+    if (!picked) break
+  }
+
+  return emphasise(out, focusOf(profile))
 }
 
 export interface Plan {

@@ -1026,6 +1026,37 @@ What was worth building was the room rather than the furniture. The note pays
 for itself today, and it needed somewhere to live. If video ever arrives it
 arrives into a screen that already exists and already earns its place.
 
+## Away from your gym
+
+Equipment is stored as a fact about a person, and a hotel makes it a fact about
+today. That is the whole of the travel problem, so that is the whole of the
+fix: on the start sheet, under "Away from your gym?", you say what the room has
+and get a session for it. Nothing touches the profile. Tomorrow is normal.
+
+Three kits, which are the access levels that already exist, because a hotel gym
+is a basic gym, a room with dumbbells is a home, and a room is a body. Picking
+one shows two things.
+
+Your plan, on today's kit. Each planned day rebuilt through the same build that
+made it, so the swaps land where a sore joint would send them and the day keeps
+its intent: a quad day in a hotel is still a quad day, on whatever the hotel
+has. It counts toward your week like any other session, because the nudge
+should see a hotel workout as training, not as a miss.
+
+Or just for what you have. Muscle group chips and a start button; nothing
+picked is a full body session. Movements are dealt round robin, every group
+getting its first movement before any group gets its second, so a short
+session in a bare room is still about everything that was asked for rather
+than four quad movements and an apology. Within a group the most expensive
+movement comes first, which is how the template days are written.
+
+Everything else still applies on the road, deliberately. A sore knee does not
+stay home, what you asked to bring up still comes first, and the time budget is
+the time budget wherever the dumbbells are. A group the kit cannot serve is
+dropped rather than faked, because there is no bodyweight biceps isolation
+worth pretending about and a session that quietly skips it is more honest than
+one that invents towel curls.
+
 ## The weekly nudge
 
 One message a week, on a day and at an hour you pick, comparing the week you

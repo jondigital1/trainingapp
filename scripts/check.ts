@@ -42,7 +42,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
-import { defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
+import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
@@ -2467,6 +2467,81 @@ check('a sensitive answer stays out of every screen that is not theirs', () => {
   assert.ok(!/\bsex\b/.test(admin), 'the admin screen must never read this')
   const share = readFileSync(new URL('../lib/share.ts', import.meta.url), 'utf8')
   assert.ok(!/\bsex\b|\bfocus\b/.test(share), 'a share link carries a workout, not a person')
+})
+
+check('a hotel does not change who you are, only what today has', () => {
+  const traveller = { days: 4, access: 'full' as const, minutes: 60 as const }
+
+  // A plan day rebuilt for a bare room contains nothing the room does not
+  // have, and the profile is untouched: tomorrow is normal.
+  const dayId = planFor(traveller, 'muscle').dayIds[0]
+  const day = dayById(dayId)!
+  const home = buildDay(day, traveller)
+  const bare = awayDayFor(day, traveller, 'body')
+  for (const item of bare) {
+    assert.equal(equipmentOf(item.name), 'bodyweight', `${item.name} is not doable in a hotel room`)
+  }
+  assert.equal(traveller.access, 'full', 'the profile is not written to')
+  assert.deepEqual(buildDay(day, traveller), home, 'the home version is unchanged after an away build')
+
+  // The intent survives the room: the away version of a day still trains the
+  // groups the day was about.
+  const homeGroups = new Set(home.map((i) => groupOf(i.name)))
+  const bareGroups = new Set(bare.map((i) => groupOf(i.name)))
+  let kept = 0
+  for (const g of bareGroups) if (homeGroups.has(g)) kept += 1
+  assert.ok(kept >= Math.min(2, bareGroups.size), 'an away day forgot what the day was for')
+
+  // A sore knee does not stay home.
+  const soreDay = awayDayFor(day, { ...traveller, sore: ['Knee'] }, 'home')
+  for (const item of soreDay) {
+    assert.ok(!/Squat|Lunge|Step Up|Sissy|Nordic|Pistol/i.test(item.name), `${item.name} on a sore knee`)
+  }
+})
+
+check('a session built from a room and a wish list is still a session', () => {
+  const p = { minutes: 60 as const }
+
+  // Full body on dumbbells covers the body, fits the budget, repeats nothing.
+  const full = awaySession(AWAY_FULL_BODY, p, 'home')
+  assert.ok(full.length >= 6, `only ${full.length} movements for a full hour`)
+  assert.ok(full.length <= 8, 'over the time budget')
+  assert.equal(new Set(full.map((i) => i.name)).size, full.length, 'a movement appears twice')
+  const groups = new Set(full.map((i) => groupOf(i.name)))
+  for (const g of ['Quads', 'Chest', 'Back']) assert.ok(groups.has(g), `no ${g} in a full body session`)
+
+  // Round robin: every group gets its first movement before any group gets
+  // its second, so a 30 minute session still covers what was asked for.
+  const short = awaySession(['Quads', 'Chest', 'Back', 'Shoulders'], { minutes: 30 }, 'home')
+  assert.equal(short.length, 4)
+  assert.equal(new Set(short.map((i) => groupOf(i.name))).size, 4, 'a short session doubled up before covering')
+
+  // Two groups picked on a decent kit fills the hour with those two.
+  const pair = awaySession(['Glutes', 'Hamstrings'], p, 'basic')
+  assert.ok(pair.length >= 5, `only ${pair.length} movements from two groups on machines`)
+  for (const item of pair) {
+    const g = groupOf(item.name)
+    assert.ok(g === 'Glutes' || g === 'Hamstrings', `${item.name} is not what was asked for`)
+  }
+
+  // A group the kit cannot serve is dropped rather than faked: there is no
+  // bodyweight biceps isolation worth pretending about.
+  const honest = awaySession(['Biceps', 'Chest'], p, 'body')
+  assert.ok(honest.length > 0)
+  for (const item of honest) assert.equal(groupOf(item.name), 'Chest')
+
+  // Nothing at all available is an empty list, not a crash, and the screen
+  // hides the button rather than offering a session of nothing.
+  assert.deepEqual(awaySession(['Biceps'], p, 'body'), [])
+
+  // Only real movements: everything picked is doable on the kit named.
+  for (const item of awaySession(AWAY_FULL_BODY, p, 'body')) {
+    assert.equal(equipmentOf(item.name), 'bodyweight', item.name)
+  }
+
+  // What you are bringing up still comes first, on the road as at home.
+  const focused = awaySession(AWAY_FULL_BODY, { ...p, focus: ['Glutes'] }, 'home')
+  assert.equal(groupOf(focused[0].name), 'Glutes', 'the away session ignored the focus')
 })
 
 void (async () => {
