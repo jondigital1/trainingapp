@@ -27,9 +27,16 @@ export default function DoneSheet({
   const duration = fmtDuration(summary.duration)
   const feel = intensityLabel(summary.intensity)
 
-  const stats: { label: string; value: string }[] = []
+  // Sets and reps share a card and sit at opposite ends of it, because two
+  // numbers this close together in meaning blur into one if they are only a
+  // few pixels apart.
+  const stats: { label: string; value: string; second?: { label: string; value: string } }[] = []
   if (duration) stats.push({ label: 'Workout duration', value: duration })
-  stats.push({ label: 'Sets', value: String(summary.sets) })
+  stats.push({
+    label: 'Sets',
+    value: String(summary.sets),
+    second: summary.reps > 0 ? { label: 'Reps', value: String(summary.reps) } : undefined,
+  })
   if (summary.volume > 0) {
     stats.push({ label: 'Weight moved', value: `${Math.round(summary.volume).toLocaleString('en-US')} lb` })
   }
@@ -46,14 +53,9 @@ export default function DoneSheet({
         {stats.length ? (
           <dl className="mt-5 grid grid-cols-2 gap-2">
             {stats.map((s) => (
-              <div key={s.label} className="surface rounded-2xl px-3.5 py-3 ring-1 ring-edge">
-                {/* Two lines of room whether the label needs them or not, so
-                    the four values sit on the same two lines rather than
-                    stepping down wherever a label happens to wrap. */}
-                <dt className="flex min-h-[2.1em] items-start text-[10.5px] font-extrabold uppercase leading-tight tracking-[1.5px] text-faint">
-                  {s.label}
-                </dt>
-                <dd className="num mt-1 font-display text-xl font-bold">{s.value}</dd>
+              <div key={s.label} className="surface flex gap-4 rounded-2xl px-3.5 py-3 ring-1 ring-edge">
+                <Half label={s.label} value={s.value} />
+                {s.second ? <Half label={s.second.label} value={s.second.value} right /> : null}
               </div>
             ))}
           </dl>
@@ -121,5 +123,18 @@ export default function DoneSheet({
         </div>
       </div>
     </Sheet>
+  )
+}
+
+// Two lines of room for the label whether it needs them or not, so the values
+// sit on the same lines rather than stepping down wherever a label wraps.
+function Half({ label, value, right }: { label: string; value: string; right?: boolean }) {
+  return (
+    <div className={right ? 'text-right' : 'flex-1'}>
+      <dt className="flex min-h-[2.1em] items-start text-[10.5px] font-extrabold uppercase leading-tight tracking-[1.5px] text-faint">
+        {label}
+      </dt>
+      <dd className="num mt-1 font-display text-xl font-bold">{value}</dd>
+    </div>
   )
 }

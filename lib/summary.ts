@@ -40,6 +40,7 @@ export interface Summary {
   duration: number | null
   volume: number
   sets: number
+  reps: number
   exercises: number
   intensity: number | null
   records: RecordLine[]
@@ -54,6 +55,19 @@ export interface Summary {
 function countSets(workout: Workout): number {
   let n = 0
   for (const e of workout.exercises) for (const s of e.sets) if (!isEmptySet(s, e.type)) n += 1
+  return n
+}
+
+// Every rep in the session. Timed and cardio work has none to count, which is
+// the honest answer rather than a zero pretending to be one.
+function countReps(workout: Workout): number {
+  let n = 0
+  for (const e of workout.exercises) {
+    for (const s of e.sets) {
+      if (isEmptySet(s, e.type)) continue
+      if (s.r != null) n += s.r
+    }
+  }
   return n
 }
 
@@ -114,6 +128,7 @@ export function summarise(
   const streak = weeklyStreak(workouts, workout.date, weeklyTarget)
   const first = workouts.filter(logged).length <= 1
   const sets = countSets(workout)
+  const reps = countReps(workout)
   const volume = workoutVolume(workout)
 
   return {
@@ -121,6 +136,7 @@ export function summarise(
     duration: durationOf(workout),
     volume,
     sets,
+    reps,
     exercises: workout.exercises.filter((e) => e.sets.some((s) => !isEmptySet(s, e.type))).length,
     intensity: workout.intensity ?? null,
     records,

@@ -1514,6 +1514,7 @@ check('the end of a session says something that actually happened', () => {
   assert.match(firstOut.headline, /first one/i)
   assert.equal(firstOut.records.length, 0, 'a movement you have never done cannot be beaten')
   assert.equal(firstOut.sets, 1)
+  assert.equal(firstOut.reps, 10, 'reps are counted alongside sets, not derived from them')
   assert.equal(firstOut.volume, 1800)
 
   // Same load, same reps, a week later. No record, no fiction.
