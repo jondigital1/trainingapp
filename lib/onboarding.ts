@@ -54,6 +54,14 @@ export interface Profile {
   // own for profiles written before the number was asked for.
   age?: 'under40' | '40to59' | 'over60'
   dislikes?: string[]
+  // Everything they want out of this, in the order they picked it. One of them
+  // steers the reps and the rests, because a set cannot be three rep ranges at
+  // once, and that one is goalChoice below. The rest are not decoration: they
+  // decide what the app says about what it is not doing yet.
+  goals?: ('muscle' | 'strength' | 'lean' | 'health')[]
+  // The one steering. Kept as its own field because everything downstream has
+  // always read it, and because a profile written before the list existed has
+  // only this.
   goalChoice?: 'muscle' | 'strength' | 'lean' | 'health'
   // Six week training blocks, opt in. Named for what they are rather than for
   // the three week wave they replaced: three weeks is not long enough to be a
@@ -438,6 +446,10 @@ export interface Plan {
   splitName: string
   dayIds: string[]
   legDays: 1 | 2
+  // Everything they said they want, and the sentence explaining which of them
+  // this week is actually doing.
+  goals: GoalChoice[]
+  goalCoverage: string | null
   perMuscle: string
   exercises: number
   reps: string
@@ -506,6 +518,81 @@ const GOAL_NOTE: Record<NonNullable<Profile['goalChoice']>, string | null> = {
     'Staying capable runs lighter and longer: easier loads, more reps, kinder joints, and a coach line that stops asking you to grind. It still builds muscle, just not as fast as chasing it would.',
 }
 
+export type GoalChoice = NonNullable<Profile['goalChoice']>
+
+// Everything they said they want. A profile written before the list existed has
+// the single answer only, and reads as a list of one.
+export function goalsOf(p: Profile): GoalChoice[] {
+  if (p.goals?.length) return p.goals
+  return p.goalChoice ? [p.goalChoice] : []
+}
+
+// The one steering. Their stated primary if it is still on the list, otherwise
+// the first thing they picked, otherwise nothing.
+export function primaryGoal(p: Profile): GoalChoice | undefined {
+  const all = goalsOf(p)
+  if (p.goalChoice && all.includes(p.goalChoice)) return p.goalChoice
+  return all[0]
+}
+
+// Two goals that resolve to the same training are not a conflict, they are one
+// answer written twice. Building muscle and leaning out are the obvious pair.
+export function goalsAgree(choices: GoalChoice[]): boolean {
+  return new Set(choices.map((c) => GOAL_FROM_CHOICE[c])).size <= 1
+}
+
+const GOAL_SHORT: Record<GoalChoice, string> = {
+  muscle: 'moderate reps and weight added as it gets easy',
+  strength: 'fewer reps, heavier, longer rests',
+  lean: 'the same training as building muscle',
+  health: 'lighter loads, more reps, kinder joints',
+}
+
+const GOAL_LABEL: Record<GoalChoice, string> = {
+  muscle: 'building muscle',
+  strength: 'getting stronger',
+  lean: 'leaning out',
+  health: 'staying capable',
+}
+
+// What picking several of them actually means, said out loud. This is the whole
+// point of letting somebody pick more than one: not to pretend the app is doing
+// four things at once, but to know what they are for and say which are already
+// covered and which are waiting.
+export function goalCoverage(p: Profile): string | null {
+  const all = goalsOf(p)
+  const first = primaryGoal(p)
+  if (!first || all.length < 2) return null
+
+  if (goalsAgree(all)) {
+    return `${cap(list(all.map((c) => GOAL_LABEL[c])))} are the same training, so this covers all of them at once. What separates them is the kitchen, not the session.`
+  }
+
+  const covered = all.filter((c) => c !== first && GOAL_FROM_CHOICE[c] === GOAL_FROM_CHOICE[first])
+  const waiting = all.filter((c) => GOAL_FROM_CHOICE[c] !== GOAL_FROM_CHOICE[first])
+
+  const parts = [`Running ${GOAL_LABEL[first]} first, which sets the reps and the rests.`]
+  if (covered.length) {
+    parts.push(`${cap(list(covered.map((c) => GOAL_LABEL[c])))} comes with it, same training.`)
+  }
+  if (waiting.length) {
+    parts.push(
+      `${cap(list(waiting.map((c) => `${GOAL_LABEL[c]} means ${GOAL_SHORT[c]}`)))}. Switch to it whenever you want on your profile, and nothing you have logged changes.`,
+    )
+  }
+  return parts.join(' ')
+}
+
+function list(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? ''
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}
+
+function cap(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 export function goalNoteFor(choice: Profile['goalChoice']): string {
   return GOAL_NOTE[choice ?? 'muscle'] ?? ''
 }
@@ -543,6 +630,8 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     splitName: back && prog === 'Foundation' && days === 4 ? 'Full Body, building up' : SPLIT_NAME[prog][days],
     dayIds,
     legDays: legs,
+    goals: goalsOf(profile),
+    goalCoverage: goalCoverage(profile),
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
     exercises: BUDGET[profile.minutes ?? 60] ?? 8,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',

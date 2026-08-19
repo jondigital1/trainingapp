@@ -201,22 +201,33 @@ destructive refuses to point at your own account, because locking yourself out
 of your own admin screen is a mistake nobody recovers from in a hurry. There is
 a CSV of whatever the list currently shows.
 
-## One goal, and what it does not cost you
+## Pick everything you want, one of them drives
 
-People asked to pick two. Almost always the two they wanted were building muscle
-and leaning out, which is one answer: they are the same training and the
-difference is what you eat.
+Goals are a list now. Pick as many as you like, because wanting to build muscle
+and get stronger and stay capable over the next year is a fact about somebody
+rather than a mistake to correct.
 
-So it is still one choice, and every option now says what it does underneath it,
-and the answer says plainly what you did not lose. Pick build muscle and it
-names leaning out; pick leaning out and it names building muscle; pick getting
-stronger and it tells you that builds muscle too, from the heavier end. Three of
-the four used to say nothing at all, which is exactly what made picking one feel
-like giving up the others. It is said at the moment of choosing now, not four
-steps later on the plan screen, and the hint says it is changeable any time.
+One of them steers, because a set cannot be three rep ranges at once. That is
+the honest part and the app says it out loud rather than quietly averaging four
+answers into something nobody asked for.
 
-Multi select would have forked the prescription table and given the coach two
-masters on the same set. Saying so does not.
+The second question only appears when the picks genuinely pull in different
+directions. Building muscle and leaning out are the same training, so being
+asked which comes first would be asking somebody to choose between a thing and
+itself; those two just get told they are covered together and the kitchen is
+what separates them. Muscle and strength do pull apart, so that gets a which
+one first, and the answer explains what is running, what rides along with it,
+and what is waiting and can be switched to any time.
+
+Every option also says what it does underneath its label. Three of the four used
+to say nothing at all, which is what made picking one feel like giving up the
+others.
+
+Underneath, one field still drives the prescriptions and it is the same field it
+always was, so a profile written before the list existed reads as a list of one
+and nothing downstream had to learn about lists. Removing the goal that was
+steering hands the wheel to the first one still on the list rather than steering
+by something just deselected.
 
 While in there, a small lie the screen told every time: leaning out advertised
 8 to 15 reps and handed out 8 to 12, because it maps to the muscle goal and
@@ -592,7 +603,7 @@ load the app itself.
 
 ## Checks
 
-`npm run check` is 116 assertions over everything that is pure logic: the movement
+`npm run check` is 117 assertions over everything that is pure logic: the movement
 library, the template days, the coach, the importer including drop set shorthand,
 CSV, the onboarding score and the three programs, the joint substitutions,
 records, rest timing, supersets, drop sets, the charts, the ordering

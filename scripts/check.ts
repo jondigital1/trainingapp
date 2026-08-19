@@ -26,8 +26,12 @@ import {
   program,
   GOAL_CHOICES,
   GOAL_FROM_CHOICE,
+  goalCoverage,
   goalNoteFor,
+  goalsAgree,
+  goalsOf,
   legDaysOf,
+  primaryGoal,
   returning,
   selfDirected,
   type Profile,
@@ -1743,6 +1747,56 @@ function person(over: Partial<AdminUser>): AdminUser {
     ...over,
   }
 }
+
+check('you can want several things, and one of them is doing the driving', () => {
+  // Wanting to build muscle and lean out is one answer written twice, so it is
+  // never a conflict and never asks which comes first.
+  assert.ok(goalsAgree(['muscle', 'lean']))
+  assert.ok(goalsAgree(['muscle']))
+  assert.ok(goalsAgree([]))
+  assert.ok(!goalsAgree(['muscle', 'strength']))
+  assert.ok(!goalsAgree(['muscle', 'lean', 'health']))
+
+  // A profile written before the list existed reads as a list of one.
+  assert.deepEqual(goalsOf({ goalChoice: 'strength' }), ['strength'])
+  assert.deepEqual(goalsOf({}), [])
+  assert.equal(primaryGoal({ goalChoice: 'strength' }), 'strength')
+  assert.equal(primaryGoal({}), undefined)
+
+  // The stated primary wins while it is still on the list, and the first pick
+  // takes over the moment it is removed, so nothing steers by a goal they
+  // just deselected.
+  assert.equal(primaryGoal({ goals: ['muscle', 'strength'], goalChoice: 'strength' }), 'strength')
+  assert.equal(primaryGoal({ goals: ['muscle', 'health'], goalChoice: 'strength' }), 'muscle')
+  assert.equal(primaryGoal({ goals: ['health'] }), 'health')
+
+  // One goal says nothing about coverage: there is nothing to cover.
+  assert.equal(goalCoverage({ goals: ['muscle'], goalChoice: 'muscle' }), null)
+  assert.equal(goalCoverage({}), null)
+
+  // Two that agree are covered together, with no talk of waiting.
+  const both = goalCoverage({ goals: ['muscle', 'lean'], goalChoice: 'muscle' })!
+  assert.match(both, /same training/i)
+  assert.match(both, /^[A-Z]/, 'a sentence starts with a capital letter')
+  assert.ok(!/first/i.test(both), 'nothing is queued behind anything here')
+
+  // Two that disagree name what is running and what is waiting, and say the
+  // waiting one can be switched to.
+  const split = goalCoverage({ goals: ['muscle', 'strength'], goalChoice: 'muscle' })!
+  assert.match(split, /building muscle first/i)
+  assert.match(split, /getting stronger/i)
+  assert.match(split, /switch to it/i)
+
+  // Three, where one rides along and one waits.
+  const three = goalCoverage({ goals: ['muscle', 'lean', 'health'], goalChoice: 'muscle' })!
+  assert.match(three, /leaning out comes with it/i)
+  assert.match(three, /staying capable means/i)
+
+  // And the plan carries both, so every screen tells the same story.
+  const plan = planFor({ days: 4, goals: ['strength', 'health'], goalChoice: 'strength' }, 'strength')
+  assert.deepEqual(plan.goals, ['strength', 'health'])
+  assert.match(plan.goalCoverage!, /getting stronger first/i)
+})
 
 check('every goal says what it does, and what it does not cost you', () => {
   // People asked to pick two goals. Almost always the two were building muscle

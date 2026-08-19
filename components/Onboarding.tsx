@@ -6,7 +6,11 @@ import {
   dayById,
   GOAL_CHOICES,
   GOAL_FROM_CHOICE,
+  goalCoverage,
   goalNoteFor,
+  goalsAgree,
+  goalsOf,
+  primaryGoal,
   legDaysOf,
   LONG_SESSION,
   planFor,
@@ -18,7 +22,7 @@ import {
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { mondayOf } from '@/lib/block'
 import { today as todayIso } from '@/lib/format'
-import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { Chips, Field, Many, NumberInput, Note, Options, TextInput } from './Form'
 import LiftyMark from './LiftyMark'
 import type { Goal } from '@/lib/types'
 
@@ -175,20 +179,42 @@ export default function Onboarding({
                 </div>
               </div>
               <Field
-                label="What is this for?"
-                hint="Sets the rep ranges and what the coach asks of you. Changeable any time on your profile."
+                label="What do you want out of this?"
+                hint="Pick as many as you like. One of them sets the reps and the rests, and you can change which any time."
               >
-                <Options
+                <Many
                   columns={2}
-                  value={profile.goalChoice}
-                  onPick={(v) => set({ goalChoice: v })}
+                  value={goalsOf(profile)}
+                  onToggle={(v) => {
+                    const now = goalsOf(profile)
+                    const next = now.includes(v) ? now.filter((g) => g !== v) : [...now, v]
+                    set({ goals: next, goalChoice: next.includes(profile.goalChoice!) ? profile.goalChoice : next[0] })
+                  }}
                   options={GOAL_CHOICES}
                 />
               </Field>
-              {/* Said here, where the choice is made and where picking one feels
-                  like losing the other three, rather than only four steps later
-                  on the plan screen. */}
-              {profile.goalChoice ? <Note>{goalNoteFor(profile.goalChoice)}</Note> : null}
+
+              {/* Only when the picks genuinely pull in different directions. Wanting to
+                  build muscle and lean out is one answer, and asking which comes first
+                  would be asking somebody to choose between a thing and itself. */}
+              {goalsOf(profile).length > 1 && !goalsAgree(goalsOf(profile)) ? (
+                <Field label="Which one first?" hint="The one that sets the rep ranges right now.">
+                  <Options
+                    columns={2}
+                    value={primaryGoal(profile)}
+                    onPick={(v) => set({ goalChoice: v })}
+                    options={GOAL_CHOICES.filter((c) => goalsOf(profile).includes(c.v))}
+                  />
+                </Field>
+              ) : null}
+
+              {/* Said here, where the choice is made, rather than four steps
+                  later on the plan screen. */}
+              {goalCoverage(profile) ? (
+                <Note>{goalCoverage(profile)}</Note>
+              ) : primaryGoal(profile) ? (
+                <Note>{goalNoteFor(primaryGoal(profile))}</Note>
+              ) : null}
             </>
           ) : null}
 

@@ -72,6 +72,42 @@ export function Options<T extends string | number>({
   )
 }
 
+// Pick as many as you like. Same shape as Options, same outline selection, but
+// the answer is a list. Used for goals, where somebody wanting three things is
+// a fact about them rather than a mistake to correct.
+export function Many<T extends string>({
+  options,
+  value,
+  onToggle,
+  columns = 1,
+}: {
+  options: { v: T; label: string; note?: string }[]
+  value: T[]
+  onToggle: (v: T) => void
+  columns?: 1 | 2
+}) {
+  return (
+    <div className={columns === 2 ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2'}>
+      {options.map((o) => {
+        const on = value.includes(o.v)
+        return (
+          <button
+            key={o.v}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onToggle(o.v)}
+            className={`${PILL} ${on ? ON : OFF}`}
+          >
+            <span className="block">{o.label}</span>
+            {o.note ? <span className="mt-0.5 block text-xs text-muted">{o.note}</span> : null}
+            {on ? <Check /> : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function Chips({
   options,
   selected,
