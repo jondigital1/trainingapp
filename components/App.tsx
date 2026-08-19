@@ -23,7 +23,7 @@ import SettingsSheet from './SettingsSheet'
 import StartSheet from './StartSheet'
 import WorkoutEditor from './WorkoutEditor'
 import type { LastSession } from './ExerciseBlock'
-import { buildDay, dayById, GOAL_FROM_CHOICE, goalLabel, MIN_DAYS, needsCheckin, planFor, primaryGoal, unitOf, type Profile } from '@/lib/onboarding'
+import { buildDay, dayById, GOAL_FROM_CHOICE, goalLabel, goalsOf, MIN_DAYS, needsCheckin, planFor, primaryGoal, promoteGoal, unitOf, type Profile } from '@/lib/onboarding'
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
 import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
@@ -35,6 +35,7 @@ import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
 import { hasSchedule, scheduledDays, suggestSchedule, todaysDayId } from '@/lib/schedule'
+import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '@/lib/advance'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
   EMPTY_DATA,
@@ -532,9 +533,15 @@ export default function App({
   // moves the training goal. The list's top pick drives, exactly as the hint
   // under the picker promises; before this, that hint was a lie and only a
   // separate radio in Settings actually changed anything.
-  async function saveProfile(profile: Profile, onboardedAt?: string) {
+  async function saveProfile(next: Profile, onboardedAt?: string) {
     const stamp = onboardedAt ?? data.settings.onboardedAt
-    const choice = primaryGoal(profile)
+    const choice = primaryGoal(next)
+    // A change of driving goal is dated, so the offer to advance to the next
+    // one counts weeks of this goal rather than weeks of membership.
+    const profile =
+      choice !== primaryGoal(data.settings.profile)
+        ? { ...next, goalChoiceAt: new Date().toISOString() }
+        : next
     const goal = choice ? GOAL_FROM_CHOICE[choice] : data.settings.goal
     setData((prev) => ({ ...prev, settings: { ...prev.settings, profile, goal, onboardedAt: stamp } }))
     try {
@@ -729,6 +736,13 @@ export default function App({
   const behind =
     plan !== null && needsCheckin(profile, data.settings.onboardedAt, trainedLast28, now)
 
+  // The offers the log has earned. At most one card speaks at a time, and the
+  // four week check-in outranks both: a week that is not happening is a bigger
+  // fact than a promotion.
+  const graduation = plan !== null && !behind ? graduationFor(profile, data.workouts, data.settings.onboardedAt) : null
+  const advance =
+    plan !== null && !behind && !graduation ? advanceFor(profile, data.workouts, data.settings.onboardedAt) : null
+
   const ordered = data.workouts.slice().sort((a, b) => b.date.localeCompare(a.date))
   const todays = ordered.filter((w) => w.date === now)
   const past = ordered.filter((w) => w.date !== now)
@@ -864,7 +878,59 @@ export default function App({
         </div>
       ) : null}
 
-      {!loading && tab === 'calendar' && wantsSore && !behind ? (
+      {!loading && tab === 'calendar' && graduation ? (
+        <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            {graduationCopy(graduation).title}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{graduationCopy(graduation).body}</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => void saveProfile({ ...profile, promotedTo: graduation.to })}
+              className="flex-1 rounded-xl bg-accent py-2 text-sm font-medium text-on-accent"
+            >
+              {graduationCopy(graduation).yes}
+            </button>
+            <button
+              onClick={() => void saveProfile({ ...profile, promotionDismissed: graduation.to })}
+              className="rounded-xl px-4 py-2 text-sm text-muted"
+            >
+              {graduationCopy(graduation).no}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {!loading && tab === 'calendar' && advance ? (
+        <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            {advanceCopy(advance).title}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{advanceCopy(advance).body}</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() =>
+                void saveProfile({
+                  ...profile,
+                  goals: promoteGoal(goalsOf(profile), advance.to),
+                  goalChoice: advance.to,
+                })
+              }
+              className="flex-1 rounded-xl bg-accent py-2 text-sm font-medium text-on-accent"
+            >
+              {advanceCopy(advance).yes}
+            </button>
+            <button
+              onClick={() => void saveProfile({ ...profile, advanceDismissedFor: advance.from })}
+              className="rounded-xl px-4 py-2 text-sm text-muted"
+            >
+              {advanceCopy(advance).no}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {!loading && tab === 'calendar' && wantsSore && !behind && !graduation && !advance ? (
         <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
           <p className="text-sm">
             Anything giving you trouble? Flag a joint and sessions swap around it.

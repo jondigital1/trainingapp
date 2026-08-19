@@ -89,6 +89,18 @@ export interface Profile {
   // When the four week check-in was answered, either way. Once set it never
   // shows again: answered is answered.
   checkinDismissedAt?: string
+  // Earned from the log, never edited by hand. The signup answers are frozen
+  // history, so moving up is its own stored fact granted by evidence: the
+  // program is the higher of what the answers said and what the log proved.
+  promotedTo?: 'Build' | 'Performance'
+  // The offer they turned down, so it is made once.
+  promotionDismissed?: 'Build' | 'Performance'
+  // When the driving goal last changed, so the offer to move to the next one
+  // counts weeks of this goal rather than weeks of membership.
+  goalChoiceAt?: string
+  // The primary they said not yet to, so the offer re-arms only after the
+  // driving goal actually changes.
+  advanceDismissedFor?: 'muscle' | 'strength' | 'lean' | 'health'
 }
 
 export const SORE_JOINTS = ['Knee', 'Low back', 'Shoulder', 'Hip', 'Elbow', 'Neck', 'Wrist']
@@ -144,11 +156,17 @@ export function experienceScore(p: Profile): number {
 
 // Max reachable score is 7: the returner question is only asked of people who
 // said never or under 6 months, so it never stacks on top of two years.
+const PROGRAM_ORDER: Program[] = ['Foundation', 'Build', 'Performance']
+
 export function program(p: Profile): Program {
   const s = experienceScore(p)
-  if (s <= 2) return 'Foundation'
-  if (s <= 4) return 'Build'
-  return 'Performance'
+  const derived: Program = s <= 2 ? 'Foundation' : s <= 4 ? 'Build' : 'Performance'
+  // A promotion earned from the log outranks the signup answers, and only
+  // upward: nothing stored can ever demote somebody below what they said.
+  if (p.promotedTo && PROGRAM_ORDER.indexOf(p.promotedTo) > PROGRAM_ORDER.indexOf(derived)) {
+    return p.promotedTo
+  }
+  return derived
 }
 
 // Somebody rebuilding is not a beginner and should not be told they are. It is
@@ -750,7 +768,7 @@ const GOAL_SHORT: Record<GoalChoice, string> = {
   health: 'lighter loads, more reps, kinder joints',
 }
 
-const GOAL_LABEL: Record<GoalChoice, string> = {
+export const GOAL_LABEL: Record<GoalChoice, string> = {
   muscle: 'building muscle',
   strength: 'getting stronger',
   lean: 'leaning out',

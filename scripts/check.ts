@@ -45,6 +45,7 @@ import { columnsFor } from '../lib/columns'
 import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf, STEP_COUNT } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
+import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
@@ -2711,6 +2712,84 @@ check('who you were at signup is asked once, and the log answers it after that',
   // And the questionnaire still asks them, because day one still needs them.
   const onboarding = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
   assert.ok(onboarding.includes('How long have you been lifting'), 'onboarding lost the experience question')
+})
+
+check('a promotion is earned from the log, offered once, and never demotes', () => {
+  const day = (date: string) => ({
+    id: date, date, title: 'x',
+    exercises: [{ id: 'e', name: 'Barbell Bench Press', type: 'W', superset: null,
+      sets: [{ id: 's', w: 100, r: 8, rpe: null, t: null, d: null, raw: null }] }],
+  })
+  // 3 sessions a week for 9 weeks: 27 days across 9 weeks.
+  const weeks = Array.from({ length: 9 }, (_, w) =>
+    ['2026-01-05', '2026-01-07', '2026-01-09'].map((d) => {
+      const t = new Date(Date.parse(d + 'T00:00:00Z') + w * 7 * 86400000)
+      return day(t.toISOString().slice(0, 10))
+    }),
+  ).flat() as unknown as Parameters<typeof graduationFor>[1]
+  const novice = { years: 'never' as const, before: 'no' as const, knows: 'no' as const }
+
+  const offer = graduationFor(novice, weeks, '2026-01-01')!
+  assert.equal(offer.from, 'Foundation')
+  assert.equal(offer.to, 'Build')
+  assert.equal(offer.days, 27)
+
+  // Not before the evidence is in, and never for somebody the app has not
+  // seen train: sessions before signup do not count.
+  assert.equal(graduationFor(novice, weeks.slice(0, 12), '2026-01-01'), null, 'twelve days is not eight weeks of proof')
+  assert.equal(graduationFor(novice, weeks, '2026-06-01'), null, 'history from before signup does not graduate anybody')
+
+  // Declined once is declined: the same offer is never repeated.
+  assert.equal(graduationFor({ ...novice, promotionDismissed: 'Build' }, weeks, '2026-01-01'), null)
+
+  // Accepted, the program moves up and stays up, and the next offer is the
+  // next tier with a much longer bar.
+  const promoted = { ...novice, promotedTo: 'Build' as const }
+  assert.equal(program(promoted), 'Build')
+  assert.equal(graduationFor(promoted, weeks, '2026-01-01'), null, '27 days is nowhere near Performance')
+
+  // And a promotion can never demote: an expert stays an expert.
+  const expert = { years: 'overTwo' as const, barbell: 'confident' as const, knows: 'yes' as const }
+  assert.equal(program({ ...expert, promotedTo: 'Build' }), program(expert))
+})
+
+check('the list advances only when its front was truly trained, and no is respected', () => {
+  const day = (date: string) => ({
+    id: date, date, title: 'x',
+    exercises: [{ id: 'e', name: 'Barbell Bench Press', type: 'W', superset: null,
+      sets: [{ id: 's', w: 100, r: 8, rpe: null, t: null, d: null, raw: null }] }],
+  })
+  const thirteen = Array.from({ length: 13 }, (_, w) => {
+    const t = new Date(Date.parse('2026-01-05T00:00:00Z') + w * 7 * 86400000)
+    return day(t.toISOString().slice(0, 10))
+  }) as unknown as Parameters<typeof advanceFor>[1]
+  const wants = { goals: ['muscle', 'strength'] as ('muscle' | 'strength')[], goalChoice: 'muscle' as const }
+
+  const offer = advanceFor(wants, thirteen, '2026-01-01')!
+  assert.equal(offer.to, 'strength')
+  assert.ok(offer.weeks >= 12)
+
+  // Goals that train the same are not something to advance to, one goal has
+  // nowhere to go, and eleven weeks is not twelve.
+  assert.equal(advanceFor({ goals: ['muscle', 'lean'], goalChoice: 'muscle' }, thirteen, '2026-01-01'), null)
+  assert.equal(advanceFor({ goals: ['muscle'], goalChoice: 'muscle' }, thirteen, '2026-01-01'), null)
+  assert.equal(advanceFor(wants, thirteen.slice(0, 11), '2026-01-01'), null)
+
+  // The clock restarts when the driving goal changes, and a no sticks for
+  // this goal but re-arms after a genuine switch.
+  assert.equal(advanceFor({ ...wants, goalChoiceAt: '2026-03-01' }, thirteen, '2026-01-01'), null, 'weeks count from the switch, not from signup')
+  assert.equal(advanceFor({ ...wants, advanceDismissedFor: 'muscle' }, thirteen, '2026-01-01'), null)
+  const switched = { goals: ['strength', 'muscle'] as ('muscle' | 'strength')[], goalChoice: 'strength' as const, advanceDismissedFor: 'muscle' as const }
+  assert.ok(advanceFor(switched, thirteen, '2026-01-01'), 'a no to the old goal does not silence the new one')
+
+  // The words on the cards say what happened and what was said, and never
+  // hype or rush anybody.
+  const g = graduationCopy({ from: 'Foundation', to: 'Build', days: 27, weeks: 9 })
+  assert.match(g.body, /27 sessions across 9 weeks/)
+  assert.match(g.body, /nothing you have logged changes/i)
+  const a = advanceCopy(offer)
+  assert.match(a.body, /you put getting stronger next/i)
+  assert.ok(!/now or|limited|last chance|crush|unlock/i.test(g.body + a.body))
 })
 
 void (async () => {

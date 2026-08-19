@@ -231,7 +231,34 @@ points, a person adds the movement properly in lib/exercises.ts, and the
 people who invented it keep their own. Names and counts only. What anybody
 lifted on their own movements stays theirs.
 
-## The audit, and what it changed
+## The offers the log earns
+
+Two cards on the Calendar tab, each made once, each with a no that sticks.
+
+Graduation. The starting program was sized from the signup answers, and those
+answers are frozen history now: the profile no longer lets anybody edit who
+they were. So the log makes the offer instead. Twenty four sessions across
+eight distinct weeks on Foundation earns the offer of Build; seventy two
+across twenty four earns Performance, because blocks and waved effort are a
+claim measured in seasons. Accepting stores a promotion, which is its own fact
+granted by evidence rather than an edit of history, and the program becomes
+the higher of what was answered and what was proved. It can only ever raise:
+nothing stored can demote somebody below what they said. Counted from signup,
+so imported history from some other life graduates nobody the app has never
+seen train.
+
+Advance. The goals are an ordered list and, until now, nothing ever moved it.
+Twelve distinct training weeks on the front of the list earns the offer of the
+next goal that actually trains differently, with the weeks counted from the
+last time the driving goal changed rather than from signup. Saying not yet is
+remembered for that goal and re-arms only when the driving goal genuinely
+changes, so a no is never nagged and a new goal is never silenced by an old
+answer.
+
+The four week check-in outranks both, because a week that is not happening is
+a bigger fact than a promotion, and at most one card speaks at a time.
+
+## The audit, and what it changed## The audit, and what it changed
 
 Six parallel reviewers read the whole app, one slice each, and an adversarial
 pass re-checked every claim against the cited line before anything got fixed.
