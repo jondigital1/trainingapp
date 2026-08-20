@@ -223,7 +223,13 @@ const TABLE: Record<Program, Record<number, string[]>> = {
     3: ['ppl-push', 'ppl-pull', 'ppl-legs'],
     4: ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'],
     5: ['five-chest', 'five-back', 'five-quads', 'five-shoulders', 'five-posterior'],
-    6: ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'five-quads', 'five-posterior'],
+    // Push Pull Legs run twice, which is how six day PPL is actually trained,
+    // with the two leg days split by what they lead with rather than repeated:
+    // quads and calves one, hamstrings and glutes the other. A muscle a day
+    // was the default here and is still a tap away in the week picker, but it
+    // is the less common answer to six days and made PPL, the most common
+    // one, impossible to derive at all.
+    6: ['ppl-push', 'ppl-pull', 'five-quads', 'ppl-push', 'ppl-pull', 'five-posterior'],
   },
 }
 
@@ -274,7 +280,7 @@ const SPLIT_NAME: Record<Program, Record<number, string>> = {
     3: 'Push Pull Legs',
     4: '4 Day Split',
     5: '5 Day Split',
-    6: 'A muscle a day, plus an upper mix',
+    6: 'Push Pull Legs, twice through',
   },
 }
 

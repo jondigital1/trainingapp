@@ -3320,6 +3320,33 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
 })
 
+check('six days a week can be Push Pull Legs', () => {
+  // Six days was the one place PPL could not be derived: it produced a muscle
+  // a day, and running Push Pull Legs twice through is the single most common
+  // way six days is actually trained.
+  const six = planFor({ days: 6, years: 'overTwo', knows: 'yes', barbell: 'confident', goalChoice: 'muscle' }, 'muscle')
+  assert.deepEqual(six.dayIds, ['ppl-push', 'ppl-pull', 'five-quads', 'ppl-push', 'ppl-pull', 'five-posterior'])
+  assert.equal(six.splitName, 'Push Pull Legs, twice through', 'the card describes a split it no longer runs')
+
+  // The two leg days lead with different things rather than being the same
+  // session twice, which is the point of splitting them at all.
+  assert.notEqual(dayById('five-quads')!.name, dayById('five-posterior')!.name)
+
+  // Laid across a week it reads the way somebody running PPL expects.
+  const spread = suggestSchedule(six).map((id) => (id ? dayById(id)!.name : 'Rest'))
+  assert.deepEqual(spread, ['Rest', 'Push', 'Pull', 'Quads and Calves', 'Push', 'Pull', 'Hamstrings and Glutes'])
+
+  // A plan naming the same session twice must not offer it twice to pick.
+  const card = readFileSync(new URL('../components/ScheduleCard.tsx', import.meta.url), 'utf8')
+  assert.ok(card.includes('new Set(plan?.dayIds'), 'duplicate sessions show as duplicate chips')
+
+  // A muscle a day is still reachable by hand, it is just no longer the
+  // default answer to six days.
+  for (const id of ['bro-chest', 'bro-back', 'bro-shoulders', 'bro-arms', 'bro-legs']) {
+    assert.ok(dayById(id), `${id} vanished from the library`)
+  }
+})
+
 check('a day you picked is saved when you pick it', () => {
   const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
 

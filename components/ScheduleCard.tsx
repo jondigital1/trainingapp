@@ -27,7 +27,10 @@ export default function ScheduleCard({
   // offer, which meant somebody who wanted Push on Monday could not say so:
   // Push exists, it is startable from the Start button, and it simply was not
   // schedulable. Every session in the library is here now, behind one tap.
-  const mine = plan?.dayIds ?? []
+  // Deduped, because a plan can name the same session twice: Push Pull Legs
+  // twice through lists Push on two days, and two identical chips is a choice
+  // that is not a choice.
+  const mine = [...new Set(plan?.dayIds ?? [])]
   // Grouped under their split rather than each chip carrying its split's name,
   // because half these names repeat across splits and Hamstrings and Glutes
   // with 5 Day Split stuck on the end is wider than a phone.
