@@ -384,6 +384,38 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## The clock is a ceiling, not a target
+
+The worry was that the app was squeezing sessions to hit a number instead of
+designing a workout that lands where it lands. The measurement said the
+opposite, and something worse: it was not hitting the number at all.
+
+The cap was a fixed count per bucket. Four movements at thirty minutes, eight
+at an hour, twelve at ninety. That counts the wrong thing, because a movement
+is not a fixed length: a heavy squat rests three minutes between sets and a
+lateral raise rests sixty seconds, so eight movements is fifty minutes of one
+day and seventy of another. Asking for ninety minutes returned a forty three
+minute push day and called it ninety.
+
+The count now falls out of the session, using the same estimate the app
+already shows you before you start, so the two can never disagree. Movements
+go in until the next one would not fit, and the answers say Up to, because
+that is what they now mean.
+
+Above an hour there is no honest bigger number to offer. The templates run out
+of movements long before the clock does, so the last option is No limit rather
+than a duration nothing can fill. Thirty minutes gives you twenty six to
+twenty nine, an hour gives forty three to fifty nine, and the estimate on the
+card tells you which before you start.
+
+Making the cap real then exposed the thing the old cap had been hiding. With
+time to spare, every day kept its whole core circuit, and four core movements
+supersetted at the end of every session is twenty a week on a five day split
+against five for chest. Core recovers fast and pairs with anything, which is
+an argument for a little in every session and not for making it the biggest
+thing in the week. The circuit is a pair now: one that resists the arch and
+one that resists the twist.
+
 ## Counting what a week actually trains
 
 The templates read as balanced. Counting the sessions they produce, per muscle,

@@ -20,7 +20,13 @@ export interface TemplateSplit {
 
 // Baked into every day of the 4 and 5 day splits. It is a circuit by
 // name, so it is a superset by structure: straight through, then rest.
-const CORE: TemplateEntry = ['Hanging Leg Raise', 'Cable Crunch', 'Pallof Press', 'Plank']
+// A pair, not a four. This was four movements supersetted at the end of every
+// session in the four and five day splits, which on a five day week is twenty
+// core exercises against five for chest. Core recovers fast and pairs with
+// anything, and that is an argument for putting some in every session, not for
+// making it the largest thing in the week. One that resists the arch and one
+// that resists the twist covers what the finisher is for.
+const CORE: TemplateEntry = ['Hanging Leg Raise', 'Pallof Press']
 
 // These carry the ordinary movements, squats and hinges included. Somebody who
 // flags a sore knee or a bad back in the questionnaire never sees them: banned()

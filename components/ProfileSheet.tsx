@@ -160,15 +160,16 @@ export default function ProfileSheet({
     return (
       <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={close}>
         {focus === 'minutes' ? (
-          <Field label="How long have you got?" hint="Sets how many movements we put in a session.">
+          <Field label="How long have you got?" hint="A ceiling, not a target. Sessions land where they land and the app tells you what each one costs.">
             <Options
               columns={2}
               value={draft.minutes}
               onPick={(v) => set({ minutes: v })}
               options={[
-                { v: 30 as const, label: '30 minutes' },
-                { v: 60 as const, label: '1 hour' },
-                { v: LONG_SESSION, label: '90 minutes' },
+                { v: 30 as const, label: 'Up to 30 minutes' },
+                { v: 45 as const, label: 'Up to 45 minutes' },
+                { v: 60 as const, label: 'Up to an hour' },
+                { v: LONG_SESSION, label: 'No limit' },
               ]}
             />
           </Field>
@@ -363,15 +364,16 @@ export default function ProfileSheet({
               </Field>
             ) : null}
 
-            <Field label="How long have you got?" hint="Sets how many movements we put in a session.">
+            <Field label="How long have you got?" hint="A ceiling, not a target. Sessions land where they land and the app tells you what each one costs.">
               <Options
                 columns={2}
                 value={draft.minutes}
                 onPick={(v) => set({ minutes: v })}
                 options={[
-                  { v: 30 as const, label: '30 minutes' },
-                  { v: 60 as const, label: '1 hour' },
-                  { v: LONG_SESSION, label: '90 minutes' },
+                  { v: 30 as const, label: 'Up to 30 minutes' },
+                  { v: 45 as const, label: 'Up to 45 minutes' },
+                  { v: 60 as const, label: 'Up to an hour' },
+                  { v: LONG_SESSION, label: 'No limit' },
                 ]}
               />
             </Field>

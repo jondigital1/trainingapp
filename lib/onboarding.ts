@@ -1,4 +1,5 @@
 import { LIBRARY, demandOf, demandRank, equipmentOf, groupOf, lookupType, similarTo } from './exercises'
+import { estimateSeconds } from './estimate'
 import { restTier, type RestTier } from './rest'
 import { dayItems, SPLITS, type TemplateDay } from './templates'
 import type { CustomWorkoutItem, Goal, SetType } from './types'
@@ -8,6 +9,11 @@ import type { Unit } from './units'
 // are not in a hurry, and its budget of twelve is past the length of every
 // template day there is, so in practice nothing gets trimmed. The cap only
 // ever removes work, it never invents any.
+// The no ceiling answer. Kept as a number so everything stored stays a number,
+// but nothing is trimmed against it: above an hour the templates run out of
+// movements long before the clock does, so a bigger number was a promise the
+// library could not keep. Ninety minutes delivered a forty three minute push
+// day and called it ninety.
 export const LONG_SESSION = 90
 
 // How many sections the questionnaire has. Lives here so Settings can promise
@@ -514,7 +520,25 @@ export interface PlannedItem extends CustomWorkoutItem {
 }
 
 // How many movements fit in the time they said they had.
-const BUDGET: Record<number, number> = { 30: 4, 45: 6, 60: 8, 75: 10, [LONG_SESSION]: 12 }
+//
+// This was a fixed count per bucket, four at thirty minutes and twelve at
+// ninety, which ignored the one thing that decides how long a session takes:
+// what is in it. A heavy squat day rests three minutes between sets and a pump
+// day rests sixty seconds, so eight movements is fifty minutes of one and
+// seventy of the other. Counting to eight and calling it an hour was counting
+// the wrong thing.
+//
+// The count is worked out from the session instead, using the same estimate
+// the app already shows you before you start, so the two can never disagree.
+// It is still a ceiling and not a target: a session lands where it lands, and
+// the time somebody picked is the most it may cost them.
+const CEILING = 12
+
+function fits(items: PlannedItem[], profile: Profile, goal: Goal): boolean {
+  const minutes = profile.minutes ?? 60
+  if (minutes >= LONG_SESSION) return true
+  return estimateSeconds(items, goal) <= minutes * 60
+}
 
 export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
   const bans = banned(profile)
@@ -545,12 +569,9 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
 
   const ordered = emphasise(withCarriedFocus(out, profile, bans, used), focusOf(profile))
 
-  const cap = BUDGET[profile.minutes ?? 60] ?? 8
-  if (ordered.length <= cap) return ordered
+  const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
+  if (ordered.length <= CEILING && fits(ordered, profile, goal)) return ordered
 
-  // The cap never slices through a superset: half a circuit is not a circuit.
-  // Tagged groups are kept whole while at least two other movements still fit,
-  // otherwise the whole group is dropped and singles fill the day.
   const groups = new Map<string, PlannedItem[]>()
   for (const item of ordered) {
     if (!item.superset) continue
@@ -558,48 +579,49 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     groups.get(item.superset)!.push(item)
   }
 
-  // First come, first served, in the order the session was already sorted.
-  //
-  // This used to reserve every circuit that fitted before a single movement
-  // was considered, which sounds fair and is exactly backwards: the circuit
-  // is the finisher and the singles are the session. A four movement core
-  // circuit at the end of a day reserved half an hour budget and evicted the
-  // arm work at the front, so Performance at five days a week came back with
-  // twenty core exercises, no biceps, no triceps and no calves.
+  // Movements in the order the session was already sorted, added while the
+  // session still fits the time. The circuit is all of it or one of it: half a
+  // circuit is not a circuit, and it may not be the session either, so it is
+  // only kept whole once two movements that are not it are already in.
   const wanted = new Set(focusOf(profile))
   const kept = new Set<string>()
   const skipped = new Set<string>()
   const trimmed: PlannedItem[] = []
 
   for (const item of ordered) {
-    if (trimmed.length >= cap) break
+    if (trimmed.length >= CEILING) break
+    if (item.superset && skipped.has(item.superset)) continue
+    if (item.superset && kept.has(item.superset)) {
+      trimmed.push(item)
+      continue
+    }
+
     if (!item.superset) {
-      trimmed.push(item)
+      if (fits([...trimmed, item], profile, goal)) trimmed.push(item)
+      else break
       continue
     }
-    if (skipped.has(item.superset)) continue
-    if (kept.has(item.superset)) {
-      trimmed.push(item)
-      continue
-    }
+
     const members = groups.get(item.superset) ?? [item]
-    // Room for the circuit and for at least two movements that are not it.
-    // Without the second half, a core focused thirty minute push day came back
-    // as four core movements and no pressing at all: emphasise had moved the
-    // circuit to the front, and the front of the queue took the whole budget.
-    // Bringing core up is not the same as replacing the session with it.
-    if (trimmed.length + members.length <= cap - 2) {
+    const singles = trimmed.filter((t) => !t.superset).length
+    if (singles >= 2 && trimmed.length + members.length <= CEILING && fits([...trimmed, ...members], profile, goal)) {
       kept.add(item.superset)
       trimmed.push(item)
       continue
     }
-    // It does not fit whole, and half a circuit is not a circuit. One movement
-    // still is, though: the one they asked to bring up if the circuit holds
-    // it, otherwise the first, so the clock trims the session and never the
-    // reason somebody gave for training.
     skipped.add(item.superset)
     const save = members.find((m) => wanted.has(groupOf(m.name) ?? '')) ?? members[0]
-    trimmed.push({ ...save, superset: null })
+    const one = { ...save, superset: null }
+    if (fits([...trimmed, one], profile, goal)) trimmed.push(one)
+  }
+
+  // A session is a session. If the clock is so tight that almost nothing fits,
+  // three movements go in anyway and the estimate says what it really costs,
+  // rather than the app quietly handing back a day with one exercise on it.
+  for (const item of ordered) {
+    if (trimmed.length >= 3) break
+    if (trimmed.some((t) => t.name === item.name)) continue
+    trimmed.push(item.superset ? { ...item, superset: null } : item)
   }
 
   return trimmed
@@ -748,17 +770,19 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
     )
     .filter((pool) => pool.length > 0)
 
-  const cap = BUDGET[profile.minutes ?? 60] ?? 8
+  const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
   const used = new Set<string>()
   const out: PlannedItem[] = []
-  while (out.length < cap) {
+  while (out.length < CEILING) {
     let picked = false
     for (const pool of pools) {
-      if (out.length >= cap) break
+      if (out.length >= CEILING) break
       const next = pool.find((e) => !used.has(e.name))
       if (!next) continue
+      const item = { name: next.name, type: next.type, superset: null }
+      if (out.length >= 3 && !fits([...out, item], profile, goal)) return emphasise(out, focusOf(profile))
       used.add(next.name)
-      out.push({ name: next.name, type: next.type, superset: null })
+      out.push(item)
       picked = true
     }
     if (!picked) break
@@ -1033,10 +1057,20 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   // it is not a session, it is a card promising a workout and opening on
   // almost nothing, which is the same dishonesty as opening on nothing at all.
   const MIN_SESSION = 3
+  const built = new Map<string, number>()
   const dayIds = wanted.filter((id) => {
     const day = dayById(id)
-    return day ? buildDay(day, { ...profile, days }).length >= MIN_SESSION : false
+    if (!day) return false
+    const size = buildDay(day, { ...profile, days }).length
+    built.set(id, size)
+    return size >= MIN_SESSION
   })
+
+  // What the plan actually contains, rather than what a table said it would.
+  // The number of movements now falls out of the time somebody has and what
+  // their sessions are made of, so it is read back off the sessions.
+  const sizes = dayIds.map((id) => built.get(id) ?? 0)
+  const typical = sizes.length ? Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length) : 0
   const emptied = wanted.length - dayIds.length
 
   return {
@@ -1055,7 +1089,7 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     focus: focusOf(profile),
     focusNote: focusNote(focusOf(profile)),
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
-    exercises: BUDGET[profile.minutes ?? 60] ?? 8,
+    exercises: typical,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
     sets: cleared || prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
     block: !cleared && prog === 'Performance',

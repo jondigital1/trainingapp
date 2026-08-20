@@ -110,9 +110,12 @@ check('the 4 and 5 day splits carry the core circuit every day', () => {
   for (const id of ['summer4', 'five']) {
     const split = SPLITS.find((s) => s.id === id)!
     for (const day of split.days) {
-      const names = dayNames(day)
-      assert.ok(names.includes('Plank'), `${day.name} has no core circuit`)
-      assert.ok(names.includes('Hanging Leg Raise'), `${day.name} has no core circuit`)
+      // A pair, not a four. Four core movements supersetted at the end of
+      // every session is twenty a week on a five day split, against five for
+      // chest, which made core the largest thing in the week.
+      const core = dayNames(day).filter((n) => groupOf(n) === 'Core')
+      assert.equal(core.length, 2, `${day.name} carries ${core.length} core movements`)
+      assert.ok(core.includes('Pallof Press'), `${day.name} has nothing resisting a twist`)
     }
   }
 })
@@ -128,9 +131,9 @@ check('the core circuit is one superset in his template days', () => {
     for (const day of split.days) {
       const items = dayItems(day)
       const circuit = items.filter((i) => i.superset)
-      assert.equal(circuit.length, 4, `${day.name} circuit is ${circuit.length} movements`)
+      assert.equal(circuit.length, 2, `${day.name} circuit is ${circuit.length} movements`)
       assert.equal(new Set(circuit.map((i) => i.superset)).size, 1, `${day.name} circuit split across tags`)
-      const tail = items.slice(-4)
+      const tail = items.slice(-2)
       assert.ok(tail.every((i) => i.superset), `${day.name} circuit is not at the end`)
     }
   }
@@ -400,42 +403,44 @@ check('bodyweight only leaves nothing that needs a rack', () => {
   }
 })
 
-check('the clock takes the finisher before it takes the session', () => {
-  // Two rules, and the order between them is the whole point. A circuit is
-  // never split, because half a circuit is not a circuit. But a circuit is
-  // also never reserved ahead of the movements in front of it: it is the
-  // finisher, and reserving it first is how Performance at five days a week
-  // came back with twenty core exercises, no biceps and no triceps.
+check('the clock is a ceiling, and the finisher is not the session', () => {
+  // The cap used to be a fixed count per bucket: four movements at thirty
+  // minutes, twelve at ninety. That counted the wrong thing. A heavy squat day
+  // rests three minutes between sets and a pump day rests sixty seconds, so
+  // eight movements is fifty minutes of one and seventy of the other, and
+  // ninety minutes was delivering a forty three minute push day.
   const day = dayById('five-chest')!
 
-  // 60 minutes, cap 8. Five chest and two triceps are the session, so the four
-  // movement circuit cannot fit whole and leaves one movement behind.
-  const hour = buildDay(day, { minutes: 60 })
-  assert.equal(hour.length, 8)
-  assert.equal(hour[0].name, 'Incline Dumbbell Press', 'the first main survives the cap')
-  assert.ok(
-    hour.filter((i) => groupOf(i.name) === 'Triceps').length >= 2,
-    'the arm work was evicted by the finisher again',
-  )
-  const core = hour.filter((i) => groupOf(i.name) === 'Core')
-  assert.equal(core.length, 1, `core arrived as ${core.length}`)
-  assert.ok(core.every((i) => !i.superset), 'a lone movement is still carrying a circuit tag')
-
-  // 90 minutes, cap 12: everything fits, so the circuit arrives whole and
-  // tagged, which is the half of the rule that has not changed.
-  const long = buildDay(day, { minutes: LONG_SESSION })
-  assert.equal(long.filter((i) => i.superset).length, 4, 'the whole circuit no longer survives')
-
-  // 30 minutes: four movements, and never an orphaned circuit member among them.
-  const half = buildDay(day, { minutes: 30 })
-  assert.equal(half.length, 4)
-  assert.ok(half.every((i) => !i.superset), 'a partial circuit leaked into the short session')
-
-  // Whatever the clock says, the session never comes back longer than asked.
-  for (const minutes of [30, 45, 60, 75] as const) {
-    const cap = { 30: 4, 45: 6, 60: 8, 75: 10 }[minutes]
-    assert.ok(buildDay(day, { minutes }).length <= cap, `${minutes} overran its cap`)
+  for (const minutes of [30, 45, 60] as const) {
+    const items = buildDay(day, { minutes })
+    const mins = estimateSeconds(items, 'muscle') / 60
+    assert.ok(mins <= minutes, `${minutes} minutes came back as ${Math.round(mins)}`)
+    assert.ok(items.length >= 3, `${minutes} minutes came back with ${items.length} movements`)
+    // Never an orphaned circuit member: a superset arrives whole or as one
+    // movement that has stopped calling itself a circuit.
+    const tags = new Set(items.filter((i) => i.superset).map((i) => i.superset))
+    for (const tag of tags) {
+      assert.equal(items.filter((i) => i.superset === tag).length, 2, 'half a circuit arrived')
+    }
   }
+
+  // And the finisher never becomes the session. At thirty minutes with core
+  // brought to the front, the circuit cannot take the whole budget.
+  const focused = buildDay(day, { minutes: 30, focus: ['Core'] })
+  assert.ok(
+    focused.filter((i) => groupOf(i.name) !== 'Core').length >= 2,
+    'a core focused half hour came back as core and nothing else',
+  )
+  assert.ok(focused.some((i) => groupOf(i.name) === 'Core'), 'the trim took the focused work')
+
+  // No limit means no trimming, so the day arrives as written.
+  const whole = buildDay(day, { minutes: LONG_SESSION })
+  assert.equal(whole.filter((i) => i.superset).length, 2, 'the whole circuit no longer survives')
+  assert.ok(whole.length > buildDay(day, { minutes: 45 }).length, 'no limit is no different to 45 minutes')
+
+  // A tighter clock is never a longer session.
+  const lengths = ([30, 45, 60] as const).map((m) => buildDay(day, { minutes: m }).length)
+  assert.deepEqual([...lengths].sort((a, b) => a - b), lengths, 'less time gave more movements')
 })
 
 check('dislikes are never suggested', () => {
@@ -1187,21 +1192,35 @@ check('the time you have got decides how much goes in the session', () => {
   const long = buildDay(day, { minutes: LONG_SESSION }).length
   const hour = buildDay(day, { minutes: 60 }).length
   const half = buildDay(day, { minutes: 30 }).length
-  assert.ok(half <= 4, `30 minutes caps at 4, got ${half}`)
-  assert.ok(hour <= 8, `an hour caps at 8, got ${hour}`)
+  // Measured in minutes rather than in movements, because a movement is not a
+  // fixed length: a heavy squat rests three minutes and a lateral raise rests
+  // sixty seconds, so counting to eight and calling it an hour counted the
+  // wrong thing.
+  assert.ok(estimateSeconds(buildDay(day, { minutes: 30 }), 'muscle') <= 30 * 60, 'over half an hour')
+  assert.ok(estimateSeconds(buildDay(day, { minutes: 60 }), 'muscle') <= 60 * 60, 'over the hour')
   assert.ok(half <= hour && hour <= long, 'more time is never fewer movements')
-  // Ninety minutes is past the length of every template day, so in practice
-  // it trims nothing. Check that against the longest day in the library.
-  const longest = Math.max(...SPLITS.flatMap((s) => s.days).map((d) => dayItems(d).length))
-  assert.ok(planFor({ minutes: LONG_SESSION }, 'muscle').exercises >= longest,
-    `a 90 minute budget of 12 should clear the longest day, which is ${longest}`)
-  assert.equal(long, dayItems(day).length, 'so the whole day comes back')
-  assert.equal(planFor({ minutes: 30 }, 'muscle').exercises, 4)
-  assert.equal(planFor({ minutes: 60 }, 'muscle').exercises, 8)
-  // 45 and 75 are no longer offered but a profile saved with one still works.
-  assert.equal(planFor({ minutes: 45 }, 'muscle').exercises, 6)
-  assert.equal(planFor({ minutes: 75 }, 'muscle').exercises, 10)
-  assert.equal(planFor({}, 'muscle').exercises, 8, 'no answer falls back to an hour')
+
+  // No limit trims nothing, so the whole day comes back however long it is.
+  assert.equal(long, dayItems(day).length, 'no limit still trimmed the day')
+  const longest = Math.max(...SPLITS.flatMap((sp) => sp.days).map((d) => dayItems(d).length))
+  assert.ok(planFor({ minutes: LONG_SESSION }, 'muscle').exercises <= longest, 'a plan claims more than the longest day holds')
+
+  // The number the plan reports is read off the sessions rather than a table,
+  // so it cannot promise a count the sessions do not contain.
+  for (const minutes of [30, 45, 60] as const) {
+    const plan = planFor({ minutes, days: 4, years: 'overTwo', knows: 'yes' }, 'muscle')
+    const real = plan.dayIds.map((id) => buildDay(dayById(id)!, { minutes, days: 4, years: 'overTwo' as const, knows: 'yes' as const }).length)
+    assert.ok(
+      plan.exercises >= Math.min(...real) && plan.exercises <= Math.max(...real),
+      `${minutes} claims ${plan.exercises} against sessions of ${real.join(', ')}`,
+    )
+  }
+  // Every value a profile can hold, including 75, which is no longer offered
+  // but may be saved against somebody from before. More time is never fewer
+  // movements, and no answer means an hour.
+  const counts = ([30, 45, 60, 75, LONG_SESSION] as const).map((m) => planFor({ minutes: m }, 'muscle').exercises)
+  assert.deepEqual([...counts].sort((a, b) => a - b), counts, 'more time gave fewer movements')
+  assert.equal(planFor({}, 'muscle').exercises, planFor({ minutes: 60 }, 'muscle').exercises, 'no answer falls back to an hour')
 })
 
 check('supersetting reaches past the exercise next to it', () => {
@@ -2991,8 +3010,16 @@ check('every plan the app can generate is a real session', () => {
 
                       // A day in the plan is a day with work in it. Days the
                       // answers emptied are dropped from the plan instead.
-                      assert.ok(items.length > 0, `${where}/${id}: empty day offered as a session`)
-                      assert.ok(items.length <= (budget[minutes] ?? 8), `${where}/${id}: ${items.length} over budget`)
+                      assert.ok(items.length >= 3, `${where}/${id}: ${items.length} is not a session`)
+                      // Budget in minutes, not movements. A session may run
+                      // over only when three movements will not fit inside the
+                      // clock at all, which is the floor winning over the
+                      // ceiling on purpose.
+                      const mins = estimateSeconds(items, goal) / 60
+                      assert.ok(
+                        minutes >= LONG_SESSION || mins <= minutes || items.length <= 3,
+                        `${where}/${id}: ${Math.round(mins)} minutes against ${minutes}`,
+                      )
 
                       const seen = new Set<string>()
                       for (const item of items) {
