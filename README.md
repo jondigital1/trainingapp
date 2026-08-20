@@ -294,18 +294,30 @@ fails on any tab a piece of copy names that the nav does not render, so the
 next rename cannot leave the help text pointing at a place that no longer
 exists.
 
-## The month
+## The week, and what is coming
 
 The tab called Calendar showed today and nothing else, which on a rest day was
 a heading, a line of grey text and half a phone of white. A log is worth
 keeping because it accumulates, and the accumulation was three taps away on
 another tab.
 
-It now carries the month: six by seven, filled where you trained, outlined
-where your week asks for something, ringed on today, greyed either side of the
-month so the first row is never ragged. Tapping a filled day opens what you
-logged, tapping a planned one opens what it holds, and a rest day does
-nothing, which is the point of a rest day.
+It carries two things now, and they answer two different questions. The card
+at the top is the week you are in, Sunday to Saturday, the same week the streak
+and the coverage count already use: filled where you trained, outlined where
+the schedule asks for something, ringed on today. Underneath it is what is
+coming, the next ten sessions the schedule holds as a list you scroll, with
+real dates on them so it can be read against a calendar that has the rest of
+your life in it: Fri 21 Aug, Hamstrings and Glutes. Then everything behind you,
+hidden while a session is live.
+
+Names only in that list, no movements. Ten sessions with six exercises each is
+sixty lines of text nobody reads, and what is in a day is one tap away on the
+day itself.
+
+A month grid lived here for an afternoon and was the wrong answer: thirty
+squares of mostly nothing, decoded rather than read, and it pushed the thing
+somebody actually wants, what am I doing on Thursday, off the bottom of the
+screen.
 
 ## Answers the plan asks for reach the plan## Answers the plan asks for reach the plan
 

@@ -14,7 +14,7 @@ import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
-import MonthCalendar from './MonthCalendar'
+import UpcomingList from './UpcomingList'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
 import Sheet from './Sheet'
@@ -1004,28 +1004,16 @@ export default function App({
             />
           ))}
 
-          {/* The month, because a log is worth keeping because it accumulates,
-              and this tab is named after the place that accumulation should
-              live. Before this it showed today and half a phone of white. */}
-          <MonthCalendar
-            profile={profile}
-            workouts={data.workouts}
-            today={now}
-            onOpenDate={(date) => {
-              // Opened in place, on the tab the calendar is on. The sessions
-              // themselves live underneath it now, so leaving is not required
-              // to read one.
-              const hit = data.workouts.find((w) => w.date === date)
-              if (hit) setOpenHistory(hit.id)
-            }}
-            onPeek={setPeekDay}
-          />
+          {/* What is coming, under the week that says where you are in the
+              one you are in. Names only: ten sessions with six movements each
+              is sixty lines nobody reads, and what is in a day is one tap
+              away on the day. */}
+          <UpcomingList profile={profile} workouts={data.workouts} today={now} onPeek={setPeekDay} />
 
-          {/* Everything behind you, under the month that navigates it. This
-              was its own tab until the calendar made that tab redundant as a
-              navigator. Hidden while a session is live, because a workout in
-              progress should not be followed down the page by every workout
-              that came before it. */}
+          {/* Everything behind you. This was its own tab until the calendar
+              made that tab redundant as a navigator. Hidden while a session is
+              live, because a workout in progress should not be followed down
+              the page by every workout that came before it. */}
           {todays.length === 0 ? (
         <div className="flex flex-col gap-3">
           {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}

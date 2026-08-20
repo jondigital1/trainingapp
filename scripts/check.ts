@@ -47,7 +47,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { hasSchedule, monthGrid, monthLabel, scheduledDays, scheduleOf, shiftMonth, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
+import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
@@ -3020,46 +3020,6 @@ check('a week that came back shorter says why', () => {
 
   // And an ordinary week loses nothing and says nothing.
   assert.equal(planFor({ days: 4, years: 'overTwo', knows: 'yes' }, 'muscle').emptied, 0)
-})
-
-check('the month reads as a month, whatever the month starts on', () => {
-  // Six by seven, always, so the grid never reflows and the shape on screen is
-  // the shape people already know how to read.
-  const profile = { schedule: [null, 'ppl-push', null, 'ppl-pull', null, 'ppl-legs', null] }
-  const cells = monthGrid(profile, [], '2026-08-01', '2026-08-19')
-  assert.equal(cells.length, 42)
-  assert.equal(cells[0].date, '2026-07-26', 'the grid backs up to the Sunday on or before the first')
-  assert.ok(!cells[0].inMonth, 'days from the month before are marked as such')
-  assert.equal(cells.filter((c) => c.inMonth).length, 31, 'August has 31 days')
-
-  // A month that starts on a Sunday still gets a full leading week rather than
-  // a ragged first row.
-  const feb = monthGrid(profile, [], '2026-02-01', '2026-02-10')
-  assert.equal(feb.length, 42)
-  assert.equal(feb[0].date, '2026-02-01', 'February 2026 starts on a Sunday')
-
-  // Today, the future and the schedule all land where they should.
-  const today = cells.find((c) => c.date === '2026-08-19')!
-  assert.ok(today.today && !today.future)
-  assert.equal(today.dayId, 'ppl-pull', 'the 19th is a Wednesday, which is pull here')
-  assert.ok(cells.find((c) => c.date === '2026-08-20')!.future)
-  // The schedule array is Sunday indexed, so this one trains Mon, Wed, Fri.
-  assert.equal(cells.find((c) => c.date === '2026-08-17')!.dayId, 'ppl-push', 'Monday is push')
-  assert.equal(cells.find((c) => c.date === '2026-08-18')!.dayId, null, 'Tuesday is a rest day here')
-
-  // Trained beats planned, and an empty saved workout is not training.
-  const real = [{ id: 'a', date: '2026-08-18', title: 'x', exercises: [
-    { id: 'e', name: 'Barbell Bench Press', type: 'W' as const, sets: [{ id: 's', w: 100, r: 8, rpe: null, t: null, d: null, raw: null }] },
-  ] }] as unknown as Parameters<typeof monthGrid>[1]
-  assert.ok(monthGrid(profile, real, '2026-08-01', '2026-08-19').find((c) => c.date === '2026-08-18')!.trained)
-  const blank = [{ id: 'a', date: '2026-08-18', title: 'x', exercises: [] }] as unknown as Parameters<typeof monthGrid>[1]
-  assert.ok(!monthGrid(profile, blank, '2026-08-01', '2026-08-19').find((c) => c.date === '2026-08-18')!.trained)
-
-  // Stepping months lands on real months and survives the year boundary.
-  assert.equal(monthLabel('2026-08-01'), 'August 2026')
-  assert.equal(shiftMonth('2026-12-15', 1).slice(0, 7), '2027-01')
-  assert.equal(shiftMonth('2026-01-15', -1).slice(0, 7), '2025-12')
-  assert.equal(monthGrid(profile, [], shiftMonth('2026-08-01', 1), '2026-08-19').filter((c) => c.inMonth).length, 30)
 })
 
 check('a switch that says on means a phone the server can actually reach', () => {

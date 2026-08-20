@@ -4,10 +4,11 @@ import { dayById } from '@/lib/onboarding'
 import {
   scheduledDays,
   todaysDayId,
+  scheduleOf,
   trainedOn,
-  upcomingDays,
   WEEKDAYS,
   weekdayOf,
+  weekStart,
 } from '@/lib/schedule'
 import { weeklyStreak } from '@/lib/gamify'
 
@@ -41,17 +42,24 @@ export default function TodayCard({
   const streak = weeklyStreak(workouts, today, target)
   const doneToday = trainedOn(workouts, today)
 
-  // The next ten sessions the schedule holds, with real dates on them. The
-  // fixed Sunday to Saturday grid spent cells on rest days and showed a week
-  // that was mostly over by Friday; what somebody planning their life wants is
-  // what is coming: Mon 25, Tue 26, Thu 28. Today rides along until it is done.
-  const upcoming = upcomingDays(profile, today).map((u) => ({
-    ...u,
-    label: WEEKDAYS[weekdayOf(u.date)],
-    dayNum: Number(u.date.slice(8, 10)),
-    done: trainedOn(workouts, u.date),
-    today: u.date === today,
-  }))
+  // This week, Sunday to Saturday, which is the week the streak and the
+  // coverage count already use. What is coming next lives in its own list
+  // underneath rather than in here, so this card answers one question: where
+  // are you in the week you are in.
+  const sunday = weekStart(today)
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(sunday + 'T00:00:00')
+    d.setDate(d.getDate() + i)
+    const iso = d.toISOString().slice(0, 10)
+    const weekday = weekdayOf(iso)
+    return {
+      iso,
+      label: WEEKDAYS[weekday],
+      dayId: scheduleOf(profile)[weekday] ?? null,
+      done: trainedOn(workouts, iso),
+      today: iso === today,
+    }
+  })
 
   return (
     <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
@@ -70,48 +78,48 @@ export default function TodayCard({
         ) : null}
       </div>
 
-      {upcoming.length ? (
-        // Sideways, because ten dated sessions deserve more than seven
-        // squeezed columns. Tapping one opens it for reading; starting stays
-        // its own tap inside, so the strip is safe to browse.
-        <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
-          {upcoming.map((u) => {
-            const its = dayById(u.dayId)
-            return (
-              <button
-                key={u.date}
-                onClick={() => onPeek(u.dayId)}
-                aria-label={`${u.label} ${u.dayNum}, ${its?.name ?? ''}${u.done ? ', trained' : ''}`}
-                className="w-[72px] flex-none text-center"
+      {/* Every planned day opens for reading. Starting stays its own tap
+          inside, so the week is safe to browse. */}
+      <div className="mt-3 grid grid-cols-7 gap-1.5">
+        {week.map((d) => {
+          const its = d.dayId ? dayById(d.dayId) : null
+          return (
+            <button
+              key={d.iso}
+              onClick={() => d.dayId && onPeek(d.dayId)}
+              disabled={!d.dayId}
+              aria-label={
+                its
+                  ? `${d.label}, ${its.name}${d.done ? ', trained' : ''}`
+                  : `${d.label}, rest${d.done ? ', trained anyway' : ''}`
+              }
+              className="text-center disabled:cursor-default"
+            >
+              <span
+                className={`block text-[10px] font-extrabold uppercase ${
+                  d.today ? 'text-bright' : 'text-faint'
+                }`}
               >
-                <span
-                  className={`block text-[10px] font-extrabold uppercase ${
-                    u.today ? 'text-bright' : 'text-faint'
-                  }`}
-                >
-                  {u.label} <span className="num">{u.dayNum}</span>
-                </span>
-                {/* Trained is the only filled state, because lime means done.
-                    Today is the one with the thicker ring around whatever it
-                    already was. */}
-                <span
-                  className={`mt-1 flex h-11 items-center justify-center rounded-[10px] px-1 text-[9px] font-extrabold uppercase leading-tight ${
-                    u.done
-                      ? 'bg-accent text-on-accent'
-                      : 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
-                  } ${u.today ? 'ring-2 ring-accent-ink' : ''}`}
-                >
-                  <span className="line-clamp-2 overflow-hidden">{its?.name ?? ''}</span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      ) : (
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Lay your week out on your profile and the next ten sessions appear here, dated.
-        </p>
-      )}
+                {d.label}
+              </span>
+              {/* Trained is the only filled state, because lime means done.
+                  Planned is an outline, rest is a hairline, and today is the
+                  one with a thicker ring around whatever it already was. */}
+              <span
+                className={`mt-1 flex h-9 items-center justify-center rounded-[10px] px-0.5 text-[9px] font-extrabold uppercase leading-tight ${
+                  d.done
+                    ? 'bg-accent text-on-accent'
+                    : d.dayId
+                      ? 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
+                      : 'ring-1 ring-edge'
+                } ${d.today ? 'ring-2 ring-accent-ink' : ''}`}
+              >
+                <span className="line-clamp-2 overflow-hidden">{its ? its.name : ''}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
 
       {day && !doneToday ? (
         <button
