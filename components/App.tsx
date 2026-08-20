@@ -1545,6 +1545,7 @@ export default function App({
           }}
           onHelp={() => setSheet('help')}
           onDeleteAccount={() => void deleteAccount()}
+          onProfileChange={(patch) => void saveProfile({ ...profile, ...patch })}
           onListShares={() => db.listShares(sb)}
           onRevokeShare={(id) => db.unshare(sb, id)}
           onSignOut={async () => {

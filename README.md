@@ -2302,6 +2302,37 @@ Nothing new underneath. Assigning a day already stored an empty string for "the
 pattern says train, this date says otherwise"; nothing had ever called it with
 nothing to assign.
 
+## What you set, and what you are
+
+The profile page had grown into two subjects wearing one heading. Name and age
+sit next to what you want out of training, which weight unit you read in, and
+which muscle groups get put first, and only the first two are facts about you.
+The rest are answers you gave, and answers can be changed on a settings screen
+without anybody feeling they are editing themselves.
+
+The questionnaire had already drawn this line and the profile had quietly
+crossed it. Its first step is titled You, kicker "Facts about you, and nothing
+else", and goals are a step of their own called "What you want out of it".
+
+So Settings owns them now: what you want out of it, what you want brought up,
+sex, and the weight unit, which sits under Appearance next to the theme because
+by its own description it changes nothing but what you are shown. The profile
+keeps name, age, your week, your body and your movements.
+
+They moved rather than being copied. Settings used to show the goal read only
+and send you to the profile to change it, and the comment on that block said
+why: it had been two editors once and they disagreed. One editor, one home, and
+a check that fails if either screen grows a second copy.
+
+Moving them turned up a quieter version of the same bug waiting to happen.
+Settings opens as a sheet over the profile, so both are mounted at the same
+time. The profile builds its save from a draft seeded when it opened, so
+changing your goal in Settings and then saving the profile underneath handed
+back the goal you had before. Measured, not guessed: kg reverted to lb and two
+goals dropped to one. The profile now takes those fields fresh from the profile
+it was given rather than from its own draft, because it does not own them any
+more.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

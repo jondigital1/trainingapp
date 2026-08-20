@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ageBand,
     COMMON_DISLIKES,
-  goalsOf,
   GOAL_FROM_CHOICE,
   legDaysOf,
   OTHER_NOTES,
@@ -26,9 +25,7 @@ import { restForTier } from '@/lib/rest'
 import { weekStart } from '@/lib/week'
 import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
 import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
-import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
-import { GoalPicker } from './GoalPicker'
-import { BringUpField, SexField } from './FocusField'
+import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES } from '@/lib/questions'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -111,7 +108,7 @@ export default function ProfileSheet({
   const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
   const [section, setSection] = useState<Section>(focus === 'minutes' || focus === 'week' ? 'week' : focus === 'sore' ? 'body' : 'you')
-  const unit = unitOf(draft)
+  const unit = unitOf(profile)
 
   const [name, setName] = useState(profile.name ?? '')
   const [age, setAge] = useState(profile.ageYears != null ? String(profile.ageYears) : '')
@@ -147,6 +144,16 @@ export default function ProfileSheet({
     const gw = numOrNull(goalWeight)
     const next: Profile = {
       ...draft,
+      // Settings owns these, and Settings opens as a sheet over this page, so
+      // both are mounted at once. A draft seeded when this page opened would
+      // hand back the goal you had before you changed it a moment ago, which
+      // is the same disagreement the two goal editors used to have, arriving
+      // by a quieter route.
+      units: profile.units,
+      sex: profile.sex,
+      goals: profile.goals,
+      goalChoice: profile.goalChoice,
+      focus: profile.focus,
       name: name.trim() || undefined,
       ageYears: numOrNull(age) ?? undefined,
       heightIn,
@@ -299,18 +306,10 @@ export default function ProfileSheet({
             <Field label="Age" optional>
               <NumberInput value={age} onChange={setAge} suffix="years" />
             </Field>
-            <Ask
-              q={UNITS}
-              value={unit}
-              onPick={(v) => set({ units: v })}
-              hint="A display choice. Nothing you have already logged changes."
-            />
-            <SexField profile={draft} onChange={set} />
-
-            <GoalPicker goals={goalsOf(draft)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
-
-            <BringUpField profile={draft} onChange={set} />
-            {plan.goalCoverage ? <Note>{plan.goalCoverage}</Note> : plan.goalNote ? <Note>{plan.goalNote}</Note> : null}
+            {/* Units, sex, what you want out of it and what you want brought
+                up all live in Settings now. They are things you set rather
+                than facts about you, and the questionnaire files them the same
+                way. One home each: this page does not keep a second copy. */}
           </>
         ) : null}
 

@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { goalLabel, STEP_COUNT } from '@/lib/onboarding'
+import { STEP_COUNT, goalsOf, planFor, unitOf, GOAL_FROM_CHOICE, type Profile } from '@/lib/onboarding'
+import { UNITS } from '@/lib/questions'
+import { Ask, Note } from './Form'
+import { GoalPicker } from './GoalPicker'
+import { BringUpField, SexField } from './FocusField'
 import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
@@ -52,6 +56,7 @@ export default function SettingsSheet({
   onHelp,
   onSignOut,
   onDeleteAccount,
+  onProfileChange,
   onListShares,
   onRevokeShare,
   onClose,
@@ -65,6 +70,10 @@ export default function SettingsSheet({
   onImport: (data: TrainingData) => Promise<void>
   onSignOut: () => void
   onDeleteAccount: () => void
+  // The questionnaire answers this screen owns. Every one is a tap on an
+  // option, so each saves on the tap: there is no draft here to lose and no
+  // Done to forget.
+  onProfileChange: (patch: Partial<Profile>) => void
   // Links you have handed out. Read when the section is opened rather than at
   // startup, since this is a screen people visit rarely.
   onListShares?: () => Promise<Share[]>
@@ -85,6 +94,8 @@ export default function SettingsSheet({
   const [busy, setBusy] = useState(false)
   // Said out loud when the phone agreed but the server did not hear about it.
   const [failed, setFailed] = useState('')
+  const profile = data.settings.profile
+  const plan = planFor(profile, GOAL_FROM_CHOICE[profile.goalChoice ?? 'muscle'] ?? 'muscle')
   const [origin, setOrigin] = useState('')
   useEffect(() => setOrigin(window.location.origin), [])
 
@@ -173,17 +184,19 @@ export default function SettingsSheet({
 
   return (
     <Sheet title="Settings" onClose={onClose}>
-      {/* Read here, edited on the profile, because the goal is one answer with
-          one home. This used to be a second, unsynced editor wearing different
-          words, which meant changing it here and changing it there disagreed. */}
+      {/* The goal used to be read here and edited on the profile, because it
+          had once been two editors that disagreed. It is one editor now, and
+          this is where it lives: what you want out of it is something you set,
+          not a fact about you, and the questionnaire files it that way too. */}
       <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Goal</h3>
-      <button
-        onClick={onEditProfile}
-        className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
-      >
-        <span className="font-bold">{goalLabel(data.settings.profile, data.settings.goal)}</span>
-        <span className="text-xs text-muted">change on your profile</span>
-      </button>
+      <div className="mt-2">
+        <GoalPicker
+          goals={goalsOf(profile)}
+          onChange={(goals) => onProfileChange({ goals, goalChoice: goals[0] })}
+        />
+        <BringUpField profile={profile} onChange={onProfileChange} />
+        {plan.goalCoverage ? <Note>{plan.goalCoverage}</Note> : plan.goalNote ? <Note>{plan.goalNote}</Note> : null}
+      </div>
 
       <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Appearance</h3>
       {/* A track with one segment lifted out of it, rather than three buttons
@@ -201,6 +214,18 @@ export default function SettingsSheet({
             {t}
           </button>
         ))}
+      </div>
+
+      {/* Filed here rather than with the facts about you, because by its own
+          description it changes nothing but what you are shown, which is the
+          same job the switcher above it does. */}
+      <div className="mt-2">
+        <Ask
+          q={UNITS}
+          value={unitOf(profile)}
+          onPick={(v) => onProfileChange({ units: v })}
+          hint="A display choice. Nothing you have already logged changes."
+        />
       </div>
 
       {/* One heading, two switches. They are two decisions on purpose, because
@@ -263,13 +288,16 @@ export default function SettingsSheet({
       )}
 
       <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">You</h3>
+      <div className="mt-2">
+        <SexField profile={profile} onChange={onProfileChange} />
+      </div>
       <button
         onClick={onEditProfile}
-        className="mt-2 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
+        className="mt-4 w-full rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
       >
         Your profile
         <span className="mt-0.5 block text-xs text-muted">
-          Name, age, units, experience, your week, bodyweight and your record
+          Name, age, your week, bodyweight, your movements and your record
         </span>
       </button>
       <button

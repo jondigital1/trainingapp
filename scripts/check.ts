@@ -4505,6 +4505,34 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('a questionnaire answer is edited in one place', () => {
+  // Units, sex, what you want out of it and what you want brought up are
+  // things you set rather than facts about you, and they live in Settings.
+  // The profile keeps who you are and what you have measured.
+  const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+
+  for (const control of ['GoalPicker', 'BringUpField', 'SexField', 'q={UNITS}']) {
+    assert.ok(settings.includes(control), `settings does not offer ${control}`)
+    assert.ok(!profile.includes(control), `${control} is in two places again`)
+  }
+
+  // The goal was two editors once and they disagreed. It is one editor now,
+  // and the read only copy that used to stand in for it is gone with it.
+  assert.ok(!settings.includes('change on your profile'), 'settings still points at an editor that moved')
+
+  // Settings opens as a sheet over the profile, so both are mounted at once.
+  // A draft seeded when the profile opened would hand back the goal you had
+  // before Settings changed it, which is the old disagreement by a quieter
+  // route. The profile takes these fields fresh every time it builds a save.
+  const build = profile.slice(profile.indexOf('function buildNext'))
+  const body = build.slice(0, build.indexOf('return next'))
+  for (const field of ['units: profile.units', 'sex: profile.sex', 'goals: profile.goals', 'goalChoice: profile.goalChoice', 'focus: profile.focus']) {
+    assert.ok(body.includes(field), `the profile can write a stale ${field.split(':')[0]} back over Settings`)
+  }
+  assert.ok(!/const unit = unitOf\(draft\)/.test(profile), 'the profile reads the unit from its own draft')
+})
+
 check('a session can be skipped, and only that date is', () => {
   // Moving was the only way to clear a date, and moving is a swap, so the
   // session came back on whatever day it was sent to. There was no way to say
