@@ -3332,9 +3332,12 @@ check('a week nobody laid out does not pretend to be a rest day', () => {
   assert.ok(card.includes("'No week set yet'"), 'an empty week still calls itself a rest day')
   assert.ok(card.includes('Lay out your week'), 'nothing on the card fixes it')
 
-  // And the empty list offers the same door rather than describing where it is.
+  // One button, on the card that states the problem. The empty list below it
+  // explains what it becomes and offers nothing, because the same lime button
+  // twice on one screen is one button asked twice.
   const list = readFileSync(new URL('../components/UpcomingList.tsx', import.meta.url), 'utf8')
-  assert.ok(list.includes('onPlanWeek'), 'the empty state is still only an instruction')
+  assert.ok(!list.includes('Lay out your week'), 'the second copy of the button came back')
+  assert.equal(card.match(/Lay out your week/g)!.length, 1)
 
   // The log is named. Without a heading it sat under What is coming in the
   // same card shape, and a finished workout read as a scheduled one.

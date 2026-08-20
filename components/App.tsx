@@ -133,7 +133,12 @@ export default function App({
   // went wrong in the console now, where somebody looking for it can find it.
   const noteQuestion = useCallback(
     (question: string, answered: boolean) => {
-      if (!userId) return
+      // Silently doing nothing is how the swallowed error hid, and a bare
+      // early return is the same thing wearing a different hat.
+      if (!userId) {
+        console.warn('Could not record the question: signed out')
+        return
+      }
       void db.logQuestion(sb, userId, question, answered).catch((e: unknown) => {
         console.warn('Could not record the question:', e)
       })
@@ -1040,10 +1045,6 @@ export default function App({
             today={now}
             onPeek={setPeekDay}
             onMove={setMoving}
-            onPlanWeek={() => {
-              setProfileFocus('week')
-              setSheet('profile')
-            }}
           />
 
           {/* Everything behind you. This was its own tab until the calendar
