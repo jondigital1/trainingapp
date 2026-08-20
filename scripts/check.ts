@@ -3456,19 +3456,31 @@ check('core training covers holding still, not only crunching', () => {
   // work people are actually taught now is that: planks, dead bugs, bird dogs,
   // Pallof presses, carries. Crunches are the smaller half of the job.
   const core = LIBRARY.filter((e) => e.group === 'Core')
-  assert.ok(core.length >= 35, `Core has only ${core.length}`)
+  assert.ok(core.length >= 50, `Core has only ${core.length}`)
 
   const holds = core.filter((e) => e.type === 'T')
-  assert.ok(holds.length >= 8, `only ${holds.length} core holds`)
+  assert.ok(holds.length >= 12, `only ${holds.length} core holds`)
 
-  for (const n of ['Dead Bug', 'Bird Dog', 'Pallof Press', 'Body Saw', 'Bear Hold', 'Reverse Crunch']) {
+  // The plank has a ladder now, both ways, which is the thing every other
+  // movement got last round and core did not.
+  for (const n of ['Knee Plank', 'High Plank', 'Long Lever Plank', 'Weighted Plank']) {
+    assert.ok(core.some((e) => e.name === n), `${n} is missing from the plank ladder`)
+  }
+  for (const n of ['Knee Side Plank', 'Side Plank', 'Star Side Plank']) {
+    assert.ok(core.some((e) => e.name === n), `${n} is missing from the side plank ladder`)
+  }
+
+  for (const n of [
+    'Dead Bug', 'Bird Dog', 'Pallof Press', 'Body Saw', 'Bear Hold', 'Reverse Crunch',
+    'Renegade Row', 'Shoulder Tap Plank', 'L-Sit', 'Flutter Kick', 'Suitcase Deadlift',
+  ]) {
     assert.ok(core.some((e) => e.name === n), `${n} is missing`)
   }
 
   // Bodyweight, because a core exercise nobody can do at home is not core work
   // it is gym work, and this is the group people train in a bedroom.
   const bw = core.filter((e) => equipmentOf(e.name) === 'bodyweight')
-  assert.ok(bw.length >= 20, `only ${bw.length} core movements need no kit`)
+  assert.ok(bw.length >= 40, `only ${bw.length} core movements need no kit`)
 
   // And the words for it resolve, including the one somebody would type after
   // watching their wife do something they had never seen.
