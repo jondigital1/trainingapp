@@ -105,7 +105,25 @@ export default function ProfileSheet({
   )
   const [todayWeight, setTodayWeight] = useState('')
 
-  const set = (patch: Partial<Profile>) => setDraft((prev) => ({ ...prev, ...patch }))
+  // Every tap on this page saves itself.
+  //
+  // The answers here were a draft, flushed when the page unmounted, which
+  // meant they survived only if you left it the way the code expected. Anything
+  // else, a backgrounded phone, a reload, an app the system decided to reclaim,
+  // and the answer was gone. That was tolerable for a name typed into a box and
+  // not for a flagged knee, which is the whole reason sessions get built around
+  // it. Every one of these is a tap on an option, deliberate and small, so it
+  // saves on the tap rather than on the way out.
+  //
+  // Typed fields stay on the flush. Saving a name a letter at a time is a write
+  // per keystroke, and nobody loses a name they are halfway through typing in
+  // the way they lose a joint they flagged three screens ago.
+  const set = (patch: Partial<Profile>) => {
+    setDraft((prev) => ({ ...prev, ...patch }))
+    const next = { ...buildNext(), ...patch }
+    saved.current = JSON.stringify(next)
+    ;(onApply ?? onSave)(next)
+  }
   const toggle = (key: 'sore' | 'other' | 'dislikes', v: string) => {
     const list = draft[key] ?? []
     set({ [key]: list.includes(v) ? list.filter((x) => x !== v) : [...list, v] } as Partial<Profile>)
@@ -334,17 +352,7 @@ export default function ProfileSheet({
             <ScheduleCard
               profile={draft}
               plan={plan}
-              onChange={(schedule) => {
-                set({ schedule })
-                // Saved on the tap rather than on the way out. Everything else
-                // on this page is an answer you might still be revising; a day
-                // of the week is a decision, and it was resting on the page
-                // unmounting cleanly to survive. Backgrounding a phone does
-                // not always unmount anything.
-                const next = { ...buildNext(), schedule }
-                saved.current = JSON.stringify(next)
-                ;(onApply ?? onSave)(next)
-              }}
+              onChange={(schedule) => set({ schedule })}
             />
 
             <Field label="Days a week">

@@ -3970,8 +3970,14 @@ check('laying out a week does not close the page under you', () => {
   // and stay exactly where you are. Both went through onSave, and onSave on
   // the profile sheet closes it, so picking a session for Monday shut the page
   // and unmounted it mid save: the tap looked like it had done nothing.
-  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('/>', sheet.indexOf('<ScheduleCard')))
-  assert.ok(onChange.includes('onApply ?? onSave'), 'a schedule tap is back on the leaving path')
+  // The schedule goes through the same set as everything else now, and set is
+  // what carries the rule.
+  const setFn = sheet.slice(sheet.indexOf('const set = (patch'), sheet.indexOf('const toggle'))
+  assert.ok(setFn.includes('onApply ?? onSave'), 'a tap is back on the leaving path')
+  assert.ok(
+    /onChange=\{\(schedule\) => set\(\{ schedule \}\)\}/.test(sheet),
+    'the schedule grew its own copy of the rule again',
+  )
 
   // And the sheet has somewhere to send it that does not navigate.
   assert.ok(/onApply=\{\(next\) => void saveProfile\(next\)\}/.test(app), 'onApply is not wired to a plain save')
@@ -3987,8 +3993,18 @@ check('a day you picked is saved when you pick it', () => {
   // is flushed when the page unmounts. A weekday is a decision, and resting it
   // on a clean unmount is resting it on the phone not being backgrounded,
   // reloaded or killed first.
-  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('/>', sheet.indexOf('<ScheduleCard')))
-  assert.ok(/\(onApply \?\? onSave\)\(next\)/.test(onChange), 'a tap on a day is still only a draft')
+  // Not just the schedule. Every tap on an option anywhere on the page saves
+  // itself, which is one rule instead of one exception. The answers that
+  // decide what is safe to program, a flagged joint and the red flag beside
+  // it, were the ones still resting on a clean unmount to survive, and they
+  // are the last ones that should.
+  const setFn = sheet.slice(sheet.indexOf('const set = (patch'), sheet.indexOf('const toggle'))
+  assert.ok(/\(onApply \?\? onSave\)\(next\)/.test(setFn), 'an answer on this page is still only a draft')
+  assert.ok(/saved.current = JSON.stringify\(next\)/.test(setFn), 'the flush will fire again on the way out')
+
+  // Typed fields stay on the flush, because a write per keystroke is not the
+  // fix and nobody loses a name they are halfway through typing.
+  assert.ok(!/onChange=\{\(e\) => set\(/.test(sheet), 'a text field is saving every letter')
 
   // Week is a section of the full page, not a one question detour. When the
   // focus type gained a third value the branch still said anything but all,

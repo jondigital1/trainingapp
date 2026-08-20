@@ -597,6 +597,37 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## Every tap on the profile page saves itself
+
+Picking a session for Monday saved it and then closed the page, because Done
+and a schedule tap went through the same callback and that callback navigates.
+The tap looked like it had done nothing, which is exactly what it looked like
+to the person doing it. Two paths now: one saves and leaves, one saves and
+stays.
+
+Finding that raised the better question, which is what else on that page only
+survives being left the right way. The answer was everything. All of it lived
+in a draft flushed when the page unmounted, so it survived a Done button and
+not a backgrounded phone, a reload, or an app the system decided to reclaim.
+
+Tolerable for a name half typed into a box. Not tolerable for a flagged knee,
+which is the whole reason sessions get built around it, and which was sitting
+in exactly the same fragile place. So the rule is one rule rather than an
+exception for the schedule: every tap on an option saves itself, because every
+one of them is deliberate, small, and about what gets programmed. Typed fields
+stay on the flush, since a write per keystroke is not the fix and nobody loses
+a name they are halfway through typing.
+
+Proved by driving it: a knee flagged and still there with the page open, three
+days laid out one after another without the sheet closing, days a week and the
+health question landing as they were tapped.
+
+The exercise note was checked too and was fine. It debounces six hundred
+milliseconds and looked like it would lose anything typed and closed faster
+than that, and it does not: closing at seventy seven milliseconds still saved.
+Worth writing down, because the guess was wrong and the measurement is the only
+reason anybody knows.
+
 ## The line between a health question and a performance one
 
 Both sides of this got got wrong in turn, and the second mistake was the
