@@ -1,4 +1,5 @@
 import webpush from 'web-push'
+import { parseSubscription } from './device'
 
 // The parts of the rest alert that are worth testing on their own: what a
 // request has to look like to be accepted, how the wait is cancelled, and what
@@ -21,21 +22,11 @@ export interface Alert {
 export type Parsed = { ok: true; alert: Alert } | { ok: false; error: string }
 
 export function parseAlert(body: unknown): Parsed {
-  const b = (body ?? {}) as {
-    subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } }
-    seconds?: unknown
-    name?: unknown
-  }
-  const endpoint = b.subscription?.endpoint
-  const p256dh = b.subscription?.keys?.p256dh
-  const auth = b.subscription?.keys?.auth
-
-  if (typeof endpoint !== 'string' || typeof p256dh !== 'string' || typeof auth !== 'string') {
-    return { ok: false, error: 'no subscription' }
-  }
-  // Only a real push service, over TLS. This is the one field that says where
-  // the server will make a request to, so it does not get to be anything else.
-  if (!/^https:\/\//.test(endpoint)) return { ok: false, error: 'bad endpoint' }
+  const b = (body ?? {}) as { seconds?: unknown; name?: unknown }
+  // Checked by the same function the device route uses. This used to be a hand
+  // written copy of it, and the copy had lost the length cap on the endpoint.
+  const parsed = parseSubscription(body)
+  if (!parsed.ok) return { ok: false, error: parsed.error }
 
   const seconds = Math.round(Number(b.seconds))
   if (!Number.isFinite(seconds) || seconds <= 0 || seconds > MAX_WAIT) {
@@ -45,9 +36,7 @@ export function parseAlert(body: unknown): Parsed {
   return {
     ok: true,
     alert: {
-      endpoint,
-      p256dh,
-      auth,
+      ...parsed.sub,
       seconds,
       // Movement names come from the person's own library, but a name is still
       // going into a notification, so it is bounded.

@@ -2540,6 +2540,40 @@ check('a phone has to say what it is before it is written down', () => {
   assert.ok(worse.ok && worse.device.zone === 'UTC')
 })
 
+check('both push routes judge an endpoint the same way', () => {
+  // The rest alert and the device route each had a hand written copy of the
+  // same subscription check, and the copies had come apart: only the device
+  // route capped the length. The endpoint is the single field that decides
+  // where the server will make a request to, so the two cannot disagree about
+  // what a good one looks like.
+  const keys = { p256dh: 'a', auth: 'b' }
+  const hostile: unknown[] = [
+    'http://fcm.googleapis.com/x',
+    'file:///etc/passwd',
+    'ftp://x',
+    'https://push.example.com/' + 'x'.repeat(4000),
+    '',
+    7,
+    null,
+  ]
+  for (const endpoint of hostile) {
+    const viaAlert = parseAlert({ subscription: { endpoint, keys }, seconds: 60 }).ok
+    const viaDevice = parseDevice({ subscription: { endpoint, keys }, zone: 'UTC' }).ok
+    assert.equal(viaAlert, viaDevice, `the two routes disagree about ${String(endpoint).slice(0, 40)}`)
+    assert.ok(!viaAlert, `${String(endpoint).slice(0, 40)} was accepted`)
+  }
+
+  // And a real one is accepted by both.
+  const real = 'https://fcm.googleapis.com/fcm/send/' + 'a'.repeat(120)
+  assert.ok(parseAlert({ subscription: { endpoint: real, keys }, seconds: 60 }).ok)
+  assert.ok(parseDevice({ subscription: { endpoint: real, keys }, zone: 'UTC' }).ok)
+
+  // One implementation, not two that look alike.
+  const alert = readFileSync(new URL('../lib/alert.ts', import.meta.url), 'utf8')
+  assert.ok(alert.includes('parseSubscription'), 'the rest alert checks subscriptions its own way again')
+  assert.ok(!/keys\?\.p256dh/.test(alert), 'the rest alert reads the subscription by hand again')
+})
+
 check('the two switches are two switches', () => {
   // The rest alert and the weekly nudge both need notification permission and
   // both go down the same pipe, which is exactly why turning one on must not
