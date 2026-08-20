@@ -176,9 +176,9 @@ export default function HelpSheet({
           it a problem. */}
       <p className="mt-6 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
         Every answer here is written into the app. Nothing searches the internet, and a question
-        Lifty cannot answer says so rather than guessing. This is a training log and not a medical
-        or nutrition service: anything about an injury, a condition, medication or what you should
-        be eating belongs with a doctor, a physio or a dietitian, and the answers here say so.
+        Lifty cannot answer says so rather than guessing. It answers training questions, eating to
+        train among them. Anything about an injury, a condition or medication belongs with a
+        doctor or a physio, and those answers say so rather than guessing at it.
       </p>
     </Sheet>
   )

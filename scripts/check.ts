@@ -3418,51 +3418,65 @@ check('what Lifty could not answer is written down, not lost', () => {
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
 })
 
-check('a training log does not answer health questions', () => {
-  // The library drifted into giving health advice, and it read well, which is
-  // exactly what made it a problem: paragraphs about growth plates, oestrogen
-  // and whether a worn joint should be loaded, written confidently by a thing
-  // that has never met the person asking and cannot be told when it is wrong.
+check('the line between a health question and a performance one', () => {
+  // Both sides of this have been got wrong in turn, and the second mistake was
+  // mine correcting the first too hard.
   //
-  // The rule is not silence. A question deserves the plainly safe answer and
-  // then the name of whoever it actually belongs to. What it must not get is
-  // a judgement only a clinician can make, or a number only a dietitian
-  // should be handing out.
-  const CLINICAL = [
-    'basic-teens', 'basic-women-50', 'basic-arthritis', 'basic-age', 'basic-sick',
-    'basic-pain', 'basic-supplements', 'basic-water',
-  ]
-  const NUTRITION = [
+  // The library drifted into giving health advice, which read well and was the
+  // problem: growth plates, oestrogen, whether a worn joint should be loaded,
+  // written by something that has never met the person asking. Pulling that
+  // back then swallowed the answers either side of it, and a training log that
+  // will not say how much protein builds muscle is not being careful, it is
+  // being useless about the thing it exists for.
+  //
+  // The line is who the question belongs to. A condition, an injury, a
+  // symptom, a medication, a body that needs clearing to train: those belong
+  // to a clinician and the answer says so. How to get stronger, how much
+  // muscle is possible, what to eat to build it: those belong here, and the
+  // answer had better be specific.
+  const CLINICAL = ['basic-teens', 'basic-women-50', 'basic-arthritis', 'basic-age', 'basic-sick', 'basic-pain']
+  const PERFORMANCE = [
     'basic-protein', 'basic-protein-timing', 'basic-what-to-eat-before', 'basic-bulk',
-    'basic-recomp', 'basic-sixpack', 'basic-cardio-fatloss', 'w-macros', 'w-bulk-cut',
+    'basic-recomp', 'basic-sixpack', 'basic-cardio-fatloss', 'basic-rate-of-gain',
+    'basic-water', 'w-macros', 'w-bulk-cut', 'basic-muscle-fat',
   ]
   const DEFERS = /doctor|clinician|dietitian|pharmacist|physio|qualified|professional/i
 
-  // And the panel says it out loud rather than leaving it to be inferred from
-  // fifteen individual answers.
-  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(/not a medical\s*\n?\s*or nutrition service/.test(sheet), 'the panel stopped saying what it is not')
-
-  for (const id of [...CLINICAL, ...NUTRITION]) {
+  for (const id of CLINICAL) {
     const entry = KNOWLEDGE.find((e) => e.id === id)
     assert.ok(entry, `${id} has gone, and the rule with it`)
-    assert.ok(DEFERS.test(entry!.a), `${id} answers without saying whose question it is`)
+    assert.ok(DEFERS.test(entry!.a), `${id} answers a health question without saying whose it is`)
+    assert.ok(
+      !/growth plate|oestrogen|estrogen|osteoporosis|injury rate/i.test(entry!.a),
+      `${id} is making a medical claim`,
+    )
   }
 
-  // No prescribed amounts. A gram per pound and a calorie target are the
-  // shapes this most easily slides back into.
-  for (const id of NUTRITION) {
-    const a = KNOWLEDGE.find((e) => e.id === id)!.a
-    assert.ok(!/\d+\s*(g|gram|calorie|kcal)/i.test(a), `${id} prescribes an amount`)
-    assert.ok(!/per (pound|kilo|kg|lb)/i.test(a), `${id} prescribes a rate`)
+  // And the other way. A performance answer that hedges to a professional has
+  // handed away the question this app is for.
+  for (const id of PERFORMANCE) {
+    const entry = KNOWLEDGE.find((e) => e.id === id)
+    assert.ok(entry, `${id} has gone`)
+    assert.ok(
+      !DEFERS.test(entry!.a),
+      `${id} sends a performance question to somebody else`,
+    )
   }
 
-  // And no claims about what a body will do, which is the tell for an answer
-  // that has stopped being about training.
-  for (const id of CLINICAL) {
-    const a = KNOWLEDGE.find((e) => e.id === id)!.a
-    assert.ok(!/growth plate|oestrogen|estrogen|hormone|osteoporosis|injury rate/i.test(a), `${id} is making a medical claim`)
-  }
+  // Specific enough to be worth reading. These are the numbers somebody came
+  // for, and an answer that will not say them is not a safer answer.
+  assert.ok(/gram per pound|three quarters of a gram/i.test(KNOWLEDGE.find((e) => e.id === 'basic-protein')!.a))
+  assert.ok(/half a pound a week|few hundred calories/i.test(KNOWLEDGE.find((e) => e.id === 'basic-bulk')!.a))
+  assert.ok(/pound or two a month/i.test(KNOWLEDGE.find((e) => e.id === 'basic-rate-of-gain')!.a))
+
+  // The panel says which of the two it is, rather than leaving it to be
+  // inferred from the answers one at a time.
+  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(/answers training questions/.test(sheet), 'the panel stopped saying what it does')
+  assert.ok(/injury, a condition or medication/.test(sheet), 'the panel stopped saying what it does not')
+  // And it must not claim to be no use on food, since eating to train is half
+  // of what people ask about and it answers that.
+  assert.ok(!/nutrition service/.test(sheet), 'the panel disowns questions it actually answers')
 })
 
 check('the questions the whole internet asks have answers here', () => {

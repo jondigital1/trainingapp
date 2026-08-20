@@ -597,14 +597,29 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
-## A training log does not answer health questions
+## The line between a health question and a performance one
+
+Both sides of this got got wrong in turn, and the second mistake was the
+correction of the first.
 
 The library drifted into giving health advice, and it read well, which is
 exactly what made it a problem. Paragraphs about growth plates, about oestrogen
-and bone density, about whether a worn joint should be rested or loaded, about
-grams of protein per pound of bodyweight. All of it written confidently by a
-thing that has never met the person asking, cannot see them, and has no way of
-being told when it is wrong about them.
+and bone density, about whether a worn joint should be rested or loaded, written
+confidently by a thing that has never met the person asking, cannot see them,
+and has no way of being told when it is wrong about them.
+
+Pulling that back then swallowed the answers on either side of it. How much
+protein builds muscle, how much muscle is possible in a month, whether to eat
+more to grow: those went out with the medical claims, replaced by a shrug
+toward a dietitian. That is not caution. A training log that will not say how
+much protein builds muscle is being useless about the thing it exists for, and
+dressing it up as safety does not change that.
+
+The line is who the question belongs to, not which words it contains. A
+condition, an injury, a symptom, a medication, a body that needs clearing
+before it trains: those belong to a clinician and the answer says so. How to
+get stronger, how much muscle is possible, what to eat to build it: those
+belong here, and the answer had better be specific.
 
 The rule now is not silence, because silence in front of a real question is its
 own kind of unhelpful. A question gets the plainly safe answer and then the name
@@ -615,15 +630,16 @@ can see them. Arthritis gets the honest thing, which is that the answer is
 usually yes with adjustments and that the clinician who knows the joint is the
 one to say so, followed by what the app can actually do about it once they have.
 
-Fifteen answers were rewritten under that rule and two glossary entries with
-them. What must never come back is a judgement only a clinician can make, or a
-number only a dietitian should be handing out, and a check fails on either: it
-looks for a deferral in every clinical and nutrition answer, and fails on any
-prescribed amount or rate, or any claim about what a body will do.
+A check now guards both directions, which the first version did not. A clinical
+answer that stops naming a professional fails, and so does one that starts
+making claims about what a body will do. A performance answer that hedges to a
+professional fails too, and three of them are checked for the actual numbers
+somebody came for: the protein range, the rate of gain, the size of a surplus.
+An answer that will not say them is not a safer answer.
 
-The panel says it out loud too, rather than leaving it to be inferred from
-fifteen individual answers. This is a training log and not a medical or
-nutrition service.
+The panel draws the same line rather than leaving it to be inferred one answer
+at a time. It answers training questions, eating to train among them, and says
+that an injury, a condition or medication belongs with a doctor or a physio.
 
 ## Looking outward for the questions
 

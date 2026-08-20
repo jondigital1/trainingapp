@@ -304,7 +304,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Do I need protein straight after training?',
     group: 'The basics',
     aliases: ['anabolic window', 'protein after workout', 'shake after training', 'post workout meal', '30 minute window'],
-    a: 'No. The idea that protein has to land within half an hour of training has not held up: what you eat across the whole day matters far more than the timing of any one part of it. Beyond that, how much and when is a question for a dietitian rather than a training log.',
+    a: 'No. The anabolic window turned out to be a barn door: muscle stays sensitive to protein for a day or more after training, so what matters is how much you eat across the day rather than whether it lands within half an hour. If a shake straight after is convenient, have one. If you would rather eat a proper meal an hour later, that is just as good, and neither beats simply hitting your total.',
   },
   {
     id: 'basic-rate-of-gain',
@@ -360,7 +360,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'How much water do I need?',
     group: 'The basics',
     aliases: ['water', 'hydration', 'dehydrated', 'drink during workout', 'electrolytes'],
-    a: 'Drink enough that you are not thirsty. That is as far as a training log should go on it, and it covers most people most of the time. Being properly dehydrated does make training harder, and how much you personally need depends on your size, the weather and how much you sweat, which a dietitian or your doctor is better placed to talk about than this is.',
+    a: 'Enough that you are not thirsty and your urine is pale. That is genuinely the whole test, and it beats any fixed number of litres because how much you need depends on your size, the weather and how much you sweat. A bottle to sip through a session is plenty for an hour indoors. Being properly dehydrated does cost you strength and makes everything feel harder, but it takes more than forgetting a glass of water to get there.',
   },
   {
     id: 'basic-time-of-day',
@@ -381,14 +381,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I do cardio or weights to lose fat?',
     group: 'The basics',
     aliases: ['cardio for fat loss', 'weights or cardio', 'best exercise to lose weight', 'burn fat', 'treadmill or weights'],
-    a: 'Do both, and keep lifting whichever you prefer. Lifting protects the muscle you already have, which is what decides whether you end up smaller or simply lighter, and cardio and walking are worth doing for your heart regardless. Losing fat is settled mostly by eating, and how to do that safely for you is a question for a dietitian or your doctor rather than a training log.',
+    a: 'Weights, with cardio alongside if you like it. Cardio burns more during the session and lifting protects the muscle you already have, which is what decides whether you end up smaller or simply lighter. Losing fat is mostly settled in the kitchen either way: a deficit you can hold for months beats any amount of exercise chosen to burn it off. Walking is the most underrated part of this and the easiest to keep doing.',
   },
   {
     id: 'basic-sixpack',
     q: 'How do I get a six pack?',
     group: 'The basics',
     aliases: ['six pack', 'abs showing', 'visible abs', 'belly fat', 'lose my gut', 'get lean', 'stomach'],
-    a: 'Everybody has one. Whether it shows is mostly about how much fat is sitting over it, which is a nutrition question rather than a training one, and no amount of crunches changes it. Train your core because a strong midsection helps everything else you do. For the eating side, and for anything you would want to be careful about, ask a dietitian or your doctor.',
+    a: 'Everybody already has one. Whether it shows is decided almost entirely by how much fat is sitting over it, which is a kitchen question rather than a training one, and no amount of crunches changes it. Train your core because a strong midsection helps everything else, eat at a deficit if you want to see it, and be patient: the last bit of belly fat is the last to go and there is nothing you can do about the order.',
   },
   {
     id: 'basic-maintain',
@@ -402,14 +402,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I eat more to get bigger?',
     group: 'The basics',
     aliases: ['eat more', 'bulking', 'gain weight', 'put on size', 'calorie surplus', 'get bigger'],
-    a: 'Building muscle needs a little more food than you burn, and only a little: eating far above that adds fat rather than making the muscle arrive faster. How much more, and whether it is the right thing for you at all, depends on where you are starting from and is a conversation for a dietitian rather than a training log. If you are new to lifting or coming back to it, you can make good progress without eating more at all.',
+    a: 'A little more, not a lot. Building muscle needs slightly more food than you burn, and past that the extra goes on as fat rather than making the muscle come faster. A few hundred calories over maintenance, and a gain of around half a pound a week, is plenty for most people. If you are new to lifting or coming back to it, you can build perfectly well without eating more at all.',
   },
   {
     id: 'basic-cooldown',
     q: 'Should I cool down after lifting?',
     group: 'The basics',
     aliases: ['cool down', 'cooldown', 'stretch after', 'walk after training', 'soreness prevention'],
-    a: 'You can, and it is unlikely to make much difference to how sore you are the next day. If a few minutes of easy walking helps you feel better or clears your head, that is a good enough reason on its own. It is not a step you are skipping.',
+    a: 'You can, and it will not do much. Cooling down and stretching afterwards has been tested against doing nothing repeatedly and does not meaningfully reduce next day soreness or speed recovery. If a few minutes of easy walking helps you feel better or clears your head, do it because you like it, which is a good enough reason. It is not a step you are skipping.',
   },
   {
     id: 'basic-why-no-warmup-row',
@@ -556,14 +556,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Can I lose fat and build muscle at the same time?',
     group: 'The basics',
     aliases: ['body recomposition', 'bulk or cut', 'scale not moving'],
-    a: 'Yes, and it is most likely if you are new to lifting, coming back after a break, or carrying more fat to begin with. For everyone else it is slow, and picking one thing to focus on tends to work better. The eating side of it, and what is sensible for you specifically, is a question for a dietitian or your doctor.',
+    a: 'Yes, and more easily than the internet suggests if you are new to lifting, coming back after a break, or carrying a fair amount of fat to start with. Outside those three, it is slow, and most people make faster progress picking one and committing to it for a few months. Either way the lifting is what protects the muscle; the eating decides which direction the scale goes.',
   },
   {
     id: 'basic-protein',
     q: 'How much protein do I need?',
     group: 'The basics',
     aliases: ['protein per day', 'protein shake', 'what to eat to build muscle'],
-    a: 'Enough, spread across the day, and more than most people starting out are eating. Protein is the one part of eating that clearly matters for building muscle, and the amount that suits you depends on your size, your training and the rest of your diet. For an actual number, and for anything to do with a medical condition or a restricted diet, ask a dietitian or your doctor. This app logs training and does not track food.',
+    a: 'Somewhere around three quarters of a gram to a gram per pound of bodyweight a day, spread across your meals rather than piled into one. That is the range the research keeps landing on for people training hard, and going well past it does not build anything extra. It is the one part of eating that clearly changes how much muscle you build, which is why it is worth paying attention to when almost nothing else about your diet is.',
   },
   {
     id: 'basic-pain',
@@ -614,7 +614,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Do I need supplements?',
     group: 'The basics',
     aliases: ['creatine', 'pre workout', 'protein powder needed'],
-    a: 'No supplement is required to make progress, and this app does not give supplement advice. Anything you are considering taking, including the popular ones, is worth running past a pharmacist or your doctor first, particularly alongside any medication or condition. Sleep, food and consistent training account for almost all of it.',
+    a: 'No supplement is required for progress. The honest summary: creatine monohydrate is the only one with deep evidence behind a modest benefit, caffeine helps you train harder, and most of the rest is marketing. If you take medication or are being treated for anything, run whatever you are considering past a pharmacist first, which is a two minute conversation and free.',
   },
   {
     id: 'basic-how-many-exercises',
@@ -691,7 +691,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I eat before training?',
     group: 'The basics',
     aliases: ['eat before training', 'fasted', 'pre workout meal', 'empty stomach'],
-    a: 'If it feels better, eat something an hour or two before, and if training on an empty stomach suits you, that is fine too. Which one you choose matters far less than what you eat across the whole day. Anything more specific than that, particularly alongside a medical condition, is a question for a dietitian or your doctor.',
+    a: 'If it feels better, yes, an hour or two before, with some carbohydrate in it. Training on an empty stomach is not harmful and does not burn meaningfully more fat over a day, so the honest answer is that it comes down to what sits well with you. What matters far more is your total food and total protein across the whole day, and neither is decided by the hour before your session.',
   },
   {
     id: 'basic-alcohol',
@@ -1041,7 +1041,7 @@ const WORDS: KnowledgeEntry[] = [
     q: 'What are bulking, cutting and maintenance?',
     group: 'Words you will see',
     aliases: ['bulking', 'cutting', 'maintenance', 'recomp', 'deficit', 'surplus'],
-    a: 'Eating above what you burn, below it, or at it. Bulking is the first, cutting the second, maintenance the third, and recomp is the name for doing a little of both at once. Which of them makes sense for somebody, and what the numbers should be, is a conversation for a dietitian or a doctor; these are just the words you will see people use.',
+    a: 'Eating above what you burn to build, below it to lose fat, or at it to stay put. A surplus builds muscle faster and adds some fat; a deficit does the reverse and makes building slow. Recomp is doing both slowly at once, which genuinely works for beginners and for people returning, and is frustratingly slow for everyone else.',
   },
   {
     id: 'w-tdee',
@@ -1055,7 +1055,7 @@ const WORDS: KnowledgeEntry[] = [
     q: 'What are macros?',
     group: 'Words you will see',
     aliases: ['macros', 'macronutrients', 'protein carbs fat'],
-    a: 'Protein, carbohydrate and fat, the three things calories come from. For training, protein is the one usually worth paying attention to; carbohydrate fuels hard sessions and fat handles a lot of other jobs. How much of each suits you is a question for a dietitian rather than a glossary, and past hitting your protein and your total the split matters far less than people argue about it.',
+    a: 'Protein, carbohydrate and fat, the three things calories come from. For training, protein is the one worth counting: roughly three quarters of a gram to a gram per pound of bodyweight. Carbohydrate fuels hard sessions and fat handles a lot of other jobs, and past hitting your protein and your total calories, the split between those two matters far less than people argue about it.',
   },
   {
     id: 'w-lockout',
