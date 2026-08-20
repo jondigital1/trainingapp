@@ -384,6 +384,32 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## More time buys sets, not exercises
+
+The follow up question was whether the brackets should be wider. They should
+not, and measuring says why: above forty five minutes the binding constraint is
+not the clock, it is the template. A push day holds seven movements. No limit
+returns the same session an hour does, so a two hour option would be a bigger
+version of the lie that ninety minutes already was.
+
+What an hour actually buys is sets. The same seven movement push day is forty
+five minutes at the sets it is prescribed and would be thirty odd at three of
+everything. That is how real programs scale, and padding a session with an
+eighth and ninth exercise to fill the time is the opposite of what somebody
+with an extra twenty minutes should do with them.
+
+Which turned out to be a bug rather than a feature request. The app prescribes
+per movement already, five sets for a heavy squat under strength, four under
+size, three for a cable. The estimate ignored every bit of that and assumed
+three of everything, so a leg day laid out with five sets of squats said forty
+nine minutes and took fifty nine, and the trim that fits a session into the
+time somebody has was working from the same wrong number.
+
+The estimate reads the prescription now. A superset takes as many rounds as its
+longest member asks for rather than the sum of them, since it runs as one. A
+workout somebody built by hand still gets a flat count, because nothing
+prescribed it.
+
 ## The clock is a ceiling, not a target
 
 The worry was that the app was squeezing sessions to hit a number instead of

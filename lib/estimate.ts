@@ -1,4 +1,5 @@
 import { restFor } from './rest'
+import { prescribedSets } from './prescribe'
 import type { CustomWorkoutItem, Goal } from './types'
 
 // Roughly how long a session will take, so a workout can say what it costs you
@@ -17,7 +18,20 @@ import type { CustomWorkoutItem, Goal } from './types'
 const WORK_SECONDS = 40
 const SETUP_SECONDS = 45
 
-export function estimateSeconds(items: CustomWorkoutItem[], goal: Goal, setsPer = 3): number {
+// How many sets each movement is actually going to take, which is not three.
+// The app prescribes five for a heavy squat, four for a compound and three for
+// a cable, and the estimate ignored all of it and assumed three of everything.
+// So a leg day that lays out five sets of squats told you it would take forty
+// nine minutes and then took over an hour, and the trim that fits a session
+// into the time you have was working from the same wrong number.
+//
+// A caller can still pass a flat count, which is what a workout somebody built
+// by hand uses, since nothing prescribed it.
+export function estimateSeconds(
+  items: CustomWorkoutItem[],
+  goal: Goal,
+  setsPer?: number,
+): number {
   if (!items.length) return 0
 
   // Consecutive items sharing a tag run together. Anything untagged is its own
@@ -31,9 +45,12 @@ export function estimateSeconds(items: CustomWorkoutItem[], goal: Goal, setsPer 
 
   let total = 0
   for (const group of groups) {
+    // A superset runs as one, so it takes as many rounds as its longest
+    // member asks for rather than the sum of them.
+    const sets = setsPer ?? Math.max(...group.map((i) => prescribedSets(i.name, i.type, goal)))
     const work = group.length * WORK_SECONDS
     const rest = Math.max(...group.map((i) => restFor(i.name, i.type, goal)))
-    total += setsPer * (work + rest) + group.length * SETUP_SECONDS
+    total += sets * (work + rest) + group.length * SETUP_SECONDS
   }
   // The last rest of the session is one you do not take.
   const lastRest = Math.max(...groups[groups.length - 1].map((i) => restFor(i.name, i.type, goal)))

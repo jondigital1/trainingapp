@@ -1354,10 +1354,23 @@ check('the streak counts against the week you set yourself', () => {
 
 check('a workout says what it will cost you before you commit', () => {
   const item = (name: string, superset: string | null = null) => ({ name, type: 'W' as const, superset })
-  // Three sets of work plus the rest after each, minus the rest you do not
-  // take at the end.
+  // The sets the app actually prescribes, not three of everything. A back
+  // squat is laid out with four rows for somebody training for size, so an
+  // estimate that assumed three was quietly a set light on every heavy
+  // movement in the session, and the trim that fits a session into the time
+  // somebody has was working from the same wrong number.
+  const squatSets = prescribedSets('Back Squat', 'W', 'muscle')
+  assert.equal(squatSets, 4, 'the prescription changed and this check has not')
   const one = estimateSeconds([item('Back Squat')], 'muscle')
-  assert.equal(one, 3 * (40 + 120) + 45 - 120, 'work, rest and setup, less the rest you walk away from')
+  assert.equal(one, squatSets * (40 + 120) + 45 - 120, 'work, rest and setup, less the rest you walk away from')
+
+  // A cable movement is prescribed fewer sets and rests less, so the gap
+  // between the two is bigger than rest alone explains.
+  assert.equal(prescribedSets('Cable Curl', 'W', 'muscle'), 3)
+
+  // A caller can still pass a flat count, which is what a workout somebody
+  // built by hand uses, since nothing prescribed it.
+  assert.equal(estimateSeconds([item('Back Squat')], 'muscle', 3), 3 * (40 + 120) + 45 - 120)
   // A superset rests once at the end of the group, which is the point of one,
   // so two movements paired take less than the same two apart.
   const apart = estimateSeconds([item('Cable Curl'), item('Rope Pushdown')], 'muscle')
