@@ -2189,6 +2189,17 @@ it at a movement that no longer answers to that name.
 Deleting is one button on the same screen, and asks twice, because it is the
 only thing there that cannot be changed back.
 
+The profile's four sections are Me, My week, My body and My movements. They
+used to be You, Your week and Your body, which is the app talking about you
+rather than you talking about your own things, and at four labels the old
+wording no longer fit on one line on a phone.
+
+Renaming a tab means renaming everything that points at it. Lifty had an answer
+that sent people to "your profile, under Your body", which would have been a
+signpost to a tab that does not exist. A check now reads the section labels
+straight out of the component and fails if any answer names one that is not
+there.
+
 There is also somewhere to go and look. Your own movements were only ever a
 filter chip inside the picker you get mid session and inside the workout
 builder, which meant seeing your own library required starting a workout first,

@@ -26,17 +26,21 @@ export function Field({
   optional,
   children,
 }: {
-  label: string
+  // Optional, for the one case where the thing above already named it and
+  // saying it twice on one screen is just saying it twice.
+  label?: string
   hint?: string
   optional?: boolean
   children: React.ReactNode
 }) {
   return (
     <div className="mt-4 first:mt-0">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium">{label}</h3>
-        {optional ? <span className="text-xs text-muted">optional</span> : null}
-      </div>
+      {label || optional ? (
+        <div className="flex items-baseline justify-between gap-2">
+          {label ? <h3 className="text-sm font-medium">{label}</h3> : null}
+          {optional ? <span className="text-xs text-muted">optional</span> : null}
+        </div>
+      ) : null}
       {hint ? <p className="mt-1 text-xs leading-relaxed text-muted">{hint}</p> : null}
       <div className="mt-2">{children}</div>
     </div>

@@ -4505,12 +4505,35 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('Lifty points at tabs that are actually there', () => {
+  // An answer that names a section of the profile is a signpost, and renaming
+  // the pill without it leaves the signpost pointing at nothing. That is how
+  // "under Your body" survived the pills becoming Me, My week and My body.
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const block = sheet.slice(sheet.indexOf('const SECTIONS'), sheet.indexOf('] as const'))
+  const labels = [...block.matchAll(/label: '([^']+)'/g)].map((m) => m[1])
+  assert.ok(labels.length >= 4, 'the profile lost its sections')
+
+  // Only the signpost phrasing, "on your profile, under X". Plain prose can
+  // say "under Chest" about a muscle group without meaning a tab.
+  for (const entry of KNOWLEDGE) {
+    for (const m of entry.a.matchAll(/profile, under ([^,.]+)/g)) {
+      assert.ok(labels.includes(m[1]), `an answer sends you to "${m[1]}", which is not a section`)
+    }
+  }
+
+  // And the sections named in the nav are the ones the nav draws.
+  for (const label of labels) {
+    assert.ok(sheet.includes(`label: '${label}'`), `${label} is not a section after all`)
+  }
+})
+
 check('your own movements have a place you can get to', () => {
   // They were only ever a filter chip inside the picker you get mid session and
   // inside the workout builder, so looking at your own library meant starting a
   // workout first. The screen for changing one was behind the same door.
   const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(sheet.includes("label: 'Your movements'"), 'the profile has no section for them')
+  assert.ok(sheet.includes("label: 'My movements'"), 'the profile has no section for them')
   assert.ok(sheet.includes('MyMovements'), 'the section has nothing in it')
   assert.ok(sheet.includes('restForTier'), 'the list does not say what a movement rests')
 

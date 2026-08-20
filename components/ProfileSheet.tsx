@@ -38,14 +38,14 @@ type Focus = 'minutes' | 'sore' | 'week' | 'all'
 // The same five sections the questionnaire asked, in the same order, so coming
 // back to change an answer means going to where you gave it.
 const SECTIONS = [
-  { id: 'you', label: 'You' },
-  { id: 'week', label: 'Your week' },
-  { id: 'body', label: 'Your body' },
+  { id: 'you', label: 'Me' },
+  { id: 'week', label: 'My week' },
+  { id: 'body', label: 'My body' },
   // Movements you made yourself. They were only ever reachable as a filter
   // chip inside the picker you get mid session and inside the workout builder,
   // which meant the only way to look at your own library was to start doing
   // something else first.
-  { id: 'moves', label: 'Your movements' },
+  { id: 'moves', label: 'My movements' },
 ] as const
 
 type Section = (typeof SECTIONS)[number]['id']

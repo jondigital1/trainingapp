@@ -56,10 +56,7 @@ export default function ScheduleCard({
   }
 
   return (
-    <Field
-      label="Your week"
-      hint="Which session lands on which day. Days of the week, not dates, so it repeats without you touching it again."
-    >
+    <Field hint="Which session lands on which day. Days of the week, not dates, so it repeats without you touching it again.">
       <div className="flex flex-col gap-1">
         {WEEKDAYS.map((short, i) => {
           const day = schedule[i] ? dayById(schedule[i]!) : null
