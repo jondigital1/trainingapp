@@ -3197,6 +3197,11 @@ check('the app answers questions about itself, in the words people use', () => {
   assert.equal(first('why did my estimated max go down'), 'num-max-drop')
   assert.equal(first('my gym does not have a leg press'), 'basic-equipment')
   assert.ok(searchKnowledge('export my data').some((e) => e.id === 'app-export'))
+  // There is no subscription, so the honest answer to asking about one is the
+  // entry that says so rather than silence.
+  assert.equal(first('how do i cancel my subscription'), 'app-cost')
+  assert.equal(first('is there a subscription'), 'app-cost')
+  assert.equal(first('do i need a belt'), 'basic-belt')
 
   // The one that has to be right: the move answer has to say it is dated, or
   // somebody will read it as editing their whole schedule.
@@ -3275,7 +3280,6 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   // A long question that shares a word or two with the library used to come
   // back looking answered. Half of what somebody asked has to land now.
   assert.deepEqual(searchKnowledge('is the gym open on sunday'), [])
-  assert.deepEqual(searchKnowledge('how do i cancel my subscription'), [])
   assert.deepEqual(searchKnowledge('how do i fix my golf swing'), [])
   // And a question the library really does answer still answers.
   assert.ok(searchKnowledge('creatine').some((e) => e.id === 'basic-supplements'))

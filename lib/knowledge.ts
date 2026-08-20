@@ -149,6 +149,13 @@ const APP: KnowledgeEntry[] = [
     a: 'Settings, at the bottom, Delete my account. It removes every session, every set, your bodyweight history and your profile, and it is not reversible. Export a CSV first if there is any chance you want the record. Signing out, just above it, leaves everything where it is.',
   },
   {
+    id: 'app-cost',
+    q: 'Does LiftyBot cost anything?',
+    group: 'Using the app',
+    aliases: ['is it free', 'subscription', 'do i have to pay', 'ads', 'premium tier'],
+    a: 'No. There is no charge, no adverts, and nothing in here is working its way toward asking you for a card. It exists because one person wanted it to exist. Your log stays yours either way: Settings exports every set as a spreadsheet and deletes your account outright, so nothing about staying is a lock in.',
+  },
+  {
     id: 'app-nutrition',
     q: 'Does the app track food or protein?',
     group: 'Using the app',
@@ -376,6 +383,13 @@ const BASICS: KnowledgeEntry[] = [
     group: 'The basics',
     aliases: ['no machine', 'home gym', 'only dumbbells', 'missing equipment', 'busy gym'],
     a: 'Swap it. Every exercise in a session has a swap button that offers movements training the same thing with what you do have, and if you answered that a piece of equipment is not available, the app stops programming it altogether. A dumbbell version of a barbell lift is not a compromise worth worrying about, and a machine that is occupied is not a reason to skip the session.',
+  },
+  {
+    id: 'basic-belt',
+    q: 'Should I wear a lifting belt?',
+    group: 'The basics',
+    aliases: ['lifting belt', 'belt for deadlifts', 'belt for squats', 'do i need a belt', 'straps and belts'],
+    a: 'Not to make progress, and not on most of your sets. A belt gives your abdominal brace something to push against, which is worth a little on genuinely heavy squats and deadlifts. What it does not do is protect a back that is being loaded badly, and leaning on one early means never learning to brace without it. Learn the brace first, keep your warm ups and moderate sets beltless, and if you buy one, save it for your heaviest work.',
   },
   {
     id: 'basic-supplements',
