@@ -36,13 +36,16 @@ type Focus = 'minutes' | 'sore' | 'week' | 'all'
 // your body, and the movements you made. Three subjects, each with enough in
 // it to be worth a tab of its own.
 const SECTIONS = [
+  // Body first, because it opens here and it is where your name is: the page
+  // starts with who you are and moves out to what you are doing.
+  //
   // There was a Me tab holding a name and an age. Once what you want out of
   // training moved to Settings there was nothing else in it, and a tab with
   // two fields is a tab people learn to skip. Your name and your age are
   // things about your body in the only sense this app cares about, so they
   // sit with the rest of them.
-  { id: 'week', label: 'My week' },
   { id: 'body', label: 'My body' },
+  { id: 'week', label: 'My week' },
   // Movements you made yourself. They were only ever reachable as a filter
   // chip inside the picker you get mid session and inside the workout builder,
   // which meant the only way to look at your own library was to start doing
