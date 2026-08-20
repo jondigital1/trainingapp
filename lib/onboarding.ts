@@ -1,4 +1,4 @@
-import { LIBRARY, equipmentOf, groupOf, lookupType } from './exercises'
+import { LIBRARY, demandOf, demandRank, equipmentOf, groupOf, lookupType, similarTo } from './exercises'
 import { restTier, type RestTier } from './rest'
 import { dayItems, SPLITS, type TemplateDay } from './templates'
 import type { CustomWorkoutItem, Goal, SetType } from './types'
@@ -318,7 +318,10 @@ const SORE_BANS: Record<string, string[]> = {
 // Where a movement has an obvious right answer, name it. Falling back to the
 // first workable movement in the same muscle group gives a knee a goblet squat,
 // which is still a squat. A knee wants the leg press.
-const PREFERRED: Record<string, string> = {
+// The named first choice for a swap, in order. It was one name, which meant a
+// barbell bench press with no machine in the room fell through to whatever the
+// similarity score sorted first, and that was a decline dumbbell press.
+const PREFERRED: Record<string, string | string[]> = {
   'Back Squat': 'Leg Press',
   'Front Squat': 'Leg Press',
   'Smith Machine Squat': 'Leg Press',
@@ -350,7 +353,8 @@ const PREFERRED: Record<string, string> = {
   'Seated Barbell Press': 'Machine Shoulder Press',
   'Push Press': 'Machine Shoulder Press',
   'Upright Row': 'Face Pull',
-  'Barbell Bench Press': 'Machine Chest Press',
+  'Barbell Bench Press': ['Machine Chest Press', 'Dumbbell Bench Press', 'Push Up'],
+  'Face Pull': ['Cable Rear Delt Fly', 'Rear Delt Fly', 'Band Pull Apart'],
   'Decline Barbell Bench Press': 'Machine Chest Press',
   Dip: 'Machine Chest Press',
   'Weighted Dip': 'Machine Chest Press',
@@ -413,7 +417,7 @@ const RED_FLAG_GROUPS: Record<string, string[]> = {
 const RED_FLAG_PATTERNS: Record<string, RegExp> = {
   Knee: /Leg Press|Leg Extension|Hack Squat|Wall Sit|Leg Curl|Hip Thrust|Glute Bridge|Sled|Step Up/i,
   'Low back': /Row|Rack Pull|Hip Thrust|Glute Bridge|Hyperextension|Leg Press|Squat|Carry|Swing|Deadlift/i,
-  Shoulder: /Press|Raise|Fly|Pec Deck|Dip|Pull Up|Chin Up|Pulldown|Pullover|Face Pull|Push Up|Shrug/i,
+  Shoulder: /Press|Raise|Fly|Pec Deck|Dip|Pull Up|Chin Up|Pulldown|Pullover|Face Pull|Push Up|Shrug|Pull Apart|Wall Walk|Handstand/i,
   Hip: /Squat|Lunge|Leg Press|Hip Thrust|Glute Bridge|Deadlift|Abduction|Adduction|Step Up/i,
   Elbow: /Curl|Extension|Pushdown|Skull Crusher|Press|Dip|Row|Pull|Push Up/i,
   Wrist: /Curl|Press|Push Up|Pull Up|Row|Carry|Hang/i,
@@ -457,6 +461,14 @@ function allowed(profile: Profile, name: string, bans: Set<string>): boolean {
   // and then handed them a barbell bench press anyway. An answer the plan
   // asks for and then ignores is worse than a question never asked.
   if (profile.barbell === 'no' && equipment === 'barbell') return false
+
+  // Foundation is the program for somebody who has not done this before, and
+  // it was still handing them pull ups and dips because the template said so.
+  // The swap then finds the rung below: band assisted, negatives, an inverted
+  // row. Nothing is removed from the library, it is deferred until the log
+  // says they have earned it, which is what the promotion already watches for.
+  if (program(profile) === 'Foundation' && demandOf(name) === 'demanding') return false
+
   const kit = ACCESS_EQUIPMENT[profile.access ?? 'full']
   return kit.includes(equipment)
 }
@@ -464,16 +476,37 @@ function allowed(profile: Profile, name: string, bans: Set<string>): boolean {
 // Swap rather than drop: find the nearest movement in the same muscle group
 // that this person can actually do, and is not already in the session.
 function alternative(name: string, profile: Profile, bans: Set<string>, used: Set<string>): string | null {
-  const first = PREFERRED[name]
-  if (first && !used.has(first) && allowed(profile, first, bans)) return first
+  for (const first of [PREFERRED[name] ?? []].flat()) {
+    if (!used.has(first) && allowed(profile, first, bans)) return first
+  }
 
   const group = groupOf(name)
   if (!group) return null
   const type = lookupType(name)
-  const pool = LIBRARY.filter(
+
+  // Ordered by how close the movement is, not by where it happens to sit in
+  // the file. Taking the first match in library order is how a bench press
+  // became a weighted push up: weighted push up is simply written earlier.
+  const pool = similarTo(name).filter(
     (e) => e.group === group && !used.has(e.name) && allowed(profile, e.name, bans),
   )
-  return (pool.find((e) => e.type === type) ?? pool[0])?.name ?? null
+
+  // And never upward. A swap exists because somebody cannot do the original,
+  // so answering with something harder is the one reply guaranteed to be
+  // wrong. Similarity cannot see this on its own: a handstand push up is
+  // extremely similar to a push up.
+  const ceiling = demandRank(name)
+  const within = pool.filter((e) => demandRank(e.name) <= ceiling)
+
+  // When nothing at or below the original exists, the fallback is the least
+  // demanding thing left rather than the most similar. Similarity picked the
+  // handstand push up: the only two bodyweight shoulder movements are a pike
+  // push up and a handstand push up, and once the pike was used the closest
+  // match to a seated dumbbell press was the handstand.
+  const from = within.length
+    ? within
+    : [...pool].sort((a, b) => demandRank(a.name) - demandRank(b.name))
+  return (from.find((e) => e.type === type) ?? from[0])?.name ?? null
 }
 
 export interface PlannedItem extends CustomWorkoutItem {

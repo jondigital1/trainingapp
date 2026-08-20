@@ -100,6 +100,10 @@ const RAW: Record<string, string[]> = {
     'Reverse Pec Deck|W',
     'Face Pull|W',
     'Upright Row|W',
+    'Elevated Pike Push Up|R',
+    'Wall Walk|R',
+    'Wall Handstand Hold|T',
+    'Band Pull Apart|R',
   ],
   Traps: [
     'Barbell Shrug|W',
@@ -370,6 +374,27 @@ export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweig
 
 // Names the keyword rules below get wrong.
 const EQUIPMENT_OVERRIDES: Record<string, Equipment> = {
+  // The classifier reads names, and these names do not mention the machine
+  // they are done on. That was not cosmetic: a home gym leg day came back as
+  // Goblet Squat, Single Leg Extension, Walking Lunge, Leg Extension, Standing
+  // Calf Raise, which is a leg extension twice and three machines nobody in a
+  // spare room owns. Equipment decides what a plan may offer, so a movement
+  // whose name hides its equipment has to say so here.
+  'Leg Extension': 'machine',
+  'Single Leg Extension': 'machine',
+  'Lying Leg Curl': 'machine',
+  'Seated Leg Curl': 'machine',
+  'Standing Leg Curl': 'machine',
+  'Single Leg Curl': 'machine',
+  'Standing Calf Raise': 'machine',
+  'Seated Calf Raise': 'machine',
+  'Donkey Calf Raise': 'machine',
+  'Eccentric Calf Raise': 'bodyweight',
+  // And the other way: a split squat is a dumbbell movement that happens to
+  // contain the word squat, and it is the single most useful leg exercise
+  // somebody with a bench and a pair of dumbbells has.
+  'Bulgarian Split Squat': 'dumbbell',
+  'Split Squat': 'dumbbell',
   'Assisted Pull Up': 'machine',
   'Band Assisted Pull Up': 'bodyweight',
   'Stir the Pot': 'bodyweight',
@@ -381,6 +406,10 @@ const EQUIPMENT_OVERRIDES: Record<string, Equipment> = {
   'Suitcase Hold': 'dumbbell',
   'Box Squat': 'barbell',
   'Bear Hold': 'bodyweight',
+  'Elevated Pike Push Up': 'bodyweight',
+  'Wall Walk': 'bodyweight',
+  'Wall Handstand Hold': 'bodyweight',
+  'Band Pull Apart': 'bodyweight',
   'High Plank': 'bodyweight',
   'Knee Plank': 'bodyweight',
   'Plank to Push Up': 'bodyweight',
@@ -521,4 +550,49 @@ export function similarTo(name: string, extra: LibraryExercise[] = []): LibraryE
     })
     .sort((a, b) => b.score - a.score || a.e.name.localeCompare(b.e.name))
     .map((x) => x.e)
+}
+
+// How much strength a movement assumes you already have.
+//
+// The library grew a full ladder of bodyweight work and the substitution had
+// no way to read it, so a beginner with no equipment was handed Weighted Push
+// Ups, Weighted Dips and Handstand Push Ups, and an experienced lifter with
+// the same kit got the identical session. Similarity alone cannot tell those
+// apart: a handstand push up is extremely similar to a push up.
+//
+// Hand written rather than inferred from the name, because Weighted is a
+// reliable signal and almost nothing else is. Single Arm makes a cable row
+// no harder and a push up nearly impossible.
+export type Demand = 'gentle' | 'normal' | 'demanding'
+
+const DEMANDING = new Set([
+  'Weighted Push Up', 'Weighted Dip', 'Weighted Pull Up', 'Weighted Chin Up',
+  'Handstand Push Up', 'Archer Push Up', 'Deficit Push Up',
+  'Pull Up', 'Chin Up', 'Neutral Grip Pull Up', 'Towel Pull Up', 'Dip',
+  'Toes to Bar', 'Dragon Flag', 'L-Sit', 'Hanging Windshield Wiper',
+  'Standing Ab Wheel Rollout', 'Long Lever Plank', 'Star Side Plank', 'Body Saw',
+  'Pistol Squat', 'Cossack Squat', 'Sissy Squat', 'Nordic Curl', 'Razor Curl',
+  'Glute Ham Raise', 'Dragon Flag', 'Snatch Grip High Pull', 'Snatch Grip Romanian Deadlift',
+  'Z Press', 'Deficit Deadlift', 'Copenhagen Plank', 'Barbell Rollout',
+  'Wall Walk', 'Wall Handstand Hold',
+])
+
+const GENTLE = new Set([
+  'Elevated Pike Push Up', 'Band Pull Apart',
+  'Knee Push Up', 'Incline Push Up', 'Band Assisted Pull Up', 'Assisted Pull Up',
+  'Negative Pull Up', 'Scapular Pull Up', 'Inverted Row',
+  'Bodyweight Squat', 'Box Squat', 'Wall Sit', 'Glute Bridge', 'Bird Dog', 'Dead Bug',
+  'Knee Plank', 'Knee Side Plank', 'High Plank', 'Crunch', 'Walk', 'Jog',
+])
+
+export function demandOf(name: string): Demand {
+  if (DEMANDING.has(name)) return 'demanding'
+  if (GENTLE.has(name)) return 'gentle'
+  return 'normal'
+}
+
+const DEMAND_ORDER: Demand[] = ['gentle', 'normal', 'demanding']
+
+export function demandRank(name: string): number {
+  return DEMAND_ORDER.indexOf(demandOf(name))
 }

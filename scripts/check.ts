@@ -2,7 +2,7 @@
 // artifact importer and CSV export. Run with npm run check.
 import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, equipmentOf, groupOf, lookupType, similarTo } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
@@ -3422,6 +3422,86 @@ check('two sessions with the same name are the same session', () => {
   assert.equal(dayById('ppl-push')!.name, 'Push')
   assert.equal(dayById('ppl-pull')!.name, 'Pull')
   assert.equal(dayById('ppl-legs')!.name, 'Legs')
+})
+
+check('the plan only offers equipment somebody actually has', () => {
+  // The classifier reads names, and a leg extension does not say machine in
+  // its name. A home gym leg day came back as Goblet Squat, Single Leg
+  // Extension, Walking Lunge, Leg Extension, Standing Calf Raise: a leg
+  // extension twice and three machines nobody has in a spare room.
+  for (const [name, kit] of [
+    ['Leg Extension', 'machine'], ['Single Leg Extension', 'machine'],
+    ['Lying Leg Curl', 'machine'], ['Seated Leg Curl', 'machine'],
+    ['Standing Leg Curl', 'machine'], ['Single Leg Curl', 'machine'],
+    ['Standing Calf Raise', 'machine'], ['Seated Calf Raise', 'machine'],
+    // And the other way. A split squat is a dumbbell movement that happens to
+    // contain the word squat, and it is the best leg exercise a spare room has.
+    ['Bulgarian Split Squat', 'dumbbell'], ['Split Squat', 'dumbbell'],
+  ] as [string, string][]) {
+    assert.equal(equipmentOf(name), kit, `${name} is filed as ${equipmentOf(name)}`)
+  }
+
+  // Proven on output, not on the table above it: no session may contain a
+  // movement the person has no equipment for, across every kit and every day.
+  const KIT: Record<string, string[]> = {
+    body: ['bodyweight'],
+    home: ['dumbbell', 'bodyweight'],
+    basic: ['dumbbell', 'machine', 'bodyweight', 'other'],
+  }
+  for (const [access, allowedKit] of Object.entries(KIT)) {
+    for (const day of SPLITS.flatMap((sp) => sp.days)) {
+      const items = buildDay(day, { access, days: 4, years: 'overTwo', knows: 'yes' } as never)
+      for (const i of items) {
+        assert.ok(
+          allowedKit.includes(equipmentOf(i.name)),
+          `${access} was given ${i.name}, which needs ${equipmentOf(i.name)}`,
+        )
+      }
+      // And never the same movement twice in one session.
+      const names = items.map((i) => i.name)
+      assert.equal(new Set(names).size, names.length, `${day.id} on ${access} repeats a movement`)
+    }
+  }
+})
+
+check('a swap never answers with something harder', () => {
+  // A swap exists because somebody cannot do the original, so replying with
+  // something harder is the one answer guaranteed to be wrong. Similarity
+  // cannot see it: a handstand push up is extremely similar to a push up, and
+  // a beginner with no equipment was being handed weighted push ups, weighted
+  // dips and handstand push ups on day one.
+  assert.equal(demandOf('Handstand Push Up'), 'demanding')
+  assert.equal(demandOf('Knee Push Up'), 'gentle')
+  assert.equal(demandOf('Dumbbell Bench Press'), 'normal')
+
+  const beginner = { years: 'never', knows: 'no', barbell: 'never', days: 3 } as never
+  const seasoned = { years: 'overTwo', knows: 'yes', barbell: 'confident', days: 3 } as never
+
+  for (const access of ['body', 'home', 'basic', 'full']) {
+    for (const day of SPLITS.flatMap((sp) => sp.days)) {
+      const items = buildDay(day, { ...(beginner as object), access } as never)
+      for (const i of items) {
+        assert.equal(
+          demandOf(i.name), demandOf(i.name) === 'demanding' ? 'never' : demandOf(i.name),
+          `a beginner on ${access} was given ${i.name}`,
+        )
+      }
+    }
+  }
+
+  // And the two are not the same session. Before this they were identical:
+  // difficulty was not modelled anywhere, so experience changed nothing about
+  // which movements came back.
+  const begPull = buildDay(dayById('ppl-pull')!, { ...(beginner as object), access: 'full' } as never).map((i) => i.name)
+  const proPull = buildDay(dayById('ppl-pull')!, { ...(seasoned as object), access: 'full' } as never).map((i) => i.name)
+  assert.notDeepEqual(begPull, proPull, 'experience changes nothing about the session')
+  assert.ok(!begPull.includes('Pull Up'), 'Foundation still opens on a pull up')
+  assert.ok(proPull.includes('Pull Up'), 'somebody who can do a pull up is not offered one')
+
+  // A swap lands on the right muscle, not merely the right group. Face pull
+  // and front raise are both Shoulders and train opposite ends of it.
+  const homePull = buildDay(dayById('ppl-pull')!, { ...(seasoned as object), access: 'home' } as never).map((i) => i.name)
+  assert.ok(!homePull.includes('Front Raise'), 'a face pull was answered with a front raise')
 })
 
 check('a movement somebody cannot do yet has an easier version', () => {

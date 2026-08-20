@@ -384,6 +384,45 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## Auditing the whole library found two shipping bugs
+
+Reading the library group by group turned up gaps. Reading what the library
+produced turned up bugs, which is the lesson this project keeps relearning.
+
+The first: equipment is derived from the name, and a leg extension does not
+say machine in its name. Nor does a leg curl, a standing calf raise or a seated
+calf raise. So a home gym leg day came back as Goblet Squat, Single Leg
+Extension, Walking Lunge, Leg Extension, Standing Calf Raise, Hanging Leg
+Raise. That is a leg extension twice and three machines nobody owns in a spare
+room. It ran the other way too: a Bulgarian split squat was filed as a barbell
+movement, which took the single best exercise a bench and a pair of dumbbells
+can do away from exactly the people who needed it.
+
+The second is worse. A beginner with no equipment was prescribed Weighted Push
+Ups, Weighted Dips and Handstand Push Ups, and an experienced lifter with the
+same kit got the identical session, because difficulty was not modelled
+anywhere. The substitution picked whichever candidate appeared first in the
+file, and weighted push up is simply written earlier than push up.
+
+Movements now carry a demand, hand written rather than inferred, because
+Weighted is a reliable signal and almost nothing else is: Single Arm makes a
+cable row no harder and a push up nearly impossible. A swap orders candidates
+by how close they are and never answers with something more demanding than
+what it is replacing, and when nothing at or below exists it falls to the
+gentlest thing left rather than the most similar. That fallback was the whole
+bug in miniature: the only two bodyweight shoulder movements were a pike push
+up and a handstand push up, so once the pike was used, the closest match to a
+seated dumbbell press was a handstand.
+
+Foundation now defers demanding movements entirely. It is the program for
+people who have never done this and it was still handing them pull ups,
+because the template said so and nothing overruled it. Nothing is removed from
+the library; the swap finds the rung below, and the promotion already watches
+the log for when they have earned it back.
+
+A beginner and an experienced lifter now get different sessions from the same
+template and the same equipment, which they did not before.
+
 ## The library had climbed away from beginners
 
 A question about core exercises turned up something worse than a thin core
