@@ -3151,6 +3151,37 @@ check('moving one session moves one session, and nothing on the way', () => {
   assert.ok(!list.includes('&uarr;') && !list.includes('&darr;'), 'the nudge arrows came back')
 })
 
+check('every card in the list can reach every other card', () => {
+  // The picker looks a fixed distance ahead and the list does not: ten sessions
+  // is ten days at seven a week and twenty two at three, so a span that suited
+  // one shape would leave the far cards of another unreachable. Sweep every
+  // schedule the app can hold against every day it could be opened on.
+  const ids = ['ppl-push', 'ppl-pull', 'ppl-legs']
+  let swept = 0
+  for (let mask = 1; mask < 128; mask += 1) {
+    const schedule = Array.from({ length: 7 }, (_, d) => (mask & (1 << d) ? ids[d % 3] : null))
+    for (let start = 0; start < 7; start += 1) {
+      // 2026-08-16 is a Sunday, so start walks the whole week.
+      const today = datesAhead('2026-08-16', 7)[start]
+      const profile = { schedule }
+      const upcoming = upcomingDays(profile, today)
+      const last = upcoming.at(-1)!.date
+      const span = Math.min(28, Math.max(14, daysBetween(today, last) + 1))
+      const offered = new Set(datesAhead(today, span))
+      for (const u of upcoming) {
+        assert.ok(offered.has(u.date), `${u.date} is on the list but not in the picker`)
+      }
+      swept += 1
+    }
+  }
+  assert.equal(swept, 889)
+
+  // Nothing is offered behind today, because a move backwards is a move into
+  // the log, and the log is what happened rather than what is planned.
+  const ahead = datesAhead('2026-08-17', 14)
+  assert.ok(ahead.every((d) => d >= '2026-08-17'))
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)
