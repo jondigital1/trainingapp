@@ -18,11 +18,13 @@ import {
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
 import { toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
-import { today } from '@/lib/format'
+import { fmtTime, today } from '@/lib/format'
 import HeightField from './HeightField'
+import NewExercise from './NewExercise'
 import { blockWeek } from '@/lib/block'
+import { restForTier } from '@/lib/rest'
 import { weekStart } from '@/lib/week'
-import type { BodyWeight, Workout } from '@/lib/types'
+import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
 import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
 import { GoalPicker } from './GoalPicker'
@@ -39,6 +41,11 @@ const SECTIONS = [
   { id: 'you', label: 'You' },
   { id: 'week', label: 'Your week' },
   { id: 'body', label: 'Your body' },
+  // Movements you made yourself. They were only ever reachable as a filter
+  // chip inside the picker you get mid session and inside the workout builder,
+  // which meant the only way to look at your own library was to start doing
+  // something else first.
+  { id: 'moves', label: 'Your movements' },
 ] as const
 
 type Section = (typeof SECTIONS)[number]['id']
@@ -59,10 +66,14 @@ export default function ProfileSheet({
   focus,
   weights,
   workouts,
+  customs,
+  goal,
   inline,
   onSave,
   onApply,
   onLogWeight,
+  onEditExercise,
+  onDeleteExercise,
   onOpenSettings,
   admin,
   email,
@@ -72,6 +83,10 @@ export default function ProfileSheet({
   focus: Focus
   weights: BodyWeight[]
   workouts: Workout[]
+  // Your own movements, and the goal that decides what a rest tier is worth,
+  // so the number this screen promises is the number the session counts down.
+  customs?: CustomExercise[]
+  goal?: Goal
   inline?: boolean
   onSave: (next: Profile) => void
   // Saving something that must not also navigate. Done and Save mean save and
@@ -80,6 +95,8 @@ export default function ProfileSheet({
   // the middle of laying out their week.
   onApply?: (next: Profile) => void
   onLogWeight: (pounds: number) => void
+  onEditExercise?: (exercise: CustomExercise) => void
+  onDeleteExercise?: (exercise: CustomExercise) => void
   onOpenSettings?: () => void
   // Set when the person looking at this page can see everybody else's. The
   // admin screen lives here rather than at its own address, because this is
@@ -390,6 +407,15 @@ export default function ProfileSheet({
             <Ask q={CONDITION} value={draft.condition} onPick={(v) => set({ condition: v })} />
           </>
         ) : null}
+
+        {section === 'moves' ? (
+          <MyMovements
+            customs={customs ?? []}
+            goal={goal ?? 'muscle'}
+            onEdit={onEditExercise}
+            onDelete={onDeleteExercise}
+          />
+        ) : null}
       </div>
 
       <SaveButton onClick={commit} />
@@ -456,5 +482,83 @@ function SaveButton({ onClick }: { onClick: () => void }) {
     >
       Save
     </button>
+  )
+}
+
+/**
+ * Movements you made yourself, in one place you can actually get to.
+ *
+ * They were only ever reachable as a filter chip inside the picker you get mid
+ * session and inside the workout builder, which meant looking at your own
+ * library required starting a workout first. The screen that lets you change
+ * one was reachable the same way, which is a door inside a room you have to be
+ * doing something else to enter.
+ */
+function MyMovements({
+  customs,
+  goal,
+  onEdit,
+  onDelete,
+}: {
+  customs: CustomExercise[]
+  goal: Goal
+  onEdit?: (exercise: CustomExercise) => void
+  onDelete?: (exercise: CustomExercise) => void
+}) {
+  const [fixing, setFixing] = useState<CustomExercise | null>(null)
+
+  if (!customs.length) {
+    return (
+      <p className="py-6 text-sm leading-relaxed text-muted">
+        Nothing yet. Search for a movement the app does not have, in a workout or
+        while you are training, and you can create it there. It turns up here
+        afterwards.
+      </p>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex flex-col">
+        {customs.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setFixing(fixing?.id === c.id ? null : c)}
+            aria-expanded={fixing?.id === c.id}
+            className="flex items-center justify-between gap-3 border-b border-edge py-3 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-sm">{c.name}</span>
+              {/* What it does in the app, said plainly, because these are the
+                  answers that decide which muscle it credits and how long it
+                  rests, and they are invisible everywhere else. */}
+              <span className="mt-0.5 block text-xs text-faint">
+                {c.group ?? 'No group'} &middot; <span className="num">{c.sets ?? 3}</span> sets &middot; rests{' '}
+                <span className="num">{fmtTime(restForTier(c.tier ?? 'compound', goal))}</span>
+              </span>
+            </span>
+            <span className="shrink-0 text-xs text-muted">{fixing?.id === c.id ? 'close' : 'change'}</span>
+          </button>
+        ))}
+      </div>
+
+      {fixing ? (
+        <NewExercise
+          key={fixing.id}
+          name={fixing.name}
+          action="Save changes"
+          goal={goal}
+          editing={fixing}
+          onCreate={(exercise) => {
+            onEdit?.(exercise)
+            setFixing(null)
+          }}
+          onDelete={(exercise) => {
+            onDelete?.(exercise)
+            setFixing(null)
+          }}
+        />
+      ) : null}
+    </>
   )
 }

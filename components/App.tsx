@@ -1220,8 +1220,12 @@ export default function App({
           focus="all"
           weights={data.bodyWeights}
           workouts={data.workouts}
+          customs={data.custom}
+          goal={data.settings.goal}
           onOpenSettings={() => setSheet('settings')}
           onLogWeight={(lb) => void logWeight(lb)}
+          onEditExercise={(exercise) => void editCustomExercise(exercise)}
+          onDeleteExercise={(exercise) => void removeCustomExercise(exercise)}
           onSave={(next) => void saveProfile(next)}
           onClose={() => setTab('calendar')}
         />

@@ -4505,6 +4505,25 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('your own movements have a place you can get to', () => {
+  // They were only ever a filter chip inside the picker you get mid session and
+  // inside the workout builder, so looking at your own library meant starting a
+  // workout first. The screen for changing one was behind the same door.
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(sheet.includes("label: 'Your movements'"), 'the profile has no section for them')
+  assert.ok(sheet.includes('MyMovements'), 'the section has nothing in it')
+  assert.ok(sheet.includes('restForTier'), 'the list does not say what a movement rests')
+
+  // And the profile tab is handed the movements and the goal, or the section
+  // is a heading over an empty list.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const tab = app.slice(app.indexOf("tab === 'profile'"))
+  const props = tab.slice(0, tab.indexOf('/>'))
+  for (const prop of ['customs=', 'goal=', 'onEditExercise=', 'onDeleteExercise=']) {
+    assert.ok(props.includes(prop), `the profile tab is missing ${prop}`)
+  }
+})
+
 check('a movement you made can be changed, and only from here on', () => {
   // The four answers are not decorative. The group decides which muscle it
   // credits in the weekly count, the tier decides how long it rests, the sets

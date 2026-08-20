@@ -2189,6 +2189,16 @@ it at a movement that no longer answers to that name.
 Deleting is one button on the same screen, and asks twice, because it is the
 only thing there that cannot be changed back.
 
+There is also somewhere to go and look. Your own movements were only ever a
+filter chip inside the picker you get mid session and inside the workout
+builder, which meant seeing your own library required starting a workout first,
+and the screen for changing one was behind that same door. Your movements is
+now a section on the profile, next to You, Your week and Your body. Each row
+says what the movement does in the app, which muscle it credits, how many sets
+it lays out and how long it rests, because those are the answers that matter
+and they were invisible everywhere else. Tapping one opens the same four
+questions.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half
