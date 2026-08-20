@@ -435,6 +435,16 @@ check('the word before the first session of the day', () => {
   // And it only interrupts a real session, never an empty one.
   const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
   assert.ok(/!greetedOn\(data.settings.profile, now\) && items.length > 0/.test(app), 'it greets people into nothing')
+
+  // It is also the only thing in the way. How long have you got used to be
+  // asked here too, which was a fair question in the wrong place: two things
+  // between a person and the session they opened the app to do is one too
+  // many, and the one that can wait is the clock. It lives on the profile and
+  // defaults to an hour.
+  const start = app.slice(app.indexOf('function startWorkout'), app.indexOf('function resumePendingStart'))
+  const stops = start.match(/setSheet\(|setGreeting\(true\)/g) ?? []
+  assert.equal(stops.length, 1, `${stops.length} things stop a session starting`)
+  assert.ok(!/minutes === undefined/.test(start), 'the clock question is back in the doorway')
 })
 
 check('a sore joint lightens the work, a red flag takes it away', () => {

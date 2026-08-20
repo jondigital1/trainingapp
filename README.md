@@ -615,9 +615,18 @@ your profile would be one you learn not to answer honestly, and this one costs
 nothing to answer honestly, which is the only way the answers stay worth
 having.
 
-It only interrupts a real session, and it never asks twice in a day, including
-of somebody who said nothing was wrong. Both of those are checked, because the
-failure mode of a daily greeting is not being wrong, it is being tiresome.
+It only interrupts a real session, it never asks twice in a day including of
+somebody who said nothing was wrong, and it is the only thing in the way. Those
+are all checked, because the failure mode of a daily greeting is not being
+wrong, it is being tiresome.
+
+The last of those cost something to get right. How long have you got was also
+asked in this doorway, on the grounds that it is a better question about today
+than at signup. True, and still the wrong place for it: two things standing
+between a person and the session they opened the app to do is one too many, and
+of the two, the one that can wait is the clock. It lives on the profile, it
+defaults to an hour, and a session built without an answer comes back at sixty
+minutes, which is what most people were going to say.
 
 ## A sore knee is not a reason to stop training legs
 

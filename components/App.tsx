@@ -402,19 +402,19 @@ export default function App({
       setGreeting(true)
       return
     }
-    // The one tier 2 question worth asking up front, and only at the moment it
-    // is a useful question about today rather than an obstacle at signup.
-    if (data.settings.profile.minutes === undefined && items.length > 0) {
-      setPendingStart({ title, items, sort, dayId })
-      setProfileFocus('minutes')
-      setSheet('profile')
-      return
-    }
+    // Nothing else stands in the way. How long somebody has got used to be
+    // asked here, on the grounds that it is a better question about today than
+    // at signup, and that was true and still the wrong place for it: two
+    // questions between a person and the session they opened the app to do is
+    // one too many, and the one that can wait is the one about the clock. It
+    // lives on the profile, it defaults to an hour, and nobody is stopped on
+    // the way in to answer it.
     reallyStart(title, items, sort)
   }
 
-  // The minutes answer has to shape the session it interrupted, so a plan day
-  // is rebuilt against the fresh profile rather than started from stale items.
+  // A session held while something was asked is rebuilt against the profile
+  // that came back, rather than started from the items it was holding, so the
+  // answer shapes the session it interrupted.
   function resumePendingStart(next: Profile) {
     if (!pendingStart) return
     const { title, items, sort, dayId } = pendingStart
@@ -1368,12 +1368,6 @@ export default function App({
             if (held) {
               const who = forToday(next, now)
               const day = held.dayId ? dayById(held.dayId) : null
-              if (who.minutes === undefined) {
-                setPendingStart(held)
-                setProfileFocus('minutes')
-                setSheet('profile')
-                return
-              }
               reallyStart(held.title, day ? buildDay(day, who) : held.items, held.sort, who)
             }
           }}
