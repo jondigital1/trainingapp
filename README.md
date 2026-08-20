@@ -2324,6 +2324,12 @@ and send you to the profile to change it, and the comment on that block said
 why: it had been two editors once and they disagreed. One editor, one home, and
 a check that fails if either screen grows a second copy.
 
+That left a Me tab holding a name and an age, which is a tab people learn to
+skip. Both are things about your body in the only sense this app cares about,
+so they sit at the top of My body with your weight and your height, and the
+profile is three subjects now: My week, My body, My movements. Three pills, one
+line, each with enough in it to be worth a tab.
+
 Moving them turned up a quieter version of the same bug waiting to happen.
 Settings opens as a sheet over the profile, so both are mounted at the same
 time. The profile builds its save from a draft seeded when it opened, so

@@ -32,10 +32,15 @@ import Sheet from './Sheet'
 
 type Focus = 'minutes' | 'sore' | 'week' | 'all'
 
-// The same five sections the questionnaire asked, in the same order, so coming
-// back to change an answer means going to where you gave it.
+// What this page is for, now that what you set lives in Settings: your week,
+// your body, and the movements you made. Three subjects, each with enough in
+// it to be worth a tab of its own.
 const SECTIONS = [
-  { id: 'you', label: 'Me' },
+  // There was a Me tab holding a name and an age. Once what you want out of
+  // training moved to Settings there was nothing else in it, and a tab with
+  // two fields is a tab people learn to skip. Your name and your age are
+  // things about your body in the only sense this app cares about, so they
+  // sit with the rest of them.
   { id: 'week', label: 'My week' },
   { id: 'body', label: 'My body' },
   // Movements you made yourself. They were only ever reachable as a filter
@@ -107,7 +112,7 @@ export default function ProfileSheet({
   // nothing and closing a touched one saves everything.
   const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
-  const [section, setSection] = useState<Section>(focus === 'minutes' || focus === 'week' ? 'week' : focus === 'sore' ? 'body' : 'you')
+  const [section, setSection] = useState<Section>(focus === 'minutes' || focus === 'week' ? 'week' : 'body')
   const unit = unitOf(profile)
 
   const [name, setName] = useState(profile.name ?? '')
@@ -298,20 +303,6 @@ export default function ProfileSheet({
       </div>
 
       <div className="mt-5">
-        {section === 'you' ? (
-          <>
-            <Field label="Name" optional>
-              <TextInput value={name} onChange={setName} placeholder="Name" />
-            </Field>
-            <Field label="Age" optional>
-              <NumberInput value={age} onChange={setAge} suffix="years" />
-            </Field>
-            {/* Units, sex, what you want out of it and what you want brought
-                up all live in Settings now. They are things you set rather
-                than facts about you, and the questionnaire files them the same
-                way. One home each: this page does not keep a second copy. */}
-          </>
-        ) : null}
 
         {/* There is no Experience section any more, on purpose. How long you
             had been lifting, whether you knew your weights and how the barbell
@@ -389,6 +380,13 @@ export default function ProfileSheet({
 
         {section === 'body' ? (
           <>
+            <Field label="Name" optional>
+              <TextInput value={name} onChange={setName} placeholder="Name" />
+            </Field>
+            <Field label="Age" optional>
+              <NumberInput value={age} onChange={setAge} suffix="years" />
+            </Field>
+
             <BodyWeightCard
               weights={weights}
               goalWeight={draft.goalWeight}

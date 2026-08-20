@@ -4687,7 +4687,7 @@ check('Lifty points at tabs that are actually there', () => {
   const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
   const block = sheet.slice(sheet.indexOf('const SECTIONS'), sheet.indexOf('] as const'))
   const labels = [...block.matchAll(/label: '([^']+)'/g)].map((m) => m[1])
-  assert.ok(labels.length >= 4, 'the profile lost its sections')
+  assert.ok(labels.length >= 3, 'the profile lost its sections')
 
   // Only the signpost phrasing, "on your profile, under X". Plain prose can
   // say "under Chest" about a muscle group without meaning a tab.
