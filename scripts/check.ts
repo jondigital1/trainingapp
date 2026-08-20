@@ -3077,6 +3077,16 @@ check('a switch that says on means a phone the server can actually reach', () =>
   assert.match(settings, /state === 'unregistered'/, 'the settings screen ignores a failed registration')
 })
 
+check('a week nobody was reached is not a week they were nudged', () => {
+  // The job stamped everybody it processed, delivered or not. A run where
+  // every endpoint turned out to be dead then burned the next six days and
+  // counted a miss against somebody who was never spoken to, which is how a
+  // silent failure becomes a silent absence.
+  const route = readFileSync(new URL('../app/api/nudge/route.ts', import.meta.url), 'utf8')
+  assert.match(route, /if \(delivered\) await stampNudge/, 'the job stamps people it never reached again')
+  assert.match(route, /delivered = true/, 'nothing ever records a successful delivery')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

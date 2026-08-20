@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
   for (const person of due) {
     // Every device they train with, because the phone in the gym and the phone
     // in the kitchen are often not the same one.
+    let delivered = false
     for (const device of person.devices) {
       try {
         const result = await sendNudge(device, person.nudge.title, person.nudge.body)
@@ -41,16 +42,20 @@ export async function GET(request: NextRequest) {
           await forgetDevice(device.endpoint)
           gone += 1
         } else {
+          delivered = true
           sent += 1
         }
       } catch {
         // One phone's push service being down is not a reason to skip the rest
-        // of the week's nudges. The stamp below still lands, so nobody gets
-        // two of these because one send failed.
+        // of the week's nudges.
         gone += 0
       }
     }
-    await stampNudge(person.userId, now, person.trained, person.misses)
+    // Stamped only when something actually arrived somewhere. A week where
+    // every endpoint turned out to be dead is a week nobody was nudged, and
+    // marking it as done burned the next six days and counted a miss against
+    // somebody who was never spoken to.
+    if (delivered) await stampNudge(person.userId, now, person.trained, person.misses)
   }
 
   return NextResponse.json({ due: due.length, sent, gone })
