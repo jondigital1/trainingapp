@@ -2264,8 +2264,20 @@ attached, instead of into a console nobody is watching.
 
 The client end was measured rather than assumed: typing a question the library
 cannot answer records exactly one row with answered false, typing one it can
-records one with answered true, and neither fires per keystroke. Whatever was
-stopping the round trip is now obliged to announce itself.
+records one with answered true, and neither fires per keystroke.
+
+It was writing all along. The first real report showed it, and showed something
+else with it: one person asking one thing had been filed as two questions,
+"What is weight train" and "What is weight training". The search is recorded
+once typing stops for a beat, which handles somebody typing quickly and not
+somebody who pauses mid word, and the pause gets recorded.
+
+Collapsed in the report rather than at the keyboard, so rows already written
+clean up without a migration. Only mid word joins though: "train" growing into
+"training" is one person still typing, while "squat" growing into "squat depth"
+is a real second search that happens to start with the first. Merging those
+would delete a question somebody actually asked, and a stray prefix in a list
+is untidy where a lost question is a gap nobody ever writes an entry for.
 
 ## Not built yet
 

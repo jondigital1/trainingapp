@@ -4505,6 +4505,43 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('a half typed search is not a second question', () => {
+  // The search is recorded once typing stops for a beat, which handles a fast
+  // typist and not a person who pauses mid word. Live data had one person
+  // asking one thing filed as "What is weight train" and "What is weight
+  // training", which inflates the list and splits the count.
+  const typing = [
+    { userId: 'jon', question: 'What is weight train', answered: true, at: '2026-08-20T18:05:00Z' },
+    { userId: 'jon', question: 'What is weight training', answered: true, at: '2026-08-20T18:05:06Z' },
+  ]
+  assert.deepEqual(askedReport(typing).map((r) => r.question), ['What is weight training'])
+
+  // Only mid word. A space at the join is a new word and a real second search,
+  // and merging those deletes a question somebody actually asked.
+  const refined = [
+    { userId: 'a', question: 'squat', answered: true, at: '2026-08-20T18:00:00Z' },
+    { userId: 'a', question: 'squat depth', answered: false, at: '2026-08-20T18:00:20Z' },
+  ]
+  assert.equal(askedReport(refined).length, 2, 'a refined search was eaten by its own first word')
+
+  // Not across people, and not an hour later.
+  const apart = [
+    { userId: 'a', question: 'creatine', answered: true, at: '2026-08-20T18:00:00Z' },
+    { userId: 'a', question: 'creatines', answered: true, at: '2026-08-20T19:00:00Z' },
+  ]
+  assert.equal(askedReport(apart).length, 2, 'two searches an hour apart were treated as one')
+  const two = [
+    { userId: 'a', question: 'train', answered: true, at: '2026-08-20T18:00:00Z' },
+    { userId: 'b', question: 'training', answered: true, at: '2026-08-20T18:00:05Z' },
+  ]
+  assert.equal(askedReport(two).length, 2, 'one person typing swallowed another person asking')
+
+  // The row that survives is the finished one, and the count is not doubled.
+  const [row] = askedReport(typing)
+  assert.equal(row.times, 1, 'one person asking once counted twice')
+  assert.equal(row.people, 1)
+})
+
 check('the miss log says which of its three states it is in', () => {
   // The section was drawn only when the table had rows in it, so a miss log
   // recording nothing and a miss log nobody had used yet were the same blank

@@ -28,6 +28,53 @@ export function askedKey(question: string): string {
   return question.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[?!.]+$/, '')
 }
 
+// How long after a search a longer version of it still counts as the same
+// typing rather than a second question.
+const STILL_TYPING_MS = 120_000
+
+/**
+ * Drop the half typed ones.
+ *
+ * The search is recorded once the typing stops for a beat, which was meant to
+ * stop "how" and "how m" and "how much" becoming three questions. It does, for
+ * anybody who types quickly. Somebody who pauses mid word beats the timer and
+ * the pause gets recorded, which is how "What is weight train" and "What is
+ * weight training" ended up as two separate rows from one person asking one
+ * thing.
+ *
+ * Only mid word joins are collapsed. "train" growing into "training" is one
+ * person still typing; "squat" growing into "squat depth" is a real second
+ * search that happens to start with the first, and merging those would delete
+ * a question somebody actually asked. The conservative half of the fix is the
+ * half worth having: a stray prefix in the list is untidy, a lost question is
+ * a gap nobody ever writes an entry for.
+ */
+export function withoutPartials(
+  rows: { userId: string; question: string; answered: boolean; at: string }[],
+): { userId: string; question: string; answered: boolean; at: string }[] {
+  const sorted = [...rows].sort((a, b) => a.at.localeCompare(b.at))
+  const partial = new Set<number>()
+
+  for (let i = 0; i < sorted.length; i += 1) {
+    const shorter = askedKey(sorted[i].question)
+    const from = Date.parse(sorted[i].at)
+    for (let j = i + 1; j < sorted.length; j += 1) {
+      // Ascending by time, so once one row is past the window every row after
+      // it is too.
+      if (Date.parse(sorted[j].at) - from > STILL_TYPING_MS) break
+      if (sorted[j].userId !== sorted[i].userId) continue
+      const longer = askedKey(sorted[j].question)
+      if (longer.length <= shorter.length || !longer.startsWith(shorter)) continue
+      // A space at the join means a new word, which means a new question.
+      if (longer[shorter.length] === ' ') continue
+      partial.add(i)
+      break
+    }
+  }
+
+  return sorted.filter((_, i) => !partial.has(i))
+}
+
 export function askedReport(
   rows: { userId: string; question: string; answered: boolean; at: string }[],
 ): AskedRow[] {
@@ -36,7 +83,7 @@ export function askedReport(
     { users: Set<string>; spellings: Map<string, number>; times: number; answered: boolean; last: string }
   >()
 
-  for (const row of rows) {
+  for (const row of withoutPartials(rows)) {
     const question = row.question.trim()
     if (!question) continue
     const key = askedKey(question)
