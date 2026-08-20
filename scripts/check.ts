@@ -3182,6 +3182,32 @@ check('every card in the list can reach every other card', () => {
   assert.ok(ahead.every((d) => d >= '2026-08-17'))
 })
 
+check('a session can be pulled forward to today, not just pushed back', () => {
+  // Moving is not only for putting something off. Somebody with a free evening
+  // wants next Friday brought forward, so today is on the list for every card
+  // except today's own, and the exchange runs the same way in both directions.
+  const week = { schedule: [null, 'ppl-push', 'ppl-pull', null, 'ppl-legs', 'ppl-push', null] }
+  const today = '2026-08-17' // a Monday
+
+  // The last card the list holds, a fortnight out, comes back to today.
+  const last = upcomingDays(week, today).at(-1)!.date
+  assert.equal(last, '2026-09-01')
+  const pulled = { ...week, moves: swapDays(week, last, today, today) }
+  assert.equal(dayIdFor(pulled, today), 'ppl-pull', 'the far session did not come forward')
+  assert.equal(dayIdFor(pulled, last), 'ppl-push', 'today\'s session did not go back')
+
+  // Today is offered from every card but its own.
+  for (const u of upcomingDays(week, today)) {
+    const offered = datesAhead(today, 16).filter((d) => d !== u.date)
+    assert.equal(offered.includes(today), u.date !== today, `${u.date} disagrees about today`)
+  }
+
+  // Everything the session passed over on its way forward is untouched.
+  for (const iso of ['2026-08-18', '2026-08-21', '2026-08-25', '2026-08-31']) {
+    assert.equal(dayIdFor(pulled, iso), scheduleOf(week)[weekdayOf(iso)] ?? null, `${iso} drifted`)
+  }
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)
