@@ -323,11 +323,18 @@ squares of mostly nothing, decoded rather than read, and it pushed the thing
 somebody actually wants, what am I doing on Thursday, off the bottom of the
 screen.
 
-Plans change, so the cards move. Each one carries an arrow up and an arrow
-down that trades it with the card next to it, because the fix for training
-legs on Wednesday this week is to move the day, not to renegotiate the split.
-A completed day cannot be dragged around and nothing can be traded onto it,
-since it already happened.
+Plans change, so the cards move. Each one carries Move, which opens the days
+ahead and asks which one, because the fix for training legs on Wednesday this
+week is to move the day, not to renegotiate the split. Rest days are in that
+list: a day the pattern left empty is the likeliest place a session is going,
+so it cannot be the one place you are not offered. A day already trained is
+shown and cannot be picked, since it already happened.
+
+Picking the day rather than nudging the card matters more than it sounds.
+Arrows that traded a card with the card beside it could only walk a session
+one slot at a time, and walking Monday to Friday that way is four swaps that
+shuffle everything in between. One exchange between two dates leaves the days
+it passed over exactly as they were.
 
 A move is stored against a date, never against a weekday. Editing the schedule
 to shift one Tuesday would shift every Tuesday for as long as the person keeps

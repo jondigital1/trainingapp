@@ -26,15 +26,15 @@ export default function UpcomingList({
   workouts,
   today,
   onPeek,
-  onSwap,
+  onMove,
 }: {
   profile: Profile
   workouts: Workout[]
   today: string
   onPeek: (dayId: string) => void
-  // Trade what two dates hold. Plans change, and a schedule you cannot bend
-  // without editing the pattern it repeats is a schedule people abandon.
-  onSwap: (a: string, b: string) => void
+  // Open the day picker for this date. Plans change, and a schedule you cannot
+  // bend without editing the pattern it repeats is a schedule people abandon.
+  onMove: (date: string) => void
 }) {
   const upcoming = upcomingDays(profile, today).map((u) => ({
     ...u,
@@ -67,8 +67,6 @@ export default function UpcomingList({
           // spelled out here because a card has the room and a day you are
           // planning around deserves its name.
           const when = `${WEEKDAY_NAMES[weekdayOf(u.date)]} ${fmtDate(u.date).slice(4)}`
-          const before = upcoming[i - 1]
-          const after = upcoming[i + 1]
           return (
             <div
               key={u.date}
@@ -101,29 +99,18 @@ export default function UpcomingList({
                 <button onClick={() => onPeek(u.dayId)} className="text-[12.5px] font-extrabold text-accent-ink">
                   See the exercises &rarr;
                 </button>
-                {/* Swapping with a neighbour rather than dragging, because a
-                    drag on a phone fights the scroll and this list is the
-                    thing you scroll. Two taps move a session a week, and a
-                    session already done stays where it happened. */}
+                {/* Pick the day rather than nudge the card one slot at a
+                    time: this session goes where you say, and the days in
+                    between are left alone. A day already trained stays where
+                    it happened, so it offers nothing. */}
                 {u.done ? null : (
-                  <span className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={() => before && onSwap(u.date, before.date)}
-                      disabled={!before || before.done}
-                      aria-label={`Move ${its?.name ?? 'this'} to ${before ? fmtDate(before.date) : 'the day before'}`}
-                      className="rounded-lg px-2.5 py-1 text-sm text-muted ring-1 ring-edge disabled:opacity-30"
-                    >
-                      &uarr;
-                    </button>
-                    <button
-                      onClick={() => after && onSwap(u.date, after.date)}
-                      disabled={!after}
-                      aria-label={`Move ${its?.name ?? 'this'} to ${after ? fmtDate(after.date) : 'the day after'}`}
-                      className="rounded-lg px-2.5 py-1 text-sm text-muted ring-1 ring-edge disabled:opacity-30"
-                    >
-                      &darr;
-                    </button>
-                  </span>
+                  <button
+                    onClick={() => onMove(u.date)}
+                    aria-label={`Move ${its?.name ?? 'this session'} from ${fmtDate(u.date)} to another day`}
+                    className="shrink-0 rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
+                  >
+                    Move
+                  </button>
                 )}
               </div>
             </div>

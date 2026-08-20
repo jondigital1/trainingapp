@@ -15,6 +15,7 @@ import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
 import UpcomingList from './UpcomingList'
+import MoveSheet from './MoveSheet'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
 import Sheet from './Sheet'
@@ -118,6 +119,8 @@ export default function App({
   const [loadFailed, setLoadFailed] = useState(false)
   const [tab, setTab] = useState<Tab>('calendar')
   const [sheet, setSheet] = useState<SheetName>(null)
+  // The date whose session is being moved, while the day picker is open.
+  const [moving, setMoving] = useState<string | null>(null)
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
   // The exercise being swapped out, when the picker was opened to substitute
   // rather than to add.
@@ -1013,7 +1016,7 @@ export default function App({
             workouts={data.workouts}
             today={now}
             onPeek={setPeekDay}
-            onSwap={(a, b) => void saveProfile({ ...profile, moves: swapDays(profile, a, b, now) })}
+            onMove={setMoving}
           />
 
           {/* Everything behind you. This was its own tab until the calendar
@@ -1278,6 +1281,23 @@ export default function App({
             </Sheet>
           )
         })()
+      ) : null}
+
+      {/* Where a session is going. Dated, so moving this Tuesday leaves every
+          other Tuesday alone, and a straight pick rather than a nudge, so the
+          days in between are not shuffled on the way. */}
+      {moving ? (
+        <MoveSheet
+          profile={profile}
+          workouts={data.workouts}
+          today={now}
+          date={moving}
+          onPick={(target) => {
+            void saveProfile({ ...profile, moves: swapDays(profile, moving, target, now) })
+            setMoving(null)
+          }}
+          onClose={() => setMoving(null)}
+        />
       ) : null}
 
       {/* One movement, everything known about it. Opened from its name inside a

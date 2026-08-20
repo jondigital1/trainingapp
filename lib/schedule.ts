@@ -147,3 +147,23 @@ export function upcomingDays(profile: Profile, today: string, count = 10, horizo
   }
   return out
 }
+
+// Every date in a stretch ahead, rest days included. The upcoming list only
+// knows about days that hold something, but somebody moving a session wants
+// Wednesday offered even though Wednesday is currently empty: an empty day is
+// the best place to put a session, not the one place you cannot.
+export function datesAhead(today: string, days: number): string[] {
+  const out: string[] = []
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(today + 'T00:00:00')
+    d.setDate(d.getDate() + i)
+    out.push(d.toISOString().slice(0, 10))
+  }
+  return out
+}
+
+// How far apart two dates are, in days.
+export function daysBetween(a: string, b: string): number {
+  const ms = new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()
+  return Math.round(ms / 86400000)
+}

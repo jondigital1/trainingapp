@@ -47,7 +47,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
+import { datesAhead, daysBetween, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays, weekdayOf } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
@@ -3090,6 +3090,65 @@ check('a plan that changed on Tuesday has not changed every Tuesday', () => {
   // Today's card reads the same source, so the strip and the list can never
   // disagree about what Monday holds.
   assert.equal(todaysDayId(swapped, '2026-08-17'), 'ppl-pull')
+})
+
+check('moving one session moves one session, and nothing on the way', () => {
+  // Arrows that traded a card with the card beside it could only walk a
+  // session one slot at a time, and walking Monday to Friday that way is four
+  // swaps that shuffle everything in between. Picking the day outright is one
+  // exchange between two dates.
+  const week = {
+    schedule: [null, 'ppl-push', 'ppl-pull', null, 'ppl-legs', 'ppl-push', null],
+  }
+  const today = '2026-08-17' // a Monday
+
+  // Monday's push goes straight to Friday, four days off, in one move.
+  const moved = { ...week, moves: swapDays(week, '2026-08-17', '2026-08-21', today) }
+  assert.equal(dayIdFor(moved, '2026-08-17'), 'ppl-push', 'Friday\'s session came back here')
+  assert.equal(dayIdFor(moved, '2026-08-21'), 'ppl-push')
+
+  // The days it passed over are exactly as the pattern left them.
+  assert.equal(dayIdFor(moved, '2026-08-18'), 'ppl-pull')
+  assert.equal(dayIdFor(moved, '2026-08-19'), null)
+  assert.equal(dayIdFor(moved, '2026-08-20'), 'ppl-legs')
+
+  // A move to a rest day several days out is the same one exchange.
+  const rested = { ...week, moves: swapDays(week, '2026-08-18', '2026-08-22', today) }
+  assert.equal(dayIdFor(rested, '2026-08-18'), null)
+  assert.equal(dayIdFor(rested, '2026-08-22'), 'ppl-pull')
+  assert.equal(dayIdFor(rested, '2026-08-20'), 'ppl-legs', 'a day in between changed')
+
+  // Every later week keeps every weekday it was given. This is the promise the
+  // dated map exists to make, checked across a month rather than one Tuesday.
+  for (const later of ['2026-08-24', '2026-08-31', '2026-09-07', '2026-09-14']) {
+    for (let i = 0; i < 7; i += 1) {
+      const d = new Date(later + 'T00:00:00')
+      d.setDate(d.getDate() + i)
+      const iso = d.toISOString().slice(0, 10)
+      assert.equal(dayIdFor(moved, iso), scheduleOf(week)[weekdayOf(iso)] ?? null, `${iso} drifted`)
+      assert.equal(dayIdFor(rested, iso), scheduleOf(week)[weekdayOf(iso)] ?? null, `${iso} drifted`)
+    }
+  }
+
+  // The picker offers every date ahead, rest days included, because an empty
+  // day is the likeliest place a session is going.
+  const ahead = datesAhead(today, 14)
+  assert.equal(ahead.length, 14)
+  assert.equal(ahead[0], today)
+  assert.equal(ahead[13], '2026-08-30')
+  assert.ok(ahead.includes('2026-08-19'), 'the rest day is not offered')
+  assert.equal(daysBetween('2026-08-17', '2026-08-21'), 4)
+
+  // The list reaches as far as the picker does, so nothing somebody can see on
+  // the Calendar tab is somewhere they cannot send a session.
+  const last = upcomingDays(week, today).at(-1)!.date
+  assert.ok(datesAhead(today, Math.min(28, Math.max(14, daysBetween(today, last) + 1))).includes(last))
+
+  // And the card carries one way to move, not two, so there is one story about
+  // how a session changes days.
+  const list = readFileSync(new URL('../components/UpcomingList.tsx', import.meta.url), 'utf8')
+  assert.ok(list.includes('onMove(u.date)'), 'the card lost its way to move')
+  assert.ok(!list.includes('&uarr;') && !list.includes('&darr;'), 'the nudge arrows came back')
 })
 
 void (async () => {
