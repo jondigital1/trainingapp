@@ -306,10 +306,12 @@ export async function saveBodyWeight(
   if (res.error) throw res.error
 }
 
-export async function deleteBodyWeight(sb: SupabaseClient, userId: string, date: string) {
-  const res = await sb.from('body_weights').delete().eq('user_id', userId).eq('date', date)
-  if (res.error) throw res.error
-}
+// There is no deleteBodyWeight, on purpose. A mistyped weight is fixed by
+// weighing again the same day: the table is keyed on (user_id, date) and the
+// save upserts, so the second reading replaces the first. The only case it
+// could not cover is a reading for a day nobody actually weighed, which the
+// seven day average dilutes anyway. A function nobody calls reads as a plan
+// somebody abandoned, and this was not a plan.
 
 // Takes everything away: every row this app owns, then the account itself.
 // The user id comes from the session inside the function rather than from
