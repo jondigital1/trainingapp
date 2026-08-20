@@ -300,6 +300,20 @@ const NUMBERS: KnowledgeEntry[] = [
 
 const BASICS: KnowledgeEntry[] = [
   {
+    id: 'basic-cooldown',
+    q: 'Should I cool down after lifting?',
+    group: 'The basics',
+    aliases: ['cool down', 'cooldown', 'stretch after', 'walk after training', 'soreness prevention'],
+    a: 'You can, and it will not do much. Cooling down and stretching afterwards has been tested against doing nothing repeatedly and does not meaningfully reduce next day soreness or speed recovery. If a few minutes of easy walking helps you feel better or clears your head, do it because you like it, which is a good enough reason. It is not a step you are skipping.',
+  },
+  {
+    id: 'basic-why-no-warmup-row',
+    q: 'Why is there no warm up in my session?',
+    group: 'The basics',
+    aliases: ['no warm up listed', 'warm up row', 'missing warm up', 'where is the warm up'],
+    a: 'Because a warm up is not sets you log, it is what you do before the first one counts. A few minutes of easy movement, then two or three ramping sets of the movement you are about to do, and nothing after that needs its own row. The time it takes is counted: the estimate on a session already includes it, so the number you see is what the session really costs you rather than what it would cost if you skipped getting ready.',
+  },
+  {
     id: 'basic-core-what-for',
     q: 'What is core training actually for?',
     group: 'The basics',

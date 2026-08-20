@@ -384,6 +384,56 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## The rest table was arguing with the app's own advice
+
+Sixty to ninety seconds between sets for growth is what every gym repeated for
+twenty years, and it is what the muscle column said: 120, 90, 60, 45, 30. It
+did not survive being tested. Resting three minutes beats resting one for
+growth, for an unglamorous reason: you keep more reps at the same weight on
+the later sets, so the session does more work. Short rest makes a session feel
+harder while doing less.
+
+The check protecting those numbers said so out loud. Two minutes at the top
+rather than the three the studies use, because a three minute stand around is
+not the shape of a session somebody trains most days. That was a deliberate
+trade of the evidence against the clock, and it was made invisibly, because
+Lifty's own answer on resting has always said two to three minutes on big
+lifts and that too little rest quietly costs reps. The app was arguing with
+itself and only one side of the argument was written down.
+
+The clock is handled honestly now, by the estimate and by the ceiling, so the
+rest table does not have to lie to keep sessions short. Strength still rests
+longest and endurance least; the gap is just far narrower than the folklore
+had it. A check now asserts that what the timer does and what Lifty says are
+the same thing.
+
+## Getting ready was being counted as free
+
+The estimate assumed you walk in and start working. The app's own answer says a
+few minutes of easy movement and then two or three ramping sets of the first
+exercise, and then the number underneath quoted a time that assumed none of
+that happened.
+
+It is counted now, on the first serious movement only, because later work on
+the same muscles needs little or nothing. A cardio session gets neither: the
+first ten minutes of an easy run is the warm up.
+
+Warm up sets still do not get rows. A warm up is not sets you log, it is what
+you do before the first one counts, and giving it a row somebody ticks off
+would put it in the volume totals where it does not belong. There is no cool
+down either, and that is not an omission: cooling down and stretching
+afterwards has been tested against doing nothing and does not meaningfully
+reduce soreness or speed recovery. Both now have answers saying so, because a
+missing feature that was left out on purpose should say why.
+
+Counting it honestly changed what fits. A full body hour holds five or six
+movements now rather than eight, and a leg day does not fit in thirty minutes
+at all. The app says so instead of pretending, and a session may run over its
+ceiling by exactly the things reserved on purpose: the three movement floor and
+the core finisher. Core sits last, which made it the first thing cut, and it is
+also the cheapest thing in the session, so a day written with core in it keeps
+some.
+
 ## More time buys sets, not exercises
 
 The follow up question was whether the brackets should be wider. They should

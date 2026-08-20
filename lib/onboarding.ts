@@ -615,6 +615,16 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     if (fits([...trimmed, one], profile, goal)) trimmed.push(one)
   }
 
+  // Core is the finisher, so it sits last and was therefore always the first
+  // thing cut. It is also the cheapest thing in the session: three sets of a
+  // plank rests forty five seconds and costs about three minutes. A day that
+  // was written with core in it keeps some, because losing it is a decision
+  // nobody made and it is what the templates were reaching for.
+  if (!trimmed.some((i) => groupOf(i.name) === 'Core')) {
+    const core = ordered.find((i) => groupOf(i.name) === 'Core')
+    if (core) trimmed.push(core.superset ? { ...core, superset: null } : core)
+  }
+
   // A session is a session. If the clock is so tight that almost nothing fits,
   // three movements go in anyway and the estimate says what it really costs,
   // rather than the app quietly handing back a day with one exercise on it.
@@ -773,6 +783,12 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
   const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
   const used = new Set<string>()
   const out: PlannedItem[] = []
+  // Every group asked for gets its first movement before any group gets its
+  // second, and that first pass ignores the clock. Somebody who says chest,
+  // back, quads and shoulders and has half an hour should come away having
+  // touched all four, over the estimate if it comes to it, rather than with a
+  // tidy thirty minutes that never reached their shoulders.
+  let round = 0
   while (out.length < CEILING) {
     let picked = false
     for (const pool of pools) {
@@ -780,12 +796,13 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
       const next = pool.find((e) => !used.has(e.name))
       if (!next) continue
       const item = { name: next.name, type: next.type, superset: null }
-      if (out.length >= 3 && !fits([...out, item], profile, goal)) return emphasise(out, focusOf(profile))
+      if (round > 0 && !fits([...out, item], profile, goal)) return emphasise(out, focusOf(profile))
       used.add(next.name)
       out.push(item)
       picked = true
     }
     if (!picked) break
+    round += 1
   }
 
   return emphasise(out, focusOf(profile))

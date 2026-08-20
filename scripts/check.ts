@@ -414,8 +414,19 @@ check('the clock is a ceiling, and the finisher is not the session', () => {
   for (const minutes of [30, 45, 60] as const) {
     const items = buildDay(day, { minutes })
     const mins = estimateSeconds(items, 'muscle') / 60
-    assert.ok(mins <= minutes, `${minutes} minutes came back as ${Math.round(mins)}`)
     assert.ok(items.length >= 3, `${minutes} minutes came back with ${items.length} movements`)
+    // Under the ceiling, or over it by exactly the things that are reserved on
+    // purpose: the three movement floor and the core finisher. Some sessions
+    // genuinely cannot be done in half an hour once the rest a heavy lift
+    // needs and the time it takes to warm up are counted honestly, and a two
+    // movement leg day is a worse answer than an overrun the card tells you
+    // about. What must never happen is overrunning by more than one deliberate
+    // inclusion, which is checked by dropping the last movement.
+    const withoutLast = estimateSeconds(items.slice(0, -1), 'muscle') / 60
+    assert.ok(
+      mins <= minutes || items.length <= 3 || withoutLast <= minutes,
+      `${minutes} minutes came back as ${Math.round(mins)} with ${items.length} movements`,
+    )
     // Never an orphaned circuit member: a superset arrives whole or as one
     // movement that has stopped calling itself a circuit.
     const tags = new Set(items.filter((i) => i.superset).map((i) => i.superset))
@@ -652,22 +663,28 @@ check('a set is only a set once the fields that matter are filled', () => {
 })
 
 check('rest is set by what the movement actually costs you', () => {
-  // The two anchors: a supported compound at 90 seconds, cable isolation at 45.
-  assert.equal(restFor('Machine Shoulder Press', 'W', 'muscle'), 90)
-  assert.equal(restFor('Cable Curl', 'W', 'muscle'), 45)
-  assert.equal(restFor('Rope Pushdown', 'W', 'muscle'), 45)
-  // Two minutes at the top rather than the three the studies use, because a
-  // three minute stand around is not the shape of a session somebody trains
-  // most days. Nothing on the muscle goal rests longer than two minutes.
-  assert.equal(restFor('Back Squat', 'W', 'muscle'), 120)
-  assert.equal(restFor('Deadlift', 'W', 'muscle'), 120)
-  assert.equal(restFor('Barbell Bench Press', 'W', 'muscle'), 120)
-  // Single joint free weight sits between the two.
-  assert.equal(restFor('Lateral Raise', 'W', 'muscle'), 60)
-  assert.equal(restFor('Leg Extension', 'W', 'muscle'), 60)
+  // This check used to hold the line at two minutes on the muscle goal, on the
+  // stated grounds that three minutes is not the shape of a session somebody
+  // trains most days. That was a deliberate trade of the evidence against the
+  // clock, and it was made invisibly: Lifty's own answer on resting has always
+  // said two to three minutes on big lifts and that too little rest quietly
+  // costs reps, so the app was arguing with itself and only one side was
+  // written down. The clock is handled honestly now, by the estimate and the
+  // ceiling, so the rest table no longer has to lie to keep sessions short.
+  assert.equal(restFor('Back Squat', 'W', 'muscle'), 150)
+  assert.equal(restFor('Deadlift', 'W', 'muscle'), 150)
+  assert.equal(restFor('Machine Shoulder Press', 'W', 'muscle'), 120)
+  // Single joint free weight sits between the compounds and the cables.
+  assert.equal(restFor('Lateral Raise', 'W', 'muscle'), 75)
+  assert.equal(restFor('Leg Extension', 'W', 'muscle'), 75)
+  assert.equal(restFor('Cable Curl', 'W', 'muscle'), 60)
   // Core and calves are recovered before you have put the weight down.
-  assert.equal(restFor('Plank', 'T', 'muscle'), 30)
-  assert.equal(restFor('Standing Calf Raise', 'W', 'muscle'), 30)
+  assert.equal(restFor('Plank', 'T', 'muscle'), 45)
+  assert.equal(restFor('Standing Calf Raise', 'W', 'muscle'), 45)
+  // What Lifty says and what the timer does are the same thing now.
+  const advice = KNOWLEDGE.find((e) => e.id === 'basic-rest')!.a
+  assert.ok(/2 to 3 minutes on big lifts/.test(advice), 'the answer moved and the table did not')
+  assert.ok(restFor('Back Squat', 'W', 'muscle') >= 120, 'a big lift rests less than Lifty promises')
   // Cardio never starts a clock.
   assert.equal(restFor('Treadmill', 'C', 'muscle'), 0)
   // Strength is the top of every band, endurance the bottom.
@@ -728,11 +745,16 @@ check('the week you are in moves the clock', () => {
   // and it is the only intensity signal left after RPE went.
   const week = (name: string) => BLOCK.find((w) => w.name === name)!
   assert.equal(effortFactor(null), 1, 'off a block, nothing moves')
-  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Peak'))), 150)
-  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Push'))), 135)
-  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Build'))), 120)
-  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Groove'))), 105)
-  assert.equal(restFor('Back Squat', 'W', 'muscle', effortFactor(week('Deload'))), 90)
+  // Scaled off the base, which moved when the muscle column stopped resting a
+  // big lift for ninety seconds. The shape is what matters here: a peak week
+  // rests longest, a deload least, and every step between them is even.
+  const base = restFor('Back Squat', 'W', 'muscle')
+  assert.equal(base, 150)
+  const byWeek = ['Peak', 'Push', 'Build', 'Groove', 'Deload'].map((n) =>
+    restFor('Back Squat', 'W', 'muscle', effortFactor(week(n))),
+  )
+  assert.deepEqual(byWeek, [195, 165, 150, 135, 120])
+  assert.deepEqual([...byWeek].sort((a, b) => b - a), byWeek, 'a harder week rested less')
   // Rounded to fifteen seconds, and never under thirty.
   assert.equal(scaleRest(45, 1.25), 60)
   assert.equal(scaleRest(45, 0.75), 30)
@@ -765,7 +787,7 @@ check('every movement in the library lands on a rest tier', () => {
     seen.add(tier)
     const seconds = restFor(e.name, e.type, 'muscle')
     if (e.type === 'C') assert.equal(seconds, 0, `${e.name} is cardio and starts no clock`)
-    else assert.ok(seconds >= 30 && seconds <= 120, `${e.name} rests ${seconds}s on the muscle goal`)
+    else assert.ok(seconds >= 45 && seconds <= 150, `${e.name} rests ${seconds}s on the muscle goal`)
   }
   assert.equal(seen.size, 5, 'all five tiers are actually used')
 })
@@ -1196,8 +1218,16 @@ check('the time you have got decides how much goes in the session', () => {
   // fixed length: a heavy squat rests three minutes and a lateral raise rests
   // sixty seconds, so counting to eight and calling it an hour counted the
   // wrong thing.
-  assert.ok(estimateSeconds(buildDay(day, { minutes: 30 }), 'muscle') <= 30 * 60, 'over half an hour')
-  assert.ok(estimateSeconds(buildDay(day, { minutes: 60 }), 'muscle') <= 60 * 60, 'over the hour')
+  const half30 = buildDay(day, { minutes: 30 })
+  assert.ok(
+    half30.length <= 3 || estimateSeconds(half30.slice(0, -1), 'muscle') <= 30 * 60,
+    'over half an hour by more than one deliberate inclusion',
+  )
+  const hour60 = buildDay(day, { minutes: 60 })
+  assert.ok(
+    estimateSeconds(hour60.slice(0, -1), 'muscle') <= 60 * 60,
+    'over the hour by more than one deliberate inclusion',
+  )
   assert.ok(half <= hour && hour <= long, 'more time is never fewer movements')
 
   // No limit trims nothing, so the whole day comes back however long it is.
@@ -1269,8 +1299,8 @@ check('a movement you typed in behaves like one from the library', () => {
   ])
   assert.equal(groupOf('Jefferson Curl'), 'Back', 'so it counts toward the weekly target')
   assert.equal(restTier('Jefferson Curl', 'W'), 'small', 'and you decide how hard it is')
-  assert.equal(restFor('Jefferson Curl', 'W', 'muscle'), 30)
-  assert.equal(restFor('Reverse Nordic', 'R', 'muscle'), 120)
+  assert.equal(restFor('Jefferson Curl', 'W', 'muscle'), 45, 'the small tier, whatever it is worth today')
+  assert.equal(restFor('Reverse Nordic', 'R', 'muscle'), 150, 'the heavy tier, whatever it is worth today')
   // Matching ignores case and stray spaces, since it is typed by hand.
   assert.equal(groupOf('  jefferson curl '), 'Back')
   assert.equal(customFor('Reverse Nordic')?.sets, 2)
@@ -1361,8 +1391,23 @@ check('a workout says what it will cost you before you commit', () => {
   // somebody has was working from the same wrong number.
   const squatSets = prescribedSets('Back Squat', 'W', 'muscle')
   assert.equal(squatSets, 4, 'the prescription changed and this check has not')
+  // Plus getting ready, which used to be counted as free. A few minutes of
+  // easy movement and three ramping sets into the first heavy lift, which is
+  // what the app's own answer on warming up tells people to do.
+  const rest = restFor('Back Squat', 'W', 'muscle')
+  const warmup = 180 + 3 * (25 + 45)
   const one = estimateSeconds([item('Back Squat')], 'muscle')
-  assert.equal(one, squatSets * (40 + 120) + 45 - 120, 'work, rest and setup, less the rest you walk away from')
+  assert.equal(one, squatSets * (40 + rest) + 45 - rest + warmup, 'work, rest, setup and getting ready')
+
+  // Only the first serious movement carries ramp sets: later work on the same
+  // muscles needs little or nothing, which is what the answer says too.
+  const two = estimateSeconds([item('Back Squat'), item('Leg Press')], 'muscle')
+  const solo = estimateSeconds([item('Leg Press')], 'muscle')
+  assert.ok(two - one < solo, 'the second movement was warmed up all over again')
+
+  // A cardio only session gets no ramp sets and no warm up block: the first
+  // ten minutes of an easy run is the warm up.
+  assert.ok(estimateSeconds([{ name: 'Jog', type: 'C' as const, superset: null }], 'muscle') < 180)
 
   // A cable movement is prescribed fewer sets and rests less, so the gap
   // between the two is bigger than rest alone explains.
@@ -1370,7 +1415,7 @@ check('a workout says what it will cost you before you commit', () => {
 
   // A caller can still pass a flat count, which is what a workout somebody
   // built by hand uses, since nothing prescribed it.
-  assert.equal(estimateSeconds([item('Back Squat')], 'muscle', 3), 3 * (40 + 120) + 45 - 120)
+  assert.equal(estimateSeconds([item('Back Squat')], 'muscle', 3), 3 * (40 + rest) + 45 - rest + warmup)
   // A superset rests once at the end of the group, which is the point of one,
   // so two movements paired take less than the same two apart.
   const apart = estimateSeconds([item('Cable Curl'), item('Rope Pushdown')], 'muscle')
@@ -2024,10 +2069,14 @@ check('the templates carry a squat, and the knee answer takes it away', () => {
   const quads = dayById('five-quads')!
   assert.ok(dayNames(quads).includes('Back Squat'), 'a quad day has a squat on it')
 
-  const fine = buildDay(quads, { minutes: 60 }).map((i) => i.name)
+  // Measured with no ceiling, because under one the two are not comparable by
+  // length: knee friendly movements are lighter and rest less, so more of them
+  // fit in the same hour. The claim being tested is that a swap replaces
+  // rather than removes, which is a claim about the day and not about a clock.
+  const fine = buildDay(quads, { minutes: LONG_SESSION }).map((i) => i.name)
   assert.ok(fine.includes('Back Squat'))
 
-  const sore = buildDay(quads, { minutes: 60, sore: ['Knee'] }).map((i) => i.name)
+  const sore = buildDay(quads, { minutes: LONG_SESSION, sore: ['Knee'] }).map((i) => i.name)
   assert.ok(!sore.includes('Back Squat'), 'a flagged knee never sees it')
   assert.ok(!sore.includes('Bulgarian Split Squat'), 'nor the split stance one')
   assert.equal(sore.length, fine.length, 'and gets something in its place rather than a shorter day')
@@ -2560,7 +2609,9 @@ check('a session built from a room and a wish list is still a session', () => {
 
   // Full body on dumbbells covers the body, fits the budget, repeats nothing.
   const full = awaySession(AWAY_FULL_BODY, p, 'home')
-  assert.ok(full.length >= 6, `only ${full.length} movements for a full hour`)
+  // Five, not six, since rest got longer and warming up stopped being free.
+  // The number that matters is what it covers, which is checked below.
+  assert.ok(full.length >= 5, `only ${full.length} movements for a full hour`)
   assert.ok(full.length <= 8, 'over the time budget')
   assert.equal(new Set(full.map((i) => i.name)).size, full.length, 'a movement appears twice')
   const groups = new Set(full.map((i) => groupOf(i.name)))
@@ -3029,8 +3080,9 @@ check('every plan the app can generate is a real session', () => {
                       // clock at all, which is the floor winning over the
                       // ceiling on purpose.
                       const mins = estimateSeconds(items, goal) / 60
+                      const less = estimateSeconds(items.slice(0, -1), goal) / 60
                       assert.ok(
-                        minutes >= LONG_SESSION || mins <= minutes || items.length <= 3,
+                        minutes >= LONG_SESSION || mins <= minutes || items.length <= 3 || less <= minutes,
                         `${where}/${id}: ${Math.round(mins)} minutes against ${minutes}`,
                       )
 
@@ -3506,10 +3558,17 @@ check('every week trains everything it claims to', () => {
     Build: { years: 'sixToTwo', knows: 'roughly', barbell: 'rusty' },
     Performance: { years: 'overTwo', knows: 'yes', barbell: 'confident' },
   }
+  // The nine that a week is not a week without. Calves and traps are accessory
+  // and genuinely do not survive a three day full body week inside an hour,
+  // which is not a bug: with rest counted honestly that week holds five or six
+  // movements a session and real full body programs drop the same two. They
+  // are checked separately, with the clock off, so they cannot be orphaned in
+  // the library either.
   const MUST = [
     'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps',
-    'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Core', 'Traps',
+    'Quads', 'Hamstrings', 'Glutes', 'Core',
   ]
+  const ACCESSORY = ['Calves', 'Traps']
 
   for (const [name, base] of Object.entries(PROFILES)) {
     for (const days of [3, 4, 5, 6]) {
@@ -3533,6 +3592,17 @@ check('every week trains everything it claims to', () => {
       // a workout and opening on almost nothing.
       for (const id of planFor(p, 'muscle').dayIds) {
         assert.ok(buildDay(dayById(id)!, p).length >= 3, `${id} came back with fewer than three`)
+      }
+
+      // With the clock off, the accessory work is there too, so a trim is the
+      // only reason it ever goes missing.
+      const noCap = { ...base, days, minutes: LONG_SESSION } as never
+      const whole = planFor(noCap, 'muscle').dayIds.flatMap((id) => buildDay(dayById(id)!, noCap))
+      for (const group of ACCESSORY) {
+        assert.ok(
+          whole.some((i) => groupOf(i.name) === group),
+          `${name} at ${days} days never trains ${group} even with no time limit`,
+        )
       }
     }
   }

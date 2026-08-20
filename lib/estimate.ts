@@ -1,4 +1,4 @@
-import { restFor } from './rest'
+import { restFor, restTier } from './rest'
 import { prescribedSets } from './prescribe'
 import type { CustomWorkoutItem, Goal } from './types'
 
@@ -17,6 +17,18 @@ import type { CustomWorkoutItem, Goal } from './types'
 // session that says 47 minutes is claiming to know something it does not.
 const WORK_SECONDS = 40
 const SETUP_SECONDS = 45
+
+// Getting ready, which the estimate used to pretend was free. The app's own
+// answer on warming up says a few minutes of easy movement and then two or
+// three ramping sets of the first exercise, and then the number underneath it
+// quoted a time that assumed none of that happened. A leg day is not forty
+// nine minutes if you spend seven of them warming up first.
+//
+// Later movements for the same muscles need little or nothing, so only the
+// first serious movement of the session carries ramp sets.
+const WARMUP_SECONDS = 180
+const RAMP_SECONDS = 25 + 45
+const RAMPS: Partial<Record<string, number>> = { heavy: 3, compound: 2 }
 
 // How many sets each movement is actually going to take, which is not three.
 // The app prescribes five for a heavy squat, four for a compound and three for
@@ -54,7 +66,16 @@ export function estimateSeconds(
   }
   // The last rest of the session is one you do not take.
   const lastRest = Math.max(...groups[groups.length - 1].map((i) => restFor(i.name, i.type, goal)))
-  return Math.max(0, total - lastRest)
+
+  // Easy movement to start, plus ramp sets on the first thing worth ramping
+  // into. Cardio only sessions get neither: the first ten minutes of an easy
+  // run is the warm up.
+  const lifting = items.filter((i) => i.type !== 'C')
+  const first = lifting[0]
+  const ramps = first ? (RAMPS[restTier(first.name, first.type)] ?? 0) : 0
+  const warmup = lifting.length ? WARMUP_SECONDS + ramps * RAMP_SECONDS : 0
+
+  return Math.max(0, total - lastRest + warmup)
 }
 
 export function fmtEstimate(seconds: number): string | null {

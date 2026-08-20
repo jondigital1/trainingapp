@@ -122,9 +122,21 @@ export function restTier(name: string, type: SetType): RestTier {
 
 // Seconds per tier, per goal. Strength needs to be able to repeat the effort,
 // so it sits at the top of every band; endurance work is short by definition.
+// The muscle column used to read 120, 90, 60, 45, 30, which is the sixty to
+// ninety seconds for hypertrophy rule that every gym repeated for twenty
+// years. It did not survive being tested. Resting three minutes between sets
+// beats resting one for growth, and the reason is unglamorous: you keep more
+// reps at the same weight on the later sets, so the session does more work.
+// Short rest makes a session feel harder while doing less.
+//
+// Strength still rests longest, because a near maximal single needs the
+// nervous system back as well as the muscle, and endurance still rests least,
+// because being able to keep going with less recovery is the goal there rather
+// than a side effect. The gap between the three is real; it is just far
+// narrower than the folklore had it.
 const REST: Record<Goal, Record<RestTier, number>> = {
-  strength: { heavy: 180, compound: 120, isolation: 90, cable: 60, small: 45 },
-  muscle: { heavy: 120, compound: 90, isolation: 60, cable: 45, small: 30 },
+  strength: { heavy: 180, compound: 150, isolation: 90, cable: 60, small: 45 },
+  muscle: { heavy: 150, compound: 120, isolation: 75, cable: 60, small: 45 },
   endurance: { heavy: 75, compound: 60, isolation: 45, cable: 30, small: 30 },
 }
 
