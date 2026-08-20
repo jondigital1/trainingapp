@@ -4,7 +4,7 @@ import { dayById } from '@/lib/onboarding'
 import {
   scheduledDays,
   todaysDayId,
-  scheduleOf,
+  dayIdFor,
   trainedOn,
   WEEKDAYS,
   weekdayOf,
@@ -55,7 +55,7 @@ export default function TodayCard({
     return {
       iso,
       label: WEEKDAYS[weekday],
-      dayId: scheduleOf(profile)[weekday] ?? null,
+      dayId: dayIdFor(profile, iso),
       done: trainedOn(workouts, iso),
       today: iso === today,
     }

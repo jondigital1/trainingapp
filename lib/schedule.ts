@@ -50,9 +50,43 @@ export function weekStart(iso: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+// What a given date asks of you: the one off move if there is one, otherwise
+// the weekly pattern. Every screen that draws a day goes through here, so the
+// card, the week strip and the list can never disagree about what Thursday
+// holds.
+export function dayIdFor(profile: Profile, iso: string): string | null {
+  const moved = profile.moves?.[iso]
+  if (moved !== undefined) return moved || null
+  return scheduleOf(profile)[weekdayOf(iso)] ?? null
+}
+
 // What today asks of you, or null on a rest day and when nothing is scheduled.
 export function todaysDayId(profile: Profile, today: string): string | null {
-  return scheduleOf(profile)[weekdayOf(today)] ?? null
+  return dayIdFor(profile, today)
+}
+
+// Trading what two dates hold. Both directions at once, so moving leg day onto
+// Thursday puts Thursday's session back on the day leg day came from rather
+// than quietly deleting it, and moving onto a rest day leaves a rest day
+// behind rather than a duplicate.
+export function swapDays(profile: Profile, a: string, b: string, today: string): Record<string, string> {
+  const moves = { ...(profile.moves ?? {}) }
+  const first = dayIdFor(profile, a)
+  const second = dayIdFor(profile, b)
+  moves[a] = second ?? ''
+  moves[b] = first ?? ''
+
+  // A move that puts a date back on its pattern is not a move, so it stops
+  // being stored: the map holds exceptions, and an exception that matches the
+  // rule is just the rule.
+  for (const date of [a, b]) {
+    if (moves[date] === (scheduleOf(profile)[weekdayOf(date)] ?? '')) delete moves[date]
+  }
+
+  // Yesterday's exceptions are history the pattern has already moved past, so
+  // they are dropped rather than accumulating in the profile forever.
+  for (const date of Object.keys(moves)) if (date < today) delete moves[date]
+  return moves
 }
 
 // Laying a plan across the week, as a starting point somebody can then move
@@ -103,13 +137,12 @@ export interface UpcomingDay {
 }
 
 export function upcomingDays(profile: Profile, today: string, count = 10, horizon = 28): UpcomingDay[] {
-  const schedule = scheduleOf(profile)
   const out: UpcomingDay[] = []
   for (let i = 0; i < horizon && out.length < count; i += 1) {
     const d = new Date(today + 'T00:00:00')
     d.setDate(d.getDate() + i)
     const iso = d.toISOString().slice(0, 10)
-    const dayId = schedule[weekdayOf(iso)]
+    const dayId = dayIdFor(profile, iso)
     if (dayId) out.push({ date: iso, dayId })
   }
   return out

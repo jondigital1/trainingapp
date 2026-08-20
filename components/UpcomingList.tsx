@@ -26,11 +26,15 @@ export default function UpcomingList({
   workouts,
   today,
   onPeek,
+  onSwap,
 }: {
   profile: Profile
   workouts: Workout[]
   today: string
   onPeek: (dayId: string) => void
+  // Trade what two dates hold. Plans change, and a schedule you cannot bend
+  // without editing the pattern it repeats is a schedule people abandon.
+  onSwap: (a: string, b: string) => void
 }) {
   const upcoming = upcomingDays(profile, today).map((u) => ({
     ...u,
@@ -57,17 +61,18 @@ export default function UpcomingList({
         What is coming
       </h3>
       <div className="mt-2 flex flex-col gap-2">
-        {upcoming.map((u) => {
+        {upcoming.map((u, i) => {
           const its = dayById(u.dayId)
           // "Thu 21 Aug" is the app's date everywhere else; the weekday is
           // spelled out here because a card has the room and a day you are
           // planning around deserves its name.
           const when = `${WEEKDAY_NAMES[weekdayOf(u.date)]} ${fmtDate(u.date).slice(4)}`
+          const before = upcoming[i - 1]
+          const after = upcoming[i + 1]
           return (
-            <button
+            <div
               key={u.date}
-              onClick={() => onPeek(u.dayId)}
-              className={`w-full rounded-2xl bg-card p-4 text-left ring-1 ${
+              className={`w-full rounded-2xl bg-card p-4 ring-1 ${
                 u.today ? 'ring-[1.5px] ring-accent-ink' : 'ring-edge'
               }`}
             >
@@ -90,12 +95,38 @@ export default function UpcomingList({
               <p className="mt-1 truncate font-display text-[17px] font-semibold tracking-tight">
                 {its?.name ?? ''}
               </p>
-              {/* Said out loud, because the whole card being tappable is not an
-                  affordance anybody can see. */}
-              <p className="mt-2 text-[12.5px] font-extrabold text-accent-ink">
-                See the exercises &rarr;
-              </p>
-            </button>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                {/* Said out loud, because the whole card being tappable is not
+                    an affordance anybody can see. */}
+                <button onClick={() => onPeek(u.dayId)} className="text-[12.5px] font-extrabold text-accent-ink">
+                  See the exercises &rarr;
+                </button>
+                {/* Swapping with a neighbour rather than dragging, because a
+                    drag on a phone fights the scroll and this list is the
+                    thing you scroll. Two taps move a session a week, and a
+                    session already done stays where it happened. */}
+                {u.done ? null : (
+                  <span className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => before && onSwap(u.date, before.date)}
+                      disabled={!before || before.done}
+                      aria-label={`Move ${its?.name ?? 'this'} to ${before ? fmtDate(before.date) : 'the day before'}`}
+                      className="rounded-lg px-2.5 py-1 text-sm text-muted ring-1 ring-edge disabled:opacity-30"
+                    >
+                      &uarr;
+                    </button>
+                    <button
+                      onClick={() => after && onSwap(u.date, after.date)}
+                      disabled={!after}
+                      aria-label={`Move ${its?.name ?? 'this'} to ${after ? fmtDate(after.date) : 'the day after'}`}
+                      className="rounded-lg px-2.5 py-1 text-sm text-muted ring-1 ring-edge disabled:opacity-30"
+                    >
+                      &darr;
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
           )
         })}
       </div>

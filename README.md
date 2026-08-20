@@ -323,7 +323,26 @@ squares of mostly nothing, decoded rather than read, and it pushed the thing
 somebody actually wants, what am I doing on Thursday, off the bottom of the
 screen.
 
-## Answers the plan asks for reach the plan## Answers the plan asks for reach the plan
+Plans change, so the cards move. Each one carries an arrow up and an arrow
+down that trades it with the card next to it, because the fix for training
+legs on Wednesday this week is to move the day, not to renegotiate the split.
+A completed day cannot be dragged around and nothing can be traded onto it,
+since it already happened.
+
+A move is stored against a date, never against a weekday. Editing the schedule
+to shift one Tuesday would shift every Tuesday for as long as the person keeps
+the app, and life moving a session from Tuesday to Wednesday is a change of
+Tuesday, not a change of plan. So swaps live in a small map of date to session
+that sits over the top of the pattern, and next week comes back exactly as it
+was written. Swap two days back and the exception is deleted rather than
+recorded, because an exception that matches the rule is just the rule, and
+moves in the past are dropped as they age out.
+
+One function answers what is on a given date, and the week strip, today's card
+and the list of what is coming all call it. They cannot disagree about where a
+session went.
+
+## Answers the plan asks for reach the plan
 
 A user answered Not interested on barbell lifts, picked Core as the thing to
 bring up, and got a first session that opened on a barbell bench press with no

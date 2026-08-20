@@ -37,7 +37,7 @@ import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
-import { hasSchedule, scheduledDays, suggestSchedule, todaysDayId } from '@/lib/schedule'
+import { hasSchedule, scheduledDays, suggestSchedule, swapDays, todaysDayId } from '@/lib/schedule'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '@/lib/advance'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -1008,7 +1008,13 @@ export default function App({
               one you are in. Names only: ten sessions with six movements each
               is sixty lines nobody reads, and what is in a day is one tap
               away on the day. */}
-          <UpcomingList profile={profile} workouts={data.workouts} today={now} onPeek={setPeekDay} />
+          <UpcomingList
+            profile={profile}
+            workouts={data.workouts}
+            today={now}
+            onPeek={setPeekDay}
+            onSwap={(a, b) => void saveProfile({ ...profile, moves: swapDays(profile, a, b, now) })}
+          />
 
           {/* Everything behind you. This was its own tab until the calendar
               made that tab redundant as a navigator. Hidden while a session is

@@ -47,7 +47,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { hasSchedule, scheduledDays, scheduleOf, suggestSchedule, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
+import { dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
@@ -3045,6 +3045,51 @@ check('a week nobody was reached is not a week they were nudged', () => {
   const route = readFileSync(new URL('../app/api/nudge/route.ts', import.meta.url), 'utf8')
   assert.match(route, /if \(delivered\) await stampNudge/, 'the job stamps people it never reached again')
   assert.match(route, /delivered = true/, 'nothing ever records a successful delivery')
+})
+
+check('a plan that changed on Tuesday has not changed every Tuesday', () => {
+  // The schedule is a weekly pattern, so editing it to shift one session would
+  // shift that weekday forever. Life moving a workout from Tuesday to
+  // Wednesday this week is not a change of plan, it is a change of Tuesday, so
+  // a move is stored against the date.
+  const mwf = { schedule: [null, 'ppl-push', null, 'ppl-pull', null, 'ppl-legs', null] }
+  const today = '2026-08-17' // a Monday
+
+  // Monday's push and Wednesday's pull trade places, both directions at once,
+  // so nothing is deleted and nothing is duplicated.
+  const moves = swapDays(mwf, '2026-08-17', '2026-08-19', today)
+  const swapped = { ...mwf, moves }
+  assert.equal(dayIdFor(swapped, '2026-08-17'), 'ppl-pull')
+  assert.equal(dayIdFor(swapped, '2026-08-19'), 'ppl-push')
+
+  // Next week is untouched, which is the whole point.
+  assert.equal(dayIdFor(swapped, '2026-08-24'), 'ppl-push')
+  assert.equal(dayIdFor(swapped, '2026-08-26'), 'ppl-pull')
+
+  // Moving onto a rest day leaves a rest day behind rather than a duplicate.
+  const onto = { ...mwf, moves: swapDays(mwf, '2026-08-17', '2026-08-18', today) }
+  assert.equal(dayIdFor(onto, '2026-08-18'), 'ppl-push')
+  assert.equal(dayIdFor(onto, '2026-08-17'), null, 'the day it came from still holds it')
+
+  // Swapping back is not an exception any more, so nothing is stored.
+  const there = swapDays(mwf, '2026-08-17', '2026-08-19', today)
+  const back = swapDays({ ...mwf, moves: there }, '2026-08-17', '2026-08-19', today)
+  assert.deepEqual(back, {}, 'a move that matches the pattern is just the pattern')
+
+  // Yesterday's exceptions are history the pattern has moved past.
+  const stale = swapDays({ ...mwf, moves: { '2026-08-10': 'ppl-legs' } }, '2026-08-17', '2026-08-19', today)
+  assert.ok(!('2026-08-10' in stale), 'old moves accumulate in the profile forever')
+
+  // And the list people actually read agrees with all of it.
+  const upcoming = upcomingDays(swapped, today)
+  assert.equal(upcoming[0].date, '2026-08-17')
+  assert.equal(upcoming[0].dayId, 'ppl-pull')
+  assert.equal(upcoming.find((u) => u.date === '2026-08-19')!.dayId, 'ppl-push')
+  assert.equal(upcoming.find((u) => u.date === '2026-08-24')!.dayId, 'ppl-push', 'next week drifted')
+
+  // Today's card reads the same source, so the strip and the list can never
+  // disagree about what Monday holds.
+  assert.equal(todaysDayId(swapped, '2026-08-17'), 'ppl-pull')
 })
 
 void (async () => {

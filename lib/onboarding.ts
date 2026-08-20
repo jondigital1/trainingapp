@@ -53,6 +53,12 @@ export interface Profile {
   // the session, while there is something left in the tank, and they are the
   // last thing dropped when the clock runs out.
   focus?: string[]
+  // One off moves, by date. The schedule is a weekly pattern, so editing it to
+  // shift one session would shift that weekday forever; life moving a workout
+  // from Tuesday to Wednesday this week is not a change of plan, it is a
+  // change of Tuesday. An empty string means the day was emptied by a move
+  // away from it, which is different from a day the pattern never filled.
+  moves?: Record<string, string>
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still
