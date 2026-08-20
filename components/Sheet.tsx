@@ -42,8 +42,13 @@ export default function Sheet({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60" onClick={onClose}>
+      {/* Capped and centred to the width the rest of the app is capped to.
+          Without this a sheet stretched to the whole viewport on a desktop
+          browser while the page behind it sat in a 32rem column, which turned
+          a seven day picker into seven enormous buttons and an At row wide
+          enough to land a plane on. */}
       <div
-        className="frame-sheet max-h-[88vh] overflow-y-auto rounded-t-3xl bg-card px-4 pb-safe-lg pt-3 ring-1 ring-edge"
+        className="frame-sheet mx-auto max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-card px-4 pb-safe-lg pt-3 ring-1 ring-edge"
         onClick={(e) => e.stopPropagation()}
       >
         {/* The grabber says this is a sheet before you have read a word of it. */}
