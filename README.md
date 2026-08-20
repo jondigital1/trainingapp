@@ -2137,6 +2137,25 @@ to say. Settings explains that switching pounds to kilos is a display choice
 and changes nothing you have logged, which would be a strange promise to make
 at signup when you have logged nothing.
 
+## Drawn twice
+
+Three things were written out in two places, word for word and class for class:
+the weekly check in day picker, in Settings and in the questionnaire; the
+height boxes; and the session card on the start screen, once for your plan and
+once for the same plan rebuilt on hotel kit. None of them was a bug on the day
+it was copied. The rest table showed what they become: a second copy that
+looked identical right up until one of them changed, and then quietly promised
+ninety seconds while the app rested two minutes.
+
+They are one component each now, and a check fails if any of the pairs starts
+drawing its own again.
+
+Signing out also now clears the offline copy. That copy is your whole log,
+written to this browser so a cold open with no signal has something to show.
+Deleting your account cleared it; signing out left it there. The function to
+clear it had been written and nothing ever called it, which is the quietest way
+for a gap to hide.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

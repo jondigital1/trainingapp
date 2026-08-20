@@ -6,8 +6,7 @@ import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
 import { importArtifactData } from '@/lib/importer'
 import { disablePush, enableNudge, enablePush, pushState, type PushState } from '@/lib/push'
-import { NUDGE_DAYS } from '@/lib/nudge'
-import { HOURS } from './NudgeField'
+import { NudgeWhen } from './NudgeField'
 import PasswordChange from './PasswordChange'
 import Sheet from './Sheet'
 import type { Goal, TrainingData } from '@/lib/types'
@@ -241,39 +240,9 @@ export default function SettingsSheet({
             <Switch on={nudge.day !== null} />
           </button>
           {nudge.day !== null ? (
-            <>
-              <div className="mt-2 grid grid-cols-7 gap-1">
-                {NUDGE_DAYS.map((d) => (
-                  <button
-                    key={d.v}
-                    onClick={() => onNudge({ day: d.v, hour: nudge.hour })}
-                    aria-pressed={nudge.day === d.v}
-                    aria-label={d.label}
-                    className={`rounded-lg py-2 text-xs font-bold ${
-                      nudge.day === d.v
-                        ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
-                        : 'surface text-muted ring-1 ring-edge'
-                    }`}
-                  >
-                    {d.short}
-                  </button>
-                ))}
-              </div>
-              <label className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ring-edge">
-                <span className="font-bold">At</span>
-                <select
-                  value={nudge.hour}
-                  onChange={(e) => onNudge({ day: nudge.day, hour: Number(e.target.value) })}
-                  className="bg-transparent text-sm font-bold text-bright outline-none"
-                >
-                  {HOURS.map((h) => (
-                    <option key={h.v} value={h.v}>
-                      {h.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
+            <div className="mt-2">
+              <NudgeWhen value={nudge} onChange={onNudge} />
+            </div>
           ) : null}
           {failed ? <p className="mt-2 text-xs font-bold leading-relaxed text-alert">{failed}</p> : null}
           <p className="mt-2 text-xs leading-relaxed text-muted">

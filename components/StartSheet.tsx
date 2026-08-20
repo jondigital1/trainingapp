@@ -97,23 +97,14 @@ export default function StartSheet({
               // What is actually in it and what it will cost you, so the choice
               // is made before you commit rather than after.
               const items = buildDay(day!, profile)
-              const est = fmtEstimate(estimateSeconds(items, goal))
               return (
-                <button
+                <DayCard
                   key={`${day!.id}-${i}`}
-                  onClick={() => onStart(day!.name, items, true, day!.id)}
-                  className="surface rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-bold">{day!.name}</span>
-                    <span className="num shrink-0 text-xs font-bold text-accent-ink">
-                      {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-faint">
-                    {items.slice(0, 3).map((it) => it.name).join(', ')}
-                  </p>
-                </button>
+                  name={day!.name}
+                  items={items}
+                  goal={goal}
+                  onStart={() => onStart(day!.name, items, true, day!.id)}
+                />
               )
             })}
           </div>
@@ -155,23 +146,14 @@ export default function StartSheet({
                   {planDays.map((day, i) => {
                     const items = awayDayFor(day!, profile, kit)
                     if (!items.length) return null
-                    const est = fmtEstimate(estimateSeconds(items, goal))
                     return (
-                      <button
+                      <DayCard
                         key={`away-${day!.id}-${i}`}
-                        onClick={() => onStart(day!.name, items, true, day!.id)}
-                        className="surface rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-sm font-bold">{day!.name}</span>
-                          <span className="num shrink-0 text-xs font-bold text-accent-ink">
-                            {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 truncate text-xs text-faint">
-                          {items.slice(0, 3).map((it) => it.name).join(', ')}
-                        </p>
-                      </button>
+                        name={day!.name}
+                        items={items}
+                        goal={goal}
+                        onStart={() => onStart(day!.name, items, true, day!.id)}
+                      />
                     )
                   })}
                 </div>
@@ -307,5 +289,41 @@ export default function StartSheet({
         </div>
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * One session, offered. What is in it and what it will cost you, so the choice
+ * is made before you commit rather than after.
+ *
+ * Written out twice, once for the plan and once for the same plan rebuilt on
+ * whatever kit the room has. The two cards said the same thing and had to keep
+ * on saying the same thing, since a quad day is a quad day whether you are in
+ * your gym or a hotel.
+ */
+function DayCard({
+  name,
+  items,
+  goal,
+  onStart,
+}: {
+  name: string
+  items: CustomWorkoutItem[]
+  goal: Goal
+  onStart: () => void
+}) {
+  const est = fmtEstimate(estimateSeconds(items, goal))
+  return (
+    <button onClick={onStart} className="surface rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-bold">{name}</span>
+        <span className="num shrink-0 text-xs font-bold text-accent-ink">
+          {items.length} exercises{est ? ` · ${est}` : ''}
+        </span>
+      </div>
+      <p className="mt-0.5 truncate text-xs text-faint">
+        {items.slice(0, 3).map((it) => it.name).join(', ')}
+      </p>
+    </button>
   )
 }

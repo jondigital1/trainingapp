@@ -35,7 +35,7 @@ import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
 import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
 import { customFor, registerCustoms } from '@/lib/custom'
 import { isLighter, prescribedSets } from '@/lib/prescribe'
-import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
+import { clearSnapshot, looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
@@ -1464,6 +1464,11 @@ export default function App({
           onDeleteAccount={() => void deleteAccount()}
           onSignOut={async () => {
             await flush()
+            // The offline copy is your whole log sitting in this browser. It
+            // was written to survive a dead connection, not to survive you
+            // leaving. Deleting your account already cleared it; signing out
+            // did not, and there was a function for it that nobody called.
+            clearSnapshot(userId)
             await sb.auth.signOut()
             window.location.href = '/login'
           }}

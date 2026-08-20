@@ -4465,6 +4465,46 @@ check('height is asked in the units you said you think in', () => {
   }
 })
 
+check('signing out takes the offline copy with it', () => {
+  // The snapshot is the whole log, written to localStorage so a cold open with
+  // no signal has something to show. Deleting the account cleared it. Signing
+  // out did not, and left it on the device: a function to clear it existed and
+  // nothing called it.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const signOut = app.slice(app.indexOf('onSignOut='))
+  const body = signOut.slice(0, signOut.indexOf('}}'))
+  assert.ok(body.includes('clearSnapshot'), 'signing out leaves the log on the device')
+  assert.ok(body.includes('signOut()'), 'the sign out block stopped signing out')
+})
+
+check('the app does not draw the same thing twice', () => {
+  // Each of these was written out in two places, word for word and class for
+  // class. A second copy is not a bug on the day it is made; it is a bug on the
+  // day one of them changes, and the rest table proved that.
+  const pairs: [string, string, RegExp, string][] = [
+    ['SettingsSheet', 'NudgeField', /grid-cols-7/, 'the weekly check in day picker'],
+    ['Onboarding', 'ProfileSheet', /suffix="ft"/, 'the height boxes'],
+    ['ExercisePicker', 'CustomBuilder', /What do you measure/, 'the create a movement block'],
+  ]
+  for (const [a, bComponent, pattern, what] of pairs) {
+    const one = readFileSync(new URL(`../components/${a}.tsx`, import.meta.url), 'utf8')
+    const two = readFileSync(new URL(`../components/${bComponent}.tsx`, import.meta.url), 'utf8')
+    assert.ok(
+      !(pattern.test(one) && pattern.test(bComponent === a ? one : two)),
+      `${a} and ${bComponent} each draw ${what}`,
+    )
+  }
+
+  // The away from your gym list is the same card as the plan list, because a
+  // quad day is a quad day whichever room you are in.
+  const start = readFileSync(new URL('../components/StartSheet.tsx', import.meta.url), 'utf8')
+  assert.equal(
+    (start.match(/className="surface rounded-\[14px\] px-3\.5 py-3 text-left ring-1 ring-edge"/g) ?? []).length,
+    1,
+    'the start sheet draws the session card more than once',
+  )
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

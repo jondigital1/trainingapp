@@ -18,7 +18,3 @@ export function supabaseAdmin() {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 }
-
-export function adminConfigured(): boolean {
-  return !!process.env.SUPABASE_SERVICE_ROLE_KEY
-}

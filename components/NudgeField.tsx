@@ -56,40 +56,60 @@ export function NudgeField({
 
       {on ? (
         <Field label="When?" hint="Changeable any time in settings.">
-          <div className="grid grid-cols-7 gap-1">
-            {NUDGE_DAYS.map((d) => (
-              <button
-                key={d.v}
-                type="button"
-                onClick={() => onChange({ day: d.v, hour: value.hour })}
-                aria-pressed={value.day === d.v}
-                aria-label={d.label}
-                className={`rounded-lg py-2 text-xs font-bold ${
-                  value.day === d.v
-                    ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
-                    : 'surface text-muted ring-1 ring-edge'
-                }`}
-              >
-                {d.short}
-              </button>
-            ))}
-          </div>
-          <label className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ring-edge">
-            <span className="font-bold">At</span>
-            <select
-              value={value.hour}
-              onChange={(e) => onChange({ day: value.day, hour: Number(e.target.value) })}
-              className="bg-transparent text-sm font-bold text-bright outline-none"
-            >
-              {HOURS.map((h) => (
-                <option key={h.v} value={h.v}>
-                  {h.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <NudgeWhen value={value} onChange={onChange} />
         </Field>
       ) : null}
+    </>
+  )
+}
+
+/**
+ * Which day, and what time. The questionnaire asks it once and Settings asks it
+ * again forever, and the two had a copy each: same seven buttons, same hour
+ * list, same classes. Two answers to when do you want this were never going to
+ * be useful, so there is one.
+ */
+export function NudgeWhen({
+  value,
+  onChange,
+}: {
+  value: NudgePref
+  onChange: (v: NudgePref) => void
+}) {
+  return (
+    <>
+      <div className="grid grid-cols-7 gap-1">
+        {NUDGE_DAYS.map((d) => (
+          <button
+            key={d.v}
+            type="button"
+            onClick={() => onChange({ day: d.v, hour: value.hour })}
+            aria-pressed={value.day === d.v}
+            aria-label={d.label}
+            className={`rounded-lg py-2 text-xs font-bold ${
+              value.day === d.v
+                ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+                : 'surface text-muted ring-1 ring-edge'
+            }`}
+          >
+            {d.short}
+          </button>
+        ))}
+      </div>
+      <label className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ring-edge">
+        <span className="font-bold">At</span>
+        <select
+          value={value.hour}
+          onChange={(e) => onChange({ day: value.day, hour: Number(e.target.value) })}
+          className="bg-transparent text-sm font-bold text-bright outline-none"
+        >
+          {HOURS.map((h) => (
+            <option key={h.v} value={h.v}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </>
   )
 }
