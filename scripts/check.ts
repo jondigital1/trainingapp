@@ -47,7 +47,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { datesAhead, daysBetween, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays, weekdayOf } from '../lib/schedule'
+import { assignDay, datesAhead, daysBetween, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays, weekdayOf } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
@@ -3318,6 +3318,47 @@ check('Lifty does not dress a lookup up as a conversation', () => {
     assert.ok(searchKnowledge(q).some((e) => e.id === 'basic-pain'), `${q} finds nothing about pain`)
   }
   assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
+})
+
+check('any session can be put on any day, from either direction', () => {
+  // Two complaints that turned out to be one hole. The week picker offered
+  // only the days the questionnaire derived, so somebody running Full Body
+  // could not schedule Push even though Push exists and starts fine from the
+  // Start button. And opening a session offered exactly one thing, start it
+  // now, so a session you wanted on Thursday had nowhere to go.
+  const week = { schedule: [null, 'ppl-push', null, null, null, null, null] }
+  const today = '2026-08-17' // a Monday
+
+  // Put a session on a day the pattern left empty.
+  const put = { ...week, moves: assignDay(week, '2026-08-19', 'ppl-legs', today) }
+  assert.equal(dayIdFor(put, '2026-08-19'), 'ppl-legs')
+  // And only that day. Next Wednesday is still a rest day.
+  assert.equal(dayIdFor(put, '2026-08-26'), null, 'every Wednesday changed')
+  assert.equal(dayIdFor(put, '2026-08-24'), 'ppl-push', 'next Monday drifted')
+
+  // Putting something on a day that already holds something replaces it,
+  // rather than stacking two sessions on one date.
+  const over = { ...week, moves: assignDay(week, '2026-08-17', 'ppl-pull', today) }
+  assert.equal(dayIdFor(over, '2026-08-17'), 'ppl-pull')
+  assert.equal(dayIdFor(over, '2026-08-24'), 'ppl-push', 'the pattern was edited, not the date')
+
+  // Assigning what the pattern already said is not an exception worth storing.
+  assert.deepEqual(assignDay(week, '2026-08-17', 'ppl-push', today), {})
+  // And clearing a day back to rest is the same mechanism.
+  const cleared = { ...week, moves: assignDay(week, '2026-08-17', null, today) }
+  assert.equal(dayIdFor(cleared, '2026-08-17'), null)
+  assert.equal(dayIdFor(cleared, '2026-08-24'), 'ppl-push')
+
+  // The week picker offers the whole library, not just the derived plan.
+  const everything = SPLITS.flatMap((s) => s.days)
+  assert.ok(everything.length > 20, 'the library shrank')
+  const card = readFileSync(new URL('../components/ScheduleCard.tsx', import.meta.url), 'utf8')
+  assert.ok(card.includes('SPLITS'), 'the week picker is back to offering only the plan')
+  assert.ok(card.includes('Every other session'), 'nothing opens the rest of the library')
+
+  // And a session you are reading offers somewhere to put it.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.ok(app.includes('Put it on a day'), 'the only way out of a session is still to train')
 })
 
 check('a week nobody laid out does not pretend to be a rest day', () => {

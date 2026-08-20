@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { dayById, type Plan, type Profile } from '@/lib/onboarding'
+import { SPLITS } from '@/lib/templates'
 import { emptySchedule, scheduleOf, suggestSchedule, WEEKDAY_NAMES, WEEKDAYS } from '@/lib/schedule'
 import { Field, Note } from './Form'
 
@@ -19,7 +20,21 @@ export default function ScheduleCard({
 }) {
   const schedule = scheduleOf(profile)
   const [open, setOpen] = useState<number | null>(null)
-  const choices = plan?.dayIds ?? []
+  const [all, setAll] = useState(false)
+
+  // Your plan's own days come first, because they are what the questionnaire
+  // worked out and most people want them. They were also the only thing on
+  // offer, which meant somebody who wanted Push on Monday could not say so:
+  // Push exists, it is startable from the Start button, and it simply was not
+  // schedulable. Every session in the library is here now, behind one tap.
+  const mine = plan?.dayIds ?? []
+  // Grouped under their split rather than each chip carrying its split's name,
+  // because half these names repeat across splits and Hamstrings and Glutes
+  // with 5 Day Split stuck on the end is wider than a phone.
+  const others = SPLITS.map((split) => ({
+    name: split.name,
+    days: split.days.filter((d) => !mine.includes(d.id)),
+  })).filter((s) => s.days.length)
 
   function set(weekday: number, dayId: string | null) {
     const next = [...schedule]
@@ -56,7 +71,8 @@ export default function ScheduleCard({
               </button>
 
               {open === i ? (
-                <div className="flex flex-wrap gap-1.5 border-t border-edge px-3 py-2.5">
+                <>
+                  <div className="flex flex-wrap gap-1.5 border-t border-edge px-3 py-2.5">
                   <button
                     onClick={() => set(i, null)}
                     className={`rounded-full px-3 py-1.5 text-xs ring-1 ${
@@ -67,7 +83,7 @@ export default function ScheduleCard({
                   >
                     Rest
                   </button>
-                  {choices.map((id, n) => {
+                  {mine.map((id, n) => {
                     const d = dayById(id)
                     if (!d) return null
                     return (
@@ -84,12 +100,50 @@ export default function ScheduleCard({
                       </button>
                     )
                   })}
-                  {choices.length === 0 ? (
+                  {/* Everything else the library holds, one tap away rather
+                      than absent. Folded by default so the common case stays
+                      four buttons instead of twenty six. */}
+                  {all ? null : (
+                    <button
+                      onClick={() => setAll(true)}
+                      className="rounded-full px-3 py-1.5 text-xs font-bold text-accent-ink ring-1 ring-accent-ink/45"
+                    >
+                      Every other session
+                    </button>
+                  )}
+                  {mine.length === 0 && !all ? (
                     <span className="text-xs text-muted">
                       Answer the questionnaire and your sessions appear here.
                     </span>
                   ) : null}
-                </div>
+                  </div>
+                  {all ? (
+                    <div className="border-t border-edge px-3 py-2.5">
+                      {others.map((split) => (
+                        <div key={split.name} className="mb-2 last:mb-0">
+                          <p className="text-[10px] font-extrabold uppercase tracking-[1.5px] text-faint">
+                            {split.name}
+                          </p>
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {split.days.map((d) => (
+                              <button
+                                key={d.id}
+                                onClick={() => set(i, d.id)}
+                                className={`max-w-full truncate rounded-full px-3 py-1.5 text-xs ring-1 ${
+                                  schedule[i] === d.id
+                                    ? 'bg-card text-bright ring-[1.5px] ring-accent-ink'
+                                    : 'surface text-muted ring-edge'
+                                }`}
+                              >
+                                {d.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </div>
           )

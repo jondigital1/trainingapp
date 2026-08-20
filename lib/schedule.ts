@@ -89,6 +89,23 @@ export function swapDays(profile: Profile, a: string, b: string, today: string):
   return moves
 }
 
+// Putting a named session on a named date, which is the other half of moving
+// one. Same storage: an override against a date, so choosing to do Push this
+// Thursday does not make every Thursday a Push day forever. Passing null
+// clears the date to a rest day.
+export function assignDay(
+  profile: Profile,
+  iso: string,
+  dayId: string | null,
+  today: string,
+): Record<string, string> {
+  const moves = { ...(profile.moves ?? {}) }
+  moves[iso] = dayId ?? ''
+  if (moves[iso] === (scheduleOf(profile)[weekdayOf(iso)] ?? '')) delete moves[iso]
+  for (const date of Object.keys(moves)) if (date < today) delete moves[date]
+  return moves
+}
+
 // Laying a plan across the week, as a starting point somebody can then move
 // around: the sessions land on the days most people train, Monday first,
 // leaving the weekend clear until there are more sessions than weekdays.

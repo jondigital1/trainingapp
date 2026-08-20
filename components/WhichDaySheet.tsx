@@ -8,55 +8,51 @@ import type { Profile } from '@/lib/onboarding'
 import type { Workout } from '@/lib/types'
 
 /**
- * Where this session is going.
+ * Which day, for the two questions that turn out to be one question.
  *
- * Arrows that trade a card with the card beside it can only move a session
- * one slot at a time, and getting from Monday to Friday that way shuffles
- * everything in between. Picking the day outright touches two dates and
- * nothing else.
+ * Moving Thursday's session to Saturday and deciding to do Push on Saturday
+ * are the same act from different directions, and both come down to picking a
+ * date and seeing what is already on it. One list, used by both.
  *
- * Rest days are in the list. A day the pattern left empty is the most likely
- * place somebody wants to put a session, so it cannot be the one place they
- * are not offered.
+ * Rest days are in it. A day the pattern left empty is the likeliest place a
+ * session is going, so it cannot be the one place nobody is offered. A day
+ * already trained is shown and says so rather than quietly going missing.
  */
-export default function MoveSheet({
+export default function WhichDaySheet({
+  title,
+  note,
   profile,
   workouts,
   today,
-  date,
+  exclude,
   onPick,
   onClose,
 }: {
+  title: string
+  note: string
   profile: Profile
   workouts: Workout[]
   today: string
-  // The date whose session is being moved.
-  date: string
-  onPick: (target: string) => void
+  // A date that is not worth offering, being the one this started from.
+  exclude?: string
+  onPick: (date: string) => void
   onClose: () => void
 }) {
-  const mine = dayIdFor(profile, date)
-  const its = mine ? dayById(mine) : undefined
-
   // Far enough to reach the end of the list this was opened from, so nothing
   // visible on the Calendar tab is unreachable from here, and no further.
   const last = upcomingDays(profile, today).at(-1)?.date
   const span = Math.min(28, Math.max(14, last ? daysBetween(today, last) + 1 : 14))
 
   const options = datesAhead(today, span)
-    .filter((iso) => iso !== date)
+    .filter((iso) => iso !== exclude)
     .map((iso) => {
       const id = dayIdFor(profile, iso)
-      const holds = id ? dayById(id) : undefined
-      return { iso, holds, done: trainedOn(workouts, iso) }
+      return { iso, holds: id ? dayById(id) : undefined, done: trainedOn(workouts, iso) }
     })
 
   return (
-    <Sheet title={`Move ${its?.name ?? 'this session'}`} onClose={onClose}>
-      <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-        From {fmtDate(date)}. Whatever the day you pick already holds comes back here, and
-        only these two dates change. The weeks after this one keep the schedule you set.
-      </p>
+    <Sheet title={title} onClose={onClose}>
+      <p className="mb-3 text-[12.5px] leading-relaxed text-muted">{note}</p>
       <div className="flex flex-col gap-1.5">
         {options.map((o) => (
           <button
@@ -68,15 +64,14 @@ export default function MoveSheet({
             <span className="min-w-0">
               <span className="block text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
                 {WEEKDAY_NAMES[weekdayOf(o.iso)]} {fmtDate(o.iso).slice(4)}
+                {o.iso === today ? ', today' : ''}
               </span>
               <span className="mt-0.5 block truncate text-sm font-semibold">
                 {o.holds?.name ?? 'Rest day'}
               </span>
             </span>
-            {/* A day already trained is not somewhere a session can be sent,
-                and saying why beats an arrow that does nothing when tapped. */}
             <span className="shrink-0 text-[11px] font-extrabold uppercase tracking-wider text-faint">
-              {o.done ? 'Trained' : 'Move here'}
+              {o.done ? 'Trained' : 'Put it here'}
             </span>
           </button>
         ))}

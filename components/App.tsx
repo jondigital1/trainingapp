@@ -15,7 +15,7 @@ import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
 import TodayCard from './TodayCard'
 import UpcomingList from './UpcomingList'
-import MoveSheet from './MoveSheet'
+import WhichDaySheet from './WhichDaySheet'
 import IntensitySheet from './IntensitySheet'
 import DoneSheet from './DoneSheet'
 import Sheet from './Sheet'
@@ -38,7 +38,7 @@ import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
-import { hasSchedule, scheduledDays, suggestSchedule, swapDays, todaysDayId } from '@/lib/schedule'
+import { assignDay, dayIdFor, hasSchedule, scheduledDays, suggestSchedule, swapDays, todaysDayId } from '@/lib/schedule'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '@/lib/advance'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -119,6 +119,8 @@ export default function App({
   const [loadFailed, setLoadFailed] = useState(false)
   const [tab, setTab] = useState<Tab>('calendar')
   const [sheet, setSheet] = useState<SheetName>(null)
+  // The session being put on a day, by template day id.
+  const [assigning, setAssigning] = useState<string | null>(null)
   // The date whose session is being moved, while the day picker is open.
   const [moving, setMoving] = useState<string | null>(null)
 
@@ -1304,15 +1306,26 @@ export default function App({
                 ))}
               </ul>
               {items.length ? (
-                <button
-                  onClick={() => {
-                    setPeekDay(null)
-                    reallyStart(day.name, items, true)
-                  }}
-                  className="mb-2 mt-3 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
-                >
-                  Start this today
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setPeekDay(null)
+                      reallyStart(day.name, items, true)
+                    }}
+                    className="mt-3 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
+                  >
+                    Start this today
+                  </button>
+                  {/* Looking at a session and wanting it on Thursday is at
+                      least as common as wanting it right now, and until this
+                      existed the only way out of here was to train. */}
+                  <button
+                    onClick={() => setAssigning(day.id)}
+                    className="mb-2 mt-2 w-full rounded-2xl py-3.5 font-display text-[15px] font-bold text-accent-ink ring-[1.5px] ring-accent-ink"
+                  >
+                    Put it on a day
+                  </button>
+                </>
               ) : null}
             </Sheet>
           )
@@ -1323,16 +1336,37 @@ export default function App({
           other Tuesday alone, and a straight pick rather than a nudge, so the
           days in between are not shuffled on the way. */}
       {moving ? (
-        <MoveSheet
+        <WhichDaySheet
+          title={`Move ${dayById(dayIdFor(profile, moving) ?? '')?.name ?? 'this session'}`}
+          note={`From ${fmtDate(moving)}. Whatever the day you pick already holds comes back here, and only these two dates change. The weeks after this one keep the schedule you set.`}
           profile={profile}
           workouts={data.workouts}
           today={now}
-          date={moving}
+          exclude={moving}
           onPick={(target) => {
             void saveProfile({ ...profile, moves: swapDays(profile, moving, target, now) })
             setMoving(null)
           }}
           onClose={() => setMoving(null)}
+        />
+      ) : null}
+
+      {/* The other direction: a session you are looking at, put on a day.
+          Same storage as a move, because choosing to do Push this Thursday is
+          a decision about Thursday, not a change to every Thursday after it. */}
+      {assigning ? (
+        <WhichDaySheet
+          title={`Put ${dayById(assigning)?.name ?? 'this'} on a day`}
+          note="It lands on the day you pick and nothing else changes. Whatever was there is replaced for that date only, and the weeks after this one keep the schedule you set."
+          profile={profile}
+          workouts={data.workouts}
+          today={now}
+          onPick={(target) => {
+            void saveProfile({ ...profile, moves: assignDay(profile, target, assigning, now) })
+            setAssigning(null)
+            setPeekDay(null)
+          }}
+          onClose={() => setAssigning(null)}
         />
       ) : null}
 

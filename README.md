@@ -294,6 +294,23 @@ fails on any tab a piece of copy names that the nav does not render, so the
 next rename cannot leave the help text pointing at a place that no longer
 exists.
 
+## Any session, on any day
+
+Two complaints, one hole. The week picker offered only the days the
+questionnaire had derived, so somebody running Full Body could not put Push on
+Monday. Push exists. It starts fine from the Start button. It simply could not
+be scheduled, which made the picker look broken to the one person who knew
+what he wanted. Every session in the library is there now, the plan's own days
+first and the rest a tap behind them, grouped under the split they come from
+because half the names repeat across splits and Legs on its own says nothing.
+
+The second half was the same hole from the other side: opening a session
+offered exactly one thing, start it now. Wanting to do it on Thursday is at
+least as common as wanting to do it this minute, and there was nowhere to say
+so. Put it on a day sits under Start this today, and it writes the same dated
+override a move writes, because choosing to do Push this Thursday is a
+decision about Thursday and not a change to every Thursday after it.
+
 ## What Lifty is, and what it is not
 
 The panel is a keyword lookup over hand written answers. It was wearing the
