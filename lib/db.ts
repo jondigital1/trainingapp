@@ -304,5 +304,9 @@ export async function logQuestion(
 ) {
   const asked = question.trim().replace(/\s+/g, ' ').slice(0, 200)
   if (asked.length < 2) return
-  await sb.from('asked_questions').insert({ user_id: userId, question: asked, answered })
+  // Postgrest does not throw on a rejected insert, it hands the error back in
+  // the result, so a row silently refused by row level security looked exactly
+  // like a row written. Thrown here, caught and logged by the caller.
+  const res = await sb.from('asked_questions').insert({ user_id: userId, question: asked, answered })
+  if (res.error) throw res.error
 }

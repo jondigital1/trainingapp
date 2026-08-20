@@ -122,12 +122,21 @@ export default function App({
   // The date whose session is being moved, while the day picker is open.
   const [moving, setMoving] = useState<string | null>(null)
 
-  // What somebody asked Lifty. Fire and forget: telemetry deciding what to
-  // write next must never be able to break the search box it sits behind.
+  // What somebody asked Lifty. Fire and forget, in that a failure here must
+  // never reach the person searching: telemetry deciding what to write next
+  // has no business breaking the search box it sits behind.
+  //
+  // Quiet to the user is not the same as quiet to us, though, and the first
+  // version swallowed the error whole. That made a feature whose only failure
+  // mode is a row that never arrives completely undiagnosable, which is the
+  // same trap the notification switch was in a fortnight ago. It says what
+  // went wrong in the console now, where somebody looking for it can find it.
   const noteQuestion = useCallback(
     (question: string, answered: boolean) => {
       if (!userId) return
-      void db.logQuestion(sb, userId, question, answered).catch(() => {})
+      void db.logQuestion(sb, userId, question, answered).catch((e: unknown) => {
+        console.warn('Could not record the question:', e)
+      })
     },
     [sb, userId],
   )

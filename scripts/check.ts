@@ -3209,6 +3209,27 @@ check('the app answers questions about itself, in the words people use', () => {
   assert.ok(/does not move every Tuesday/.test(move.a), 'the move answer does not say it is dated')
 })
 
+check('a write nobody checked is a write nobody knows failed', () => {
+  // Postgrest hands a rejected write back in the result rather than throwing,
+  // so an insert whose error is never read looks exactly like one that worked.
+  // The question log shipped that way: row level security could have been
+  // refusing every row and the app would have looked perfectly healthy.
+  const db = readFileSync(new URL('../lib/db.ts', import.meta.url), 'utf8')
+  const writes = db.match(/\.(insert|upsert|update|delete)\(/g) ?? []
+  assert.ok(writes.length > 5, 'no writes found, the pattern must have changed')
+
+  // Every await of a write is either assigned so its error can be read, or
+  // sits inside a statement that reads one.
+  for (const line of db.split('\n')) {
+    if (/^\s*await sb\s*$/.test(line) || /await sb\.from\([^)]*\)\s*$/.test(line)) continue
+    assert.ok(
+      !/^\s*await sb\.from\(.*\)\.(insert|upsert|update|delete)\(/.test(line),
+      `unchecked write: ${line.trim()}`,
+    )
+  }
+  assert.ok(db.includes('if (res.error) throw res.error'), 'writes stopped checking their errors')
+})
+
 check('what Lifty could not answer is written down, not lost', () => {
   // Writing more entries without knowing what people ask is guessing. Every
   // question that misses is now a row, and the top of that list is the next
