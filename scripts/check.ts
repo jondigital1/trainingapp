@@ -3294,6 +3294,60 @@ check('what Lifty could not answer is written down, not lost', () => {
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
 })
 
+check('the jargon has somewhere to be looked up', () => {
+  // A question is something somebody thought to ask. A term is something they
+  // read on a screen and did not want to admit they did not know, which is a
+  // different shape and was missing entirely: RIR, eccentric, DOMS and TDEE
+  // are on the screen or in every article about it, and none of them resolved.
+  const words = KNOWLEDGE.filter((e) => e.group === 'Words you will see')
+  assert.ok(words.length >= 30, `only ${words.length} terms`)
+
+  // Typed the way somebody types a term: the word on its own.
+  const first = (q: string) => searchKnowledge(q)[0]?.id
+  for (const [term, id] of [
+    ['rir', 'w-rir'], ['doms', 'w-doms'], ['tdee', 'w-tdee'], ['tempo', 'w-tempo'],
+    ['what does eccentric mean', 'w-eccentric'], ['what is a pump', 'w-pump'],
+    ['bracing', 'w-bracing'], ['macros', 'w-macros'], ['hypertrophy', 'w-hypertrophy'],
+    ['unilateral', 'w-unilateral'], ['sticking point', 'w-lockout'],
+  ] as [string, string][]) {
+    assert.equal(first(term), id, `${term} does not resolve to its definition`)
+  }
+
+  // Filler that arrives with a definition request is filler, not content. What
+  // does eccentric mean was answering with a paragraph about volume, because
+  // mean scored as a word somebody was asking about.
+  assert.ok(!searchKnowledge('what does eccentric mean').some((e) => e.id === 'num-volume'))
+})
+
+check('the questions people have while holding the phone are answered', () => {
+  const first = (q: string) => searchKnowledge(q)[0]?.id
+  for (const [q, id] of [
+    ['can i train when i have a cold', 'basic-sick'],
+    ['hotel gym', 'basic-travel'],
+    ['how many exercises per workout', 'basic-how-many-exercises'],
+    ['dumbbells jump too much', 'strong-small-jumps'],
+    ['how do i fix a workout i logged wrong', 'app-edit-past'],
+    ['what is the block number', 'app-block-week'],
+    ['can women train the same', 'basic-women'],
+    ['how many warm up sets', 'strong-warm-up-sets'],
+    ['can i do machines only', 'basic-machines-only'],
+    ['how long should i run a program', 'strong-how-long-block'],
+  ] as [string, string][]) {
+    assert.equal(first(q), id, `${q} finds the wrong answer`)
+  }
+
+  // Every group carries enough to be worth browsing into.
+  for (const g of KNOWLEDGE_GROUPS) {
+    assert.ok(KNOWLEDGE.filter((e) => e.group === g).length >= 10, `${g} is thin`)
+  }
+  assert.ok(KNOWLEDGE.length >= 120, `only ${KNOWLEDGE.length} entries`)
+
+  // And the gate still holds with three times the library to trip over.
+  for (const off of ['best crypto to buy', 'who won the election', 'is the gym open on sunday', 'how do i fix my golf swing']) {
+    assert.deepEqual(searchKnowledge(off), [], `${off} found something`)
+  }
+})
+
 check('Lifty does not dress a lookup up as a conversation', () => {
   // An avatar over a single line input is the shape of a chat window, and a
   // shape is read before any words under it. What is actually there is a

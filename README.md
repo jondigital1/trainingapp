@@ -384,6 +384,30 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## Words, as well as questions
+
+A question is something somebody thought to ask. A term is something they read
+on a screen and did not want to admit they did not know, and the library had
+none of the second kind. RIR, eccentric, DOMS, TDEE, sticking point: all of
+them turn up in the first article anybody reads about training, and none of
+them resolved to anything.
+
+They are a fifth group rather than a second feature, so they search through the
+same box and render through the same rows. Thirty four of them, each a
+definition plus the reason it matters, because a glossary that only defines is
+a dictionary and people do not open dictionaries.
+
+Filler had to go with them. What does eccentric mean was returning a paragraph
+about volume, because mean scored as a word somebody was asking about rather
+than as the way English forms the question.
+
+The Q and A grew with it, from forty five to eighty nine, aimed at what people
+have while holding the phone: training with a cold, a hotel gym, how many
+exercises a session should hold, dumbbells that jump five pounds at a time,
+fixing a set logged wrong, whether women should train differently. The gate
+still refuses crypto, elections, golf swings and gym opening hours, which is
+the thing worth checking every time the library trebles.
+
 ## The next entry to write is not a guess
 
 Every question that misses is recorded, and the admin screen ranks them by how
