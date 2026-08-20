@@ -400,27 +400,42 @@ check('bodyweight only leaves nothing that needs a rack', () => {
   }
 })
 
-check('a shorter session means fewer movements, and the cap never splits the circuit', () => {
+check('the clock takes the finisher before it takes the session', () => {
+  // Two rules, and the order between them is the whole point. A circuit is
+  // never split, because half a circuit is not a circuit. But a circuit is
+  // also never reserved ahead of the movements in front of it: it is the
+  // finisher, and reserving it first is how Performance at five days a week
+  // came back with twenty core exercises, no biceps and no triceps.
   const day = dayById('five-chest')!
 
-  // 60 minutes: whole circuit plus four mains, never an orphaned circuit member
+  // 60 minutes, cap 8. Five chest and two triceps are the session, so the four
+  // movement circuit cannot fit whole and leaves one movement behind.
   const hour = buildDay(day, { minutes: 60 })
   assert.equal(hour.length, 8)
-  const circuit = hour.filter((i) => i.superset)
-  assert.equal(circuit.length, 4, `circuit arrived as ${circuit.length} of 4`)
   assert.equal(hour[0].name, 'Incline Dumbbell Press', 'the first main survives the cap')
+  assert.ok(
+    hour.filter((i) => groupOf(i.name) === 'Triceps').length >= 2,
+    'the arm work was evicted by the finisher again',
+  )
+  const core = hour.filter((i) => groupOf(i.name) === 'Core')
+  assert.equal(core.length, 1, `core arrived as ${core.length}`)
+  assert.ok(core.every((i) => !i.superset), 'a lone movement is still carrying a circuit tag')
 
-  // 30 minutes: no room to keep the circuit whole, so it goes entirely
+  // 90 minutes, cap 12: everything fits, so the circuit arrives whole and
+  // tagged, which is the half of the rule that has not changed.
+  const long = buildDay(day, { minutes: LONG_SESSION })
+  assert.equal(long.filter((i) => i.superset).length, 4, 'the whole circuit no longer survives')
+
+  // 30 minutes: four movements, and never an orphaned circuit member among them.
   const half = buildDay(day, { minutes: 30 })
   assert.equal(half.length, 4)
   assert.ok(half.every((i) => !i.superset), 'a partial circuit leaked into the short session')
 
-  // 45 minutes: circuit (4) fits within cap 6 minus the two reserved mains
-  const mid = buildDay(day, { minutes: 45 })
-  assert.equal(mid.length, 6)
-  assert.equal(mid.filter((i) => i.superset).length, 4)
-
-  assert.ok(buildDay(day, { minutes: 75 }).length >= 8)
+  // Whatever the clock says, the session never comes back longer than asked.
+  for (const minutes of [30, 45, 60, 75] as const) {
+    const cap = { 30: 4, 45: 6, 60: 8, 75: 10 }[minutes]
+    assert.ok(buildDay(day, { minutes }).length <= cap, `${minutes} overran its cap`)
+  }
 })
 
 check('dislikes are never suggested', () => {
@@ -2830,17 +2845,25 @@ check('not interested in barbells means no barbells, not just a different score'
 })
 
 check('asking to bring up your core gets you core, whatever the split thinks', () => {
-  // The same user picked Core, and the whole push pull legs week carries not
+  // The same user picked Core, and the whole push pull legs week carried not
   // one core movement, so reordering had nothing to reorder. Core pairs with
   // anything and recovers overnight, so a focused core that is absent from a
   // day is added to it, first choice a plank rather than the alphabet's ab
   // wheel.
+  //
+  // The templates carry core themselves now, so most days need no addition and
+  // simply move theirs to the front. Pull still has none of its own and still
+  // gets the plank, which is the path this was written to protect.
   const p = { days: 3, minutes: 60 as const, focus: ['Core'], years: 'overTwo' as const, knows: 'yes' as const }
   for (const dayId of planFor(p, 'muscle').dayIds) {
     const built = buildDay(dayById(dayId)!, p)
     assert.ok(built.some((i) => groupOf(i.name) === 'Core'), `${dayId} has no core for a core-focused user`)
   }
-  assert.equal(buildDay(dayById('ppl-push')!, p)[0].name, 'Plank', 'focused work opens the session')
+  for (const dayId of ['ppl-push', 'ppl-pull', 'ppl-legs']) {
+    const first = buildDay(dayById(dayId)!, p)[0]
+    assert.equal(groupOf(first.name), 'Core', `${dayId} does not open on the focused work`)
+  }
+  assert.equal(buildDay(dayById('ppl-pull')!, p)[0].name, 'Plank', 'a day with no core of its own is not given one')
 
   // Within the time budget even on the shortest day: the addition competes
   // for a slot, it does not blow the clock.
@@ -2854,9 +2877,16 @@ check('asking to bring up your core gets you core, whatever the split thinks', (
   const chestFocused = buildDay(dayById(legsDay)!, { ...p, focus: ['Chest'] })
   assert.ok(!chestFocused.some((i) => groupOf(i.name) === 'Chest'), 'a split day grew another day\'s work')
 
-  // And nobody who did not ask gets a plank: the unfocused day is untouched.
-  const plain = buildDay(dayById('ppl-push')!, { days: 3, minutes: 60 as const, years: 'overTwo' as const, knows: 'yes' as const })
-  assert.ok(!plain.some((i) => groupOf(i.name) === 'Core'))
+  // And nobody who did not ask has anything added. Push carries a Pallof press
+  // of its own now, so the test is that it still carries exactly that and no
+  // plank arrived beside it, and that pull, which carries no core at all, is
+  // left carrying none.
+  const unasked = { days: 3, minutes: 60 as const, years: 'overTwo' as const, knows: 'yes' as const }
+  const plain = buildDay(dayById('ppl-push')!, unasked)
+  assert.equal(plain.filter((i) => groupOf(i.name) === 'Core').length, 1, 'core was added to a day that had some')
+  assert.ok(!plain.some((i) => i.name === 'Plank'), 'a plank was bolted on for somebody who did not ask')
+  const bare = buildDay(dayById('ppl-pull')!, unasked)
+  assert.ok(!bare.some((i) => groupOf(i.name) === 'Core'), 'core was added to a day that had none')
 })
 
 check('the clock trims the session, never the reason somebody gave for training', () => {
@@ -3422,6 +3452,50 @@ check('two sessions with the same name are the same session', () => {
   assert.equal(dayById('ppl-push')!.name, 'Push')
   assert.equal(dayById('ppl-pull')!.name, 'Pull')
   assert.equal(dayById('ppl-legs')!.name, 'Legs')
+})
+
+check('every week trains everything it claims to', () => {
+  // Counted from the sessions the app actually produces, per muscle, per week,
+  // for every program and every day count somebody can reach. Reading the
+  // templates said they looked balanced. Reading the output said Performance
+  // at five days a week came back with twenty core movements, no biceps, no
+  // triceps and no calves, and that no plan at any setting trained traps at
+  // all while the library held fourteen trap exercises.
+  const PROFILES: Record<string, object> = {
+    Foundation: { years: 'never', knows: 'no', barbell: 'never' },
+    Build: { years: 'sixToTwo', knows: 'roughly', barbell: 'rusty' },
+    Performance: { years: 'overTwo', knows: 'yes', barbell: 'confident' },
+  }
+  const MUST = [
+    'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps',
+    'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Core', 'Traps',
+  ]
+
+  for (const [name, base] of Object.entries(PROFILES)) {
+    for (const days of [3, 4, 5, 6]) {
+      const p = { ...base, days, minutes: 60 } as never
+      if (program(p) !== name) continue
+      const week = planFor(p, 'muscle').dayIds.flatMap((id) => buildDay(dayById(id)!, p))
+
+      for (const group of MUST) {
+        const sets = week.filter((i) => groupOf(i.name) === group).length
+        assert.ok(sets >= 1, `${name} at ${days} days never trains ${group}`)
+      }
+
+      // Nothing runs away with the week either. Core was the one that did:
+      // a finisher reserved ahead of the session took a third of it.
+      for (const group of MUST) {
+        const sets = week.filter((i) => groupOf(i.name) === group).length
+        assert.ok(sets <= week.length / 3, `${name} at ${days} days is ${sets} of ${week.length} on ${group}`)
+      }
+
+      // A session is a session. One movement left standing is a card promising
+      // a workout and opening on almost nothing.
+      for (const id of planFor(p, 'muscle').dayIds) {
+        assert.ok(buildDay(dayById(id)!, p).length >= 3, `${id} came back with fewer than three`)
+      }
+    }
+  }
 })
 
 check('the plan only offers equipment somebody actually has', () => {

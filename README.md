@@ -384,6 +384,40 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## Counting what a week actually trains
+
+The templates read as balanced. Counting the sessions they produce, per muscle,
+per week, for every program and day count somebody can reach, did not.
+
+Performance at five days a week came back with twenty core movements, no
+biceps, no triceps and no calves. The cause was one line of priority: the trim
+reserved every circuit that fitted before it considered a single movement,
+which sounds fair and is exactly backwards. A circuit is the finisher and the
+singles are the session, so a four movement core circuit at the end of a day
+reserved half the budget and evicted the arm work at the front.
+
+The trim now takes movements in the order the session was already sorted, and
+a circuit is kept whole only when it fits and still leaves room for two things
+that are not it. Both halves are needed. Without the first, core ate the
+session; without the second, a core focused thirty minute push day came back as
+four core movements and no pressing at all, because bringing core up had moved
+the circuit to the front of the queue. Bringing something up is not replacing
+the session with it.
+
+The count then showed what no amount of reading had: no plan at any setting
+trained traps, while the library held fourteen trap movements. Glutes were
+zero or one across the board, against twenty two in the library. Push Pull
+Legs carried no core at all, so three days a week meant a week with none. Full
+Body had no calves and no glutes in any of its three days.
+
+Those were template gaps and are filled. Every plan the app can produce now
+trains all eleven groups, and a check counts it rather than trusting it, with
+a ceiling as well as a floor so nothing takes a third of the week again.
+
+A day also has to be a session now. Three movements, not one: a shoulder
+flagged bodyweight user was getting a Push day containing a single Pallof
+press, which is the same dishonesty as a card opening on nothing.
+
 ## Auditing the whole library found two shipping bugs
 
 Reading the library group by group turned up gaps. Reading what the library

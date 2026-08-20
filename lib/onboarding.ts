@@ -558,39 +558,50 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     groups.get(item.superset)!.push(item)
   }
 
-  const kept = new Set<string>()
-  // A circuit that cannot be kept whole used to vanish whole, which silently
-  // deleted the thing somebody asked to bring up: a thirty minute day dropped
-  // its core circuit over the head of a person who picked Core. A dropped
-  // group now leaves its first focused movement behind as a single, so the
-  // clock trims the session and never the reason somebody gave for training.
+  // First come, first served, in the order the session was already sorted.
+  //
+  // This used to reserve every circuit that fitted before a single movement
+  // was considered, which sounds fair and is exactly backwards: the circuit
+  // is the finisher and the singles are the session. A four movement core
+  // circuit at the end of a day reserved half an hour budget and evicted the
+  // arm work at the front, so Performance at five days a week came back with
+  // twenty core exercises, no biceps, no triceps and no calves.
   const wanted = new Set(focusOf(profile))
-  const rescued = new Set<string>()
-  let reserved = 0
-  for (const [tag, members] of groups) {
-    if (reserved + members.length <= cap - 2) {
-      kept.add(tag)
-      reserved += members.length
+  const kept = new Set<string>()
+  const skipped = new Set<string>()
+  const trimmed: PlannedItem[] = []
+
+  for (const item of ordered) {
+    if (trimmed.length >= cap) break
+    if (!item.superset) {
+      trimmed.push(item)
       continue
     }
-    const save = members.find((m) => wanted.has(groupOf(m.name) ?? ''))
-    if (save) rescued.add(save.name)
+    if (skipped.has(item.superset)) continue
+    if (kept.has(item.superset)) {
+      trimmed.push(item)
+      continue
+    }
+    const members = groups.get(item.superset) ?? [item]
+    // Room for the circuit and for at least two movements that are not it.
+    // Without the second half, a core focused thirty minute push day came back
+    // as four core movements and no pressing at all: emphasise had moved the
+    // circuit to the front, and the front of the queue took the whole budget.
+    // Bringing core up is not the same as replacing the session with it.
+    if (trimmed.length + members.length <= cap - 2) {
+      kept.add(item.superset)
+      trimmed.push(item)
+      continue
+    }
+    // It does not fit whole, and half a circuit is not a circuit. One movement
+    // still is, though: the one they asked to bring up if the circuit holds
+    // it, otherwise the first, so the clock trims the session and never the
+    // reason somebody gave for training.
+    skipped.add(item.superset)
+    const save = members.find((m) => wanted.has(groupOf(m.name) ?? '')) ?? members[0]
+    trimmed.push({ ...save, superset: null })
   }
 
-  const trimmed: PlannedItem[] = []
-  let singles = 0
-  for (const item of ordered) {
-    if (item.superset && !rescued.has(item.name)) {
-      if (kept.has(item.superset)) trimmed.push(item)
-      continue
-    }
-    if (singles < cap - reserved) {
-      // A rescue leaves its circuit, so it stops carrying the tag: half a
-      // circuit is not a circuit, but one movement is still the answer.
-      trimmed.push(item.superset ? { ...item, superset: null } : item)
-      singles += 1
-    }
-  }
   return trimmed
 }
 
@@ -1018,9 +1029,13 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   // A red flagged shoulder on a bodyweight kit genuinely leaves nothing safe
   // for a chest day, and the honest response is a shorter week that says so,
   // rather than a card promising a workout and opening on nothing.
+  // Three movements, not one. A day that survives with a single plank left in
+  // it is not a session, it is a card promising a workout and opening on
+  // almost nothing, which is the same dishonesty as opening on nothing at all.
+  const MIN_SESSION = 3
   const dayIds = wanted.filter((id) => {
     const day = dayById(id)
-    return day ? buildDay(day, { ...profile, days }).length > 0 : false
+    return day ? buildDay(day, { ...profile, days }).length >= MIN_SESSION : false
   })
   const emptied = wanted.length - dayIds.length
 
