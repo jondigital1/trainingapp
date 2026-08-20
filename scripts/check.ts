@@ -3418,6 +3418,45 @@ check('what Lifty could not answer is written down, not lost', () => {
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
 })
 
+check('the questions the whole internet asks have answers here', () => {
+  // Found by looking outward rather than inward: sweeping what people actually
+  // ask about lifting, then checking each theme against the library rather
+  // than assuming. Most of the misses did not come back empty, they came back
+  // wrong, which is worse. Is lifting safe for teenagers returned the answer
+  // about breathing, and I have arthritis returned the answer about plateaus.
+  const first = (q: string) => searchKnowledge(q)[0]?.id
+  for (const [q, id] of [
+    ['do i need protein straight after training', 'basic-protein-timing'],
+    ['anabolic window', 'basic-protein-timing'],
+    ['how much muscle can i gain in a month', 'basic-rate-of-gain'],
+    ['will my muscle turn to fat', 'basic-muscle-fat'],
+    ['is lifting safe for teenagers', 'basic-teens'],
+    ['does lifting stunt your growth', 'basic-teens'],
+    ['strength training after menopause', 'basic-women-50'],
+    ['i have arthritis can i lift', 'basic-arthritis'],
+    ['i feel intimidated at the gym', 'basic-gym-nerves'],
+    ['do i need a spotter', 'basic-spotter'],
+    ['how much water should i drink', 'basic-water'],
+    ['does it matter what time of day i train', 'basic-time-of-day'],
+    ['can i target belly fat', 'basic-spot-reduction'],
+    ['how do i tone my arms', 'basic-spot-reduction'],
+    ['cardio or weights for fat loss', 'basic-cardio-fatloss'],
+    ['is it bad to work out every day', 'basic-restdays'],
+  ] as [string, string][]) {
+    assert.equal(first(q), id, `"${q}" does not reach ${id}`)
+  }
+
+  // The two that carry a duty of care beyond being right: neither may answer
+  // with a plan, and both have to say who the question actually belongs to.
+  for (const id of ['basic-arthritis', 'basic-women-50']) {
+    const entry = KNOWLEDGE.find((e) => e.id === id)!
+    assert.ok(
+      /clinician|physio|doctor|whoever knows/.test(entry.a),
+      `${id} answers a medical question without pointing anywhere`,
+    )
+  }
+})
+
 check('Lifty reads the question, not only the words in it', () => {
   // Matching on the terms somebody typed has a ceiling and the library reached
   // it. My knee clicks when I squat found nothing, because clicks is not a

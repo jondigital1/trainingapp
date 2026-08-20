@@ -597,6 +597,39 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## Looking outward for the questions
+
+Everything in the library up to here came from imagining what somebody would
+ask, which is a poor way to find out. So the next round came from sweeping what
+people actually ask about lifting and checking each theme against the library
+rather than assuming it was covered.
+
+What the sweep is not is a scrape of somebody else's answers. Question titles
+are a signal about what to write; the answers here are written for this app, in
+its voice, and nothing was lifted. The one properly licensed corpus of real
+fitness questions, Stack Exchange, is unreachable from this machine's network
+policy, so the sweep is search rather than a dataset, which is a weaker method
+honestly described.
+
+Most of the gaps it found did not come back empty. They came back wrong, which
+is worse and much harder to notice: is lifting safe for teenagers returned the
+answer about breathing, I have arthritis returned the answer about plateaus,
+and strength training after menopause returned the one about training for size
+and strength at once. A search that always answers hides its own gaps.
+
+Twelve entries came out of it, and the common thread is that most are things
+people ask before they ever open a training app: whether protein has to land in
+the half hour after training, how much muscle is actually possible in a month,
+whether it turns to fat when you stop, whether a fifteen year old will stunt
+their growth, what changes after fifty, whether a worn joint should be rested
+or loaded, whether everyone in the gym is watching, whether you need a spotter,
+how much water, what time of day, whether you can pick where the fat comes off,
+and whether to do cardio or weights to lose it.
+
+Two of those carry a duty of care past being correct. The arthritis answer and
+the one about menopause both say plainly who the question belongs to, and a
+check fails if either ever stops pointing there.
+
 ## Reading the question rather than the words in it
 
 Matching on the terms somebody typed has a ceiling, and the library reached it.
