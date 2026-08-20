@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ageBand,
-  LONG_SESSION,
-  COMMON_DISLIKES,
+    COMMON_DISLIKES,
   goalsOf,
   GOAL_FROM_CHOICE,
   legDaysOf,
@@ -18,12 +17,14 @@ import {
 } from '@/lib/onboarding'
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
-import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
-import { fmtDate, today } from '@/lib/format'
+import { toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
+import { today } from '@/lib/format'
+import HeightField from './HeightField'
 import { blockWeek } from '@/lib/block'
 import { weekStart } from '@/lib/week'
 import type { BodyWeight, Workout } from '@/lib/types'
-import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
 import { GoalPicker } from './GoalPicker'
 import { BringUpField, SexField } from './FocusField'
 import AdminDashboard from './AdminDashboard'
@@ -98,12 +99,7 @@ export default function ProfileSheet({
   const [name, setName] = useState(profile.name ?? '')
   const [age, setAge] = useState(profile.ageYears != null ? String(profile.ageYears) : '')
   const [goalWeight, setGoalWeight] = useState(inputFor(profile.goalWeight, unitOf(profile)))
-  const [heightFt, setHeightFt] = useState(
-    profile.heightIn != null ? String(Math.floor(profile.heightIn / 12)) : '',
-  )
-  const [heightInch, setHeightInch] = useState(
-    profile.heightIn != null ? String(Math.round(profile.heightIn % 12)) : '',
-  )
+  const [heightIn, setHeightIn] = useState<number | undefined>(profile.heightIn)
   const [todayWeight, setTodayWeight] = useState('')
 
   // Every tap on this page saves itself.
@@ -131,15 +127,12 @@ export default function ProfileSheet({
   }
 
   function buildNext(): Profile {
-    const ft = Number(heightFt)
-    const inch = Number(heightInch)
-    const height = Number.isFinite(ft) && ft > 0 ? ft * 12 + (Number.isFinite(inch) ? inch : 0) : null
     const gw = numOrNull(goalWeight)
     const next: Profile = {
       ...draft,
       name: name.trim() || undefined,
       ageYears: numOrNull(age) ?? undefined,
-      heightIn: height ?? undefined,
+      heightIn,
       goalWeight: gw != null ? toPounds(gw, unit) : undefined,
     }
     next.age = ageBand(next)
@@ -185,19 +178,7 @@ export default function ProfileSheet({
     return (
       <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={close}>
         {focus === 'minutes' ? (
-          <Field label="How long have you got?" hint="A ceiling, not a target. Sessions land where they land and the app tells you what each one costs.">
-            <Options
-              columns={2}
-              value={draft.minutes}
-              onPick={(v) => set({ minutes: v })}
-              options={[
-                { v: 30 as const, label: 'Up to 30 minutes' },
-                { v: 45 as const, label: 'Up to 45 minutes' },
-                { v: 60 as const, label: 'Up to an hour' },
-                { v: LONG_SESSION, label: 'No limit' },
-              ]}
-            />
-          </Field>
+          <Ask q={MINUTES} value={draft.minutes} onPick={(v) => set({ minutes: v })} />
         ) : (
           <SoreFields draft={draft} set={set} toggle={toggle} />
         )}
@@ -301,17 +282,12 @@ export default function ProfileSheet({
             <Field label="Age" optional>
               <NumberInput value={age} onChange={setAge} suffix="years" />
             </Field>
-            <Field label="Weights in" hint="A display choice. Nothing you have already logged changes.">
-              <Options
-                columns={2}
-                value={unit}
-                onPick={(v) => set({ units: v })}
-                options={[
-                  { v: 'lb' as const, label: 'lb' },
-                  { v: 'kg' as const, label: 'kg' },
-                ]}
-              />
-            </Field>
+            <Ask
+              q={UNITS}
+              value={unit}
+              onPick={(v) => set({ units: v })}
+              hint="A display choice. Nothing you have already logged changes."
+            />
             <SexField profile={draft} onChange={set} />
 
             <GoalPicker goals={goalsOf(draft)} onChange={(goals) => set({ goals, goalChoice: goals[0] })} />
@@ -339,54 +315,14 @@ export default function ProfileSheet({
               onChange={(schedule) => set({ schedule })}
             />
 
-            <Field label="Days a week">
-              <Options
-                columns={2}
-                value={draft.days}
-                onPick={(v) => set({ days: v })}
-                options={[3, 4, 5, 6].map((n) => ({ v: n, label: `${n} days` }))}
-              />
-            </Field>
+            <Ask q={DAYS} value={draft.days} onPick={(v) => set({ days: v })} />
 
             {(draft.days ?? 0) >= 4 ? (
-              <Field label="Leg days" hint="Two is quads on one day, hamstrings and glutes on the other.">
-                <Options
-                  columns={2}
-                  value={legDaysOf(draft)}
-                  onPick={(v) => set({ legDays: v })}
-                  options={[
-                    { v: 1 as const, label: 'Once a week' },
-                    { v: 2 as const, label: 'Twice, split' },
-                  ]}
-                />
-              </Field>
+              <Ask q={LEG_DAYS} value={legDaysOf(draft)} onPick={(v) => set({ legDays: v })} />
             ) : null}
 
-            <Field label="How long have you got?" hint="A ceiling, not a target. Sessions land where they land and the app tells you what each one costs.">
-              <Options
-                columns={2}
-                value={draft.minutes}
-                onPick={(v) => set({ minutes: v })}
-                options={[
-                  { v: 30 as const, label: 'Up to 30 minutes' },
-                  { v: 45 as const, label: 'Up to 45 minutes' },
-                  { v: 60 as const, label: 'Up to an hour' },
-                  { v: LONG_SESSION, label: 'No limit' },
-                ]}
-              />
-            </Field>
-            <Field label="Where are you training?">
-              <Options
-                value={draft.access}
-                onPick={(v) => set({ access: v })}
-                options={[
-                  { v: 'full' as const, label: 'Full gym' },
-                  { v: 'basic' as const, label: 'Basic gym' },
-                  { v: 'home' as const, label: 'Home with kit' },
-                  { v: 'body' as const, label: 'Bodyweight only' },
-                ]}
-              />
-            </Field>
+            <Ask q={MINUTES} value={draft.minutes} onPick={(v) => set({ minutes: v })} />
+            <Ask q={ACCESS} value={draft.access} onPick={(v) => set({ access: v })} />
             <Field label="Rest of the week" optional>
               <Chips options={OTHER_TRAINING} selected={draft.other ?? []} onToggle={(v) => toggle('other', v)} />
               {/* This field's whole job is the advice under it, and until every
@@ -447,27 +383,11 @@ export default function ProfileSheet({
             <Field label="Goal weight" optional>
               <NumberInput decimal value={goalWeight} onChange={setGoalWeight} suffix={unitLabel(unit)} />
             </Field>
-            <Field label="Height" optional>
-              <div className="flex gap-2">
-                <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" />
-                <NumberInput value={heightInch} onChange={setHeightInch} suffix="in" />
-              </div>
-            </Field>
+            <HeightField inches={heightIn} unit={unit} onChange={setHeightIn} />
 
             <SoreFields draft={draft} set={set} toggle={toggle} />
 
-            <Field label="Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?">
-              <Options
-                columns={2}
-                value={draft.condition}
-                onPick={(v) => set({ condition: v })}
-                options={[
-                  { v: 'no' as const, label: 'No' },
-                  { v: 'yes' as const, label: 'Yes' },
-                  { v: 'skip' as const, label: 'Rather not say' },
-                ]}
-              />
-            </Field>
+            <Ask q={CONDITION} value={draft.condition} onPick={(v) => set({ condition: v })} />
           </>
         ) : null}
       </div>

@@ -10,8 +10,7 @@ import {
   goalsOf,
   primaryGoal,
   legDaysOf,
-  LONG_SESSION,
-  planFor,
+    planFor,
   PROGRAMS,
   selfDirected,
   SORE_JOINTS,
@@ -20,7 +19,9 @@ import {
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { weekStart } from '@/lib/week'
 import { today as todayIso } from '@/lib/format'
-import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
+import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
+import HeightField from './HeightField'
 import { GoalPicker } from './GoalPicker'
 import { BringUpField, SexField } from './FocusField'
 import { NudgeField, type NudgePref } from './NudgeField'
@@ -92,15 +93,7 @@ export default function Onboarding({
   const [age, setAge] = useState(seed.ageYears != null ? String(seed.ageYears) : '')
   const [weight, setWeight] = useState('')
   const [goalWeight, setGoalWeight] = useState(inputFor(seed.goalWeight, seedUnit))
-  const [heightFt, setHeightFt] = useState(
-    seed.heightIn != null ? String(Math.floor(seed.heightIn / 12)) : '',
-  )
-  const [heightIn, setHeightIn] = useState(
-    seed.heightIn != null ? String(Math.round(seed.heightIn % 12)) : '',
-  )
-  const [heightCm, setHeightCm] = useState(
-    seed.heightIn != null ? String(Math.round(seed.heightIn * 2.54)) : '',
-  )
+  const [heightIn, setHeightIn] = useState<number | undefined>(seed.heightIn)
 
   const unit: Unit = profile.units === 'kg' ? 'kg' : 'lb'
   const set = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }))
@@ -117,28 +110,15 @@ export default function Onboarding({
   // The profile as it will be saved, with the typed fields folded in. Built on
   // demand so the plan preview on the last step reflects everything answered.
   const full = useMemo((): Profile => {
-    // Stored in inches whichever box it arrived in, because one stored unit
-    // is how the two boxes stay one answer.
-    const cm = Number(heightCm)
-    const ft = Number(heightFt)
-    const inch = Number(heightIn)
-    const height =
-      unit === 'kg'
-        ? Number.isFinite(cm) && cm > 0
-          ? cm / 2.54
-          : null
-        : Number.isFinite(ft) && ft > 0
-          ? ft * 12 + (Number.isFinite(inch) ? inch : 0)
-          : null
     const gw = num(goalWeight)
     return {
       ...profile,
       name: name.trim() || undefined,
       ageYears: num(age) ?? undefined,
-      heightIn: height ?? undefined,
+      heightIn,
       goalWeight: gw != null ? toPounds(gw, unit) : undefined,
     }
-  }, [profile, name, age, goalWeight, heightFt, heightIn, heightCm, unit])
+  }, [profile, name, age, goalWeight, heightIn, unit])
 
   const goal: Goal = GOAL_FROM_CHOICE[profile.goalChoice ?? 'muscle'] ?? 'muscle'
 
@@ -196,21 +176,12 @@ export default function Onboarding({
               </Field>
               <div className="mt-4 flex gap-2">
                 <div className="flex-1">
-                  <Field label="Age">
-                    <NumberInput value={age} onChange={setAge} suffix="yrs" placeholder="35" />
+                  <Field label="Age" optional>
+                    <NumberInput value={age} onChange={setAge} suffix="years" placeholder="35" />
                   </Field>
                 </div>
                 <div className="flex-1">
-                  <Field label="Height" optional>
-                    {unit === 'kg' ? (
-                      <NumberInput value={heightCm} onChange={setHeightCm} suffix="cm" placeholder="178" />
-                    ) : (
-                      <div className="flex gap-2">
-                        <NumberInput value={heightFt} onChange={setHeightFt} suffix="ft" placeholder="5" />
-                        <NumberInput value={heightIn} onChange={setHeightIn} suffix="in" placeholder="10" />
-                      </div>
-                    )}
-                  </Field>
+                  <HeightField inches={heightIn} unit={unit} placeholders onChange={setHeightIn} />
                 </div>
               </div>
 
@@ -218,17 +189,7 @@ export default function Onboarding({
 
               {/* Asked immediately above the first thing measured in it, rather
                   than four screens earlier next to somebody's age. */}
-              <Field label="Weights in">
-                <Options
-                  columns={2}
-                  value={unit}
-                  onPick={(v) => set({ units: v })}
-                  options={[
-                    { v: 'lb' as const, label: 'lb' },
-                    { v: 'kg' as const, label: 'kg' },
-                  ]}
-                />
-              </Field>
+              <Ask q={UNITS} value={unit} onPick={(v) => set({ units: v })} />
 
               <Field
                 label="What do you weigh today?"
@@ -353,48 +314,11 @@ export default function Onboarding({
 
           {current.id === 'week' ? (
             <>
-              <Field label="Days a week" hint="Realistically. The plan is built around the number you hit.">
-                <Options
-                  columns={2}
-                  value={profile.days}
-                  onPick={(v) => set({ days: v })}
-                  options={[
-                    { v: 3, label: '3 days', note: 'The sweet spot' },
-                    { v: 4, label: '4 days' },
-                    { v: 5, label: '5 days' },
-                    { v: 6, label: '6 days' },
-                  ]}
-                />
-              </Field>
+              <Ask q={DAYS} value={profile.days} onPick={(v) => set({ days: v })} />
               {(profile.days ?? 0) >= 4 ? (
-                <Field
-                  label="Leg days"
-                  hint="Two is quads on one day, hamstrings and glutes on the other."
-                >
-                  <Options
-                    columns={2}
-                    value={legDaysOf(profile)}
-                    onPick={(v) => set({ legDays: v })}
-                    options={[
-                      { v: 1 as const, label: 'Once a week' },
-                      { v: 2 as const, label: 'Twice, split' },
-                    ]}
-                  />
-                </Field>
+                <Ask q={LEG_DAYS} value={legDaysOf(profile)} onPick={(v) => set({ legDays: v })} />
               ) : null}
-              <Field label="How long have you got?" hint="A ceiling, not a target. Sessions land where they land and the app tells you what each one costs.">
-                <Options
-                  columns={2}
-                  value={profile.minutes}
-                  onPick={(v) => set({ minutes: v })}
-                  options={[
-                    { v: 30 as const, label: 'Up to 30 minutes' },
-                    { v: 45 as const, label: 'Up to 45 minutes' },
-                    { v: 60 as const, label: 'Up to an hour' },
-                    { v: LONG_SESSION, label: 'No limit', note: 'Nothing gets trimmed' },
-                  ]}
-                />
-              </Field>
+              <Ask q={MINUTES} value={profile.minutes} onPick={(v) => set({ minutes: v })} />
             </>
           ) : null}
 
@@ -403,19 +327,7 @@ export default function Onboarding({
               {/* Filed here rather than under the week, because which gym you
                   are in is not a scheduling answer. It decides which movements
                   you are given, which is the same job the next question does. */}
-              <Field label="Where are you training?">
-                <Options
-                  columns={2}
-                  value={profile.access}
-                  onPick={(v) => set({ access: v })}
-                  options={[
-                    { v: 'full' as const, label: 'Full gym' },
-                    { v: 'basic' as const, label: 'Basic gym' },
-                    { v: 'home' as const, label: 'Home with kit' },
-                    { v: 'body' as const, label: 'Bodyweight only' },
-                  ]}
-                />
-              </Field>
+              <Ask q={ACCESS} value={profile.access} onPick={(v) => set({ access: v })} />
 
               <Field label="Anything giving you trouble?" optional>
                 <Chips options={SORE_JOINTS} selected={profile.sore ?? []} onToggle={toggleSore} />
@@ -426,21 +338,7 @@ export default function Onboarding({
                 ) : null}
               </Field>
 
-              <Field
-                label="Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?"
-                hint="One question we have to ask. It makes the plan lighter, it locks nothing."
-              >
-                <Options
-                  columns={2}
-                  value={profile.condition}
-                  onPick={(v) => set({ condition: v })}
-                  options={[
-                    { v: 'no' as const, label: 'No' },
-                    { v: 'yes' as const, label: 'Yes' },
-                    { v: 'skip' as const, label: 'Rather not say' },
-                  ]}
-                />
-              </Field>
+              <Ask q={CONDITION} value={profile.condition} onPick={(v) => set({ condition: v })} />
             </>
           ) : null}
 

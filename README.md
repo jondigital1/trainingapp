@@ -2109,6 +2109,34 @@ something the library has never heard of be counted in the weekly total, eased
 around a sore joint, and rested properly, rather than being a name on a row
 that the rest of the app cannot reason about.
 
+## Asked twice, answered differently
+
+Signup and Settings ask the same questions, and each screen had written out
+its own copy of the wording and the choices. The copies had drifted, and the
+drift ran one way: the guidance lived at signup and went quiet afterwards.
+Three days was labelled the sweet spot when you first picked it and was a bare
+"3 days" when you changed your mind. No limit explained that nothing gets
+trimmed on the way in and explained nothing on the way back. The one question
+we have to ask, about heart and lung conditions, said why it was being asked
+at signup and said nothing in Settings. Settings asked how long you have got
+in two separate places, with two different sets of answers available.
+
+Worse than the wording: height. Signup asks for centimetres if you said you
+think in kilos. Settings only ever offered feet and inches, so somebody on
+kilos could set their height once at signup and never edit it in their own
+units again.
+
+There is now one definition of each question, in `lib/questions.ts`, and one
+height field that knows which unit you use. Both screens render from them. A
+check reads both files and fails if either starts writing a question out for
+itself again, and asserts that the explanations that had already gone missing
+are still attached to the questions.
+
+The wording is shared; one screen can still say more when it honestly has more
+to say. Settings explains that switching pounds to kilos is a display choice
+and changes nothing you have logged, which would be a strange promise to make
+at signup when you have logged nothing.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

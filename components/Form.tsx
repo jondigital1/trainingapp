@@ -1,6 +1,7 @@
 'use client'
 
 import CoachChip from './CoachChip'
+import type { Question } from '@/lib/questions'
 
 // One form vocabulary, used by the questionnaire and by the profile page that
 // edits the same answers afterwards. A question should not look like one thing
@@ -39,6 +40,31 @@ export function Field({
       {hint ? <p className="mt-1 text-xs leading-relaxed text-muted">{hint}</p> : null}
       <div className="mt-2">{children}</div>
     </div>
+  )
+}
+
+// One of the shared questions, drawn the same way wherever it is asked. The
+// label, the hint and the choices come from the question itself, so a screen
+// cannot ask it and leave the explanation behind.
+export function Ask<T extends string | number>({
+  q,
+  value,
+  onPick,
+  optional,
+  hint,
+}: {
+  q: Question<T>
+  value: T | undefined
+  onPick: (v: T) => void
+  optional?: boolean
+  // Only for the rare case where one screen honestly has more to say than the
+  // other. Everything else belongs on the question.
+  hint?: string
+}) {
+  return (
+    <Field label={q.label} hint={hint ?? q.hint} optional={optional}>
+      <Options columns={q.columns} value={value} onPick={onPick} options={q.options} />
+    </Field>
   )
 }
 

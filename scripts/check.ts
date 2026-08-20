@@ -49,6 +49,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
+import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '../lib/questions'
 import { assignDay, datesAhead, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
@@ -4406,6 +4407,61 @@ check('one place does the calendar arithmetic', () => {
   for (const file of ['TodayCard', 'UpcomingList', 'WhichDaySheet']) {
     const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
     assert.ok(!/T00:00:00'/.test(src), `${file} does its own local date arithmetic`)
+  }
+})
+
+check('signup and settings ask the same questions the same way', () => {
+  // The two screens each wrote out their own copy of the wording and the
+  // choices, and the drift ran one way: the guidance lived at signup and went
+  // quiet afterwards. Three days was "the sweet spot" when you first picked it
+  // and a bare "3 days" when you changed your mind. Settings asked how long you
+  // have got in two separate places with two different answers available.
+  const signup = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
+  const settings = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+
+  for (const [name, src] of [['signup', signup], ['settings', settings]] as const) {
+    for (const q of [DAYS, LEG_DAYS, MINUTES, ACCESS, CONDITION, UNITS]) {
+      // A Field with the question's own label means the screen is asking it
+      // rather than deferring to the shared definition. A plan summary row
+      // that happens to reuse the words is not.
+      assert.ok(!src.includes(`<Field label="${q.label}"`), `${name} asks "${q.label.slice(0, 30)}" itself`)
+      assert.ok(!src.includes(`<Field\n                  label="${q.label}"`), `${name} asks "${q.label.slice(0, 30)}" itself`)
+      for (const o of q.options) {
+        assert.ok(!src.includes(`label: '${o.label}'`), `${name} writes out the choice "${o.label}"`)
+      }
+    }
+  }
+
+  // Every choice a person can hold is offered. A question that cannot express
+  // the profile it edits is how somebody gets stuck on a value they can see
+  // but cannot change.
+  assert.deepEqual(MINUTES.options.map((o) => o.v).sort((a, b) => a - b), [30, 45, 60, LONG_SESSION])
+  assert.deepEqual(DAYS.options.map((o) => o.v), [3, 4, 5, 6])
+  assert.deepEqual(ACCESS.options.map((o) => o.v), ['full', 'basic', 'home', 'body'])
+  assert.deepEqual(CONDITION.options.map((o) => o.v), ['no', 'yes', 'skip'])
+  assert.deepEqual(LEG_DAYS.options.map((o) => o.v), [1, 2])
+  assert.deepEqual(UNITS.options.map((o) => o.v), ['lb', 'kg'])
+
+  // The explanations survive. These are the ones that had already gone missing.
+  assert.ok(DAYS.hint, 'nobody is told to answer days realistically any more')
+  assert.equal(DAYS.options[0].note, 'The sweet spot')
+  assert.equal(MINUTES.options[3].note, 'Nothing gets trimmed')
+  assert.ok(MINUTES.hint && LEG_DAYS.hint && CONDITION.hint)
+})
+
+check('height is asked in the units you said you think in', () => {
+  // Signup asked for centimetres if you chose kilos. Settings only ever
+  // offered feet and inches, so somebody on kilos could set their height once
+  // at signup and never edit it in their own units again.
+  const field = readFileSync(new URL('../components/HeightField.tsx', import.meta.url), 'utf8')
+  assert.ok(/unit === 'kg'/.test(field), 'the height field stopped caring which unit you use')
+  assert.ok(field.includes('2.54'), 'the height field stopped converting')
+
+  for (const file of ['Onboarding', 'ProfileSheet']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(src.includes('HeightField'), `${file} asks for height its own way`)
+    assert.ok(!src.includes('suffix="ft"'), `${file} still has a height box of its own`)
+    assert.ok(!src.includes('suffix="cm"'), `${file} still has a height box of its own`)
   }
 })
 
