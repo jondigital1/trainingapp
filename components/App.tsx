@@ -10,6 +10,7 @@ import Onboarding from './Onboarding'
 import BottomNav, { type Tab } from './BottomNav'
 import LiftyMark from './LiftyMark'
 import HelpSheet from './HelpSheet'
+import HelloSheet from './HelloSheet'
 import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
 import BlockCard from './BlockCard'
@@ -38,6 +39,7 @@ import { looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
 import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
+import { forToday, greetedOn, recordHello } from '@/lib/hello'
 import { assignDay, dayIdFor, hasSchedule, scheduledDays, suggestSchedule, swapDays, todaysDayId } from '@/lib/schedule'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '@/lib/advance'
 import { hardestFirst, topLoads } from '@/lib/order'
@@ -119,6 +121,8 @@ export default function App({
   const [loadFailed, setLoadFailed] = useState(false)
   const [tab, setTab] = useState<Tab>('calendar')
   const [sheet, setSheet] = useState<SheetName>(null)
+  // Open while the greeting is being answered, holding the session it stopped.
+  const [greeting, setGreeting] = useState(false)
   // The session being put on a day, by template day id.
   const [assigning, setAssigning] = useState<string | null>(null)
   // The date whose session is being moved, while the day picker is open.
@@ -391,6 +395,13 @@ export default function App({
   }
 
   function startWorkout(title: string, items: CustomWorkoutItem[], sort = false, dayId?: string) {
+    // Once a day, on the way into the first session, because how a knee feels
+    // this morning is worth asking then and is noise at any other moment.
+    if (!greetedOn(data.settings.profile, now) && items.length > 0) {
+      setPendingStart({ title, items, sort, dayId })
+      setGreeting(true)
+      return
+    }
     // The one tier 2 question worth asking up front, and only at the moment it
     // is a useful question about today rather than an obstacle at signup.
     if (data.settings.profile.minutes === undefined && items.length > 0) {
@@ -409,7 +420,10 @@ export default function App({
     const { title, items, sort, dayId } = pendingStart
     setPendingStart(null)
     const day = dayId ? dayById(dayId) : null
-    reallyStart(title, day ? buildDay(day, next) : items, sort, next)
+    // Built from today's profile, so a joint named in the greeting still eases
+    // the session even when the minutes question interrupted it on the way.
+    const who = forToday(next, now)
+    reallyStart(title, day ? buildDay(day, who) : items, sort, who)
   }
 
   function reallyStart(title: string, items: CustomWorkoutItem[], sort = false, who?: Profile) {
@@ -1334,6 +1348,40 @@ export default function App({
             </Sheet>
           )
         })()
+      ) : null}
+
+      {/* The word before the first session of the day. What it collects is
+          about today: the profile records the date and the joints, and the
+          session is built from a profile with those folded in, so tomorrow is
+          not shaped by how a knee felt on a Tuesday. */}
+      {greeting ? (
+        <HelloSheet
+          name={profile.name}
+          onStart={(eased) => {
+            const next = recordHello(profile, now, eased)
+            void saveProfile(next)
+            setGreeting(false)
+            // Minutes may still be unanswered, so the start goes back through
+            // the front door rather than around it.
+            const held = pendingStart
+            setPendingStart(null)
+            if (held) {
+              const who = forToday(next, now)
+              const day = held.dayId ? dayById(held.dayId) : null
+              if (who.minutes === undefined) {
+                setPendingStart(held)
+                setProfileFocus('minutes')
+                setSheet('profile')
+                return
+              }
+              reallyStart(held.title, day ? buildDay(day, who) : held.items, held.sort, who)
+            }
+          }}
+          onClose={() => {
+            setGreeting(false)
+            setPendingStart(null)
+          }}
+        />
       ) : null}
 
       {/* Where a session is going. Dated, so moving this Tuesday leaves every

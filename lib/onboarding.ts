@@ -65,6 +65,11 @@ export interface Profile {
   // change of Tuesday. An empty string means the day was emptied by a move
   // away from it, which is different from a day the pattern never filled.
   moves?: Record<string, string>
+  // The day the greeting last ran, and the joints somebody named on the way
+  // into a session, by date. Both are about a day rather than about a person,
+  // which is why neither is written into sore.
+  greetedAt?: string
+  easedOn?: Record<string, string[]>
   days?: number
   access?: 'full' | 'basic' | 'home' | 'body'
   // 30 minutes, an hour, or 90. 45 and 75 are no longer offered but are still

@@ -6,6 +6,7 @@ import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, lookupType, sim
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
+import { easedNote, easedToday, forToday, greetedOn, recordHello } from '../lib/hello'
 import { fmtDate, fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
@@ -375,6 +376,65 @@ check('a six day week repeats the upper days and splits the legs', () => {
   for (const id of six.dayIds) counts.set(id, (counts.get(id) ?? 0) + 1)
   assert.equal(counts.get('ppl-push'), 2)
   assert.equal(counts.get('ppl-pull'), 2)
+})
+
+check('the word before the first session of the day', () => {
+  const today = '2026-08-20'
+  const base = { years: 'overTwo' as const, knows: 'yes' as const, days: 4, minutes: 60 as const }
+
+  // Asked once. Answering it, either way, is what stops it being asked again,
+  // so somebody who says nothing is wrong is not asked twice before lunch.
+  assert.equal(greetedOn(base, today), false)
+  const fine = recordHello(base, today, [])
+  assert.equal(greetedOn(fine, today), true)
+  assert.equal(greetedOn(fine, '2026-08-21'), false, 'tomorrow is a different day')
+
+  // What it collects is about today, not about them. Nothing is written into
+  // sore, so tomorrow's session is not shaped by how a knee felt on a Tuesday.
+  const eased = recordHello(base, today, ['Knee'])
+  assert.deepEqual(eased.sore ?? [], [], 'a bad morning became a standing fact')
+  assert.deepEqual(easedToday(eased, today), ['Knee'])
+  assert.deepEqual(easedToday(eased, '2026-08-21'), [])
+
+  // Today's session is built from the two folded together.
+  const day = dayById('ul-lower-a')!
+  const normal = buildDay(day, base)
+  const today1 = buildDay(day, forToday(eased, today))
+  const tomorrow = buildDay(day, forToday(eased, '2026-08-21'))
+
+  assert.deepEqual(today1.map((i) => i.name), normal.map((i) => i.name), 'the session changed as well as easing')
+  assert.ok(today1.some((i) => i.lighter), 'nothing was eased')
+  assert.ok(tomorrow.every((i) => !i.lighter), 'tomorrow inherited this morning')
+
+  const setsFor = (items: typeof normal) =>
+    items.reduce((n, i) => n + prescribedSets(i.name, i.type, 'muscle', i.lighter === true), 0)
+  assert.ok(setsFor(today1) < setsFor(normal), 'eased was not actually lighter')
+  assert.equal(setsFor(tomorrow), setsFor(normal))
+
+  // Saying no is respected rather than argued with. The question was whether
+  // they wanted the session eased, not whether they ought to.
+  const declined = recordHello(base, today, [])
+  assert.deepEqual(easedToday(declined, today), [])
+  assert.ok(buildDay(day, forToday(declined, today)).every((i) => !i.lighter))
+
+  // Yesterday's answer is dropped rather than kept forever.
+  const stale = recordHello({ ...base, easedOn: { '2026-08-01': ['Hip'] } }, today, ['Knee'])
+  assert.ok(!('2026-08-01' in (stale.easedOn ?? {})), 'old mornings accumulate on the profile')
+
+  // The offer says what it will do, named by the joint they gave rather than
+  // by the four muscle groups behind it.
+  assert.equal(easedNote(eased, today), 'Anything working your knee runs a set shorter today.')
+  assert.equal(easedNote(declined, today), null)
+
+  // It sits in front of the thing somebody opened the app to do, so nothing is
+  // wrong has to be one tap.
+  const hello = readFileSync(new URL('../components/HelloSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(/onStart\(\[\]\)/.test(hello), 'there is no way straight past it')
+  assert.ok(/train it as normal/.test(hello), 'the offer cannot be declined')
+
+  // And it only interrupts a real session, never an empty one.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.ok(/!greetedOn\(data.settings.profile, now\) && items.length > 0/.test(app), 'it greets people into nothing')
 })
 
 check('a sore joint lightens the work, a red flag takes it away', () => {

@@ -597,6 +597,28 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## The word before the first session of the day
+
+Once a day, on the way into training, the app asks how you are. Nothing is
+wrong is one tap and the session starts. Saying something is bothering you
+picks the joint and offers to go easier on it, and that offer can be declined:
+the question was whether you want today eased, not whether you ought to.
+
+What it collects is about today rather than about you. A knee that is grumbling
+this morning is not a standing fact to be filed against every future session,
+so it is stored against the date the way a moved workout is, folded into the
+profile only while today's session is being built, and dropped as it ages.
+Tomorrow comes back exactly as it was written.
+
+Which is the whole reason it can afford to ask. A question that quietly edited
+your profile would be one you learn not to answer honestly, and this one costs
+nothing to answer honestly, which is the only way the answers stay worth
+having.
+
+It only interrupts a real session, and it never asks twice in a day, including
+of somebody who said nothing was wrong. Both of those are checked, because the
+failure mode of a daily greeting is not being wrong, it is being tiresome.
+
 ## A sore knee is not a reason to stop training legs
 
 Saying a joint is grumbling used to delete the squat, the split squat and every
