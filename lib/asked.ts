@@ -77,3 +77,26 @@ export function askedReport(
 export function unanswered(rows: AskedRow[]): AskedRow[] {
   return rows.filter((r) => !r.answered)
 }
+
+// What the report can honestly say about itself, including when it has nothing
+// to say. An empty section used to be drawn as no section at all, so a miss log
+// that was recording nothing and a miss log nobody had used yet looked the
+// same on screen, and stayed indistinguishable for weeks. This is the line
+// that tells them apart.
+export function askedState(rows: AskedRow[]): string {
+  if (!rows.length) {
+    return 'Nothing recorded yet. Ask Lifty something and this should count it within a few seconds.'
+  }
+  let times = 0
+  let last = ''
+  for (const r of rows) {
+    times += r.times
+    if (r.last > last) last = r.last
+  }
+  const misses = unanswered(rows).length
+  const wordings = rows.length === 1 ? '1 wording' : `${rows.length} wordings`
+  const asks = times === 1 ? '1 search' : `${times} searches`
+  const missing =
+    misses === 0 ? 'none of them unanswered' : misses === 1 ? '1 unanswered' : `${misses} unanswered`
+  return `${asks} across ${wordings}, ${missing}. Last recorded ${last.slice(0, 10)}.`
+}

@@ -2242,6 +2242,31 @@ render of the settings sheet, so depending on its identity refetched the whole
 list every time somebody typed a character into the import box further up the
 page, twenty two reads for twenty keystrokes. A check pins it.
 
+## Making the miss log answerable
+
+The miss log records what people ask Lifty and whether the library had an
+answer, so the next entry to write is the top row of a list rather than a
+guess. It went weeks without anybody being able to say whether it worked, and
+the reason turned out to be design, not a bug in the writing.
+
+Two things hid it. The admin section was drawn only when the table had rows in
+it, so a miss log that was recording nothing and a miss log nobody had used yet
+were the same blank space on the screen. And a refused write reported itself
+with a console warning, which is only read by somebody who had the console open
+before they typed, which is nobody.
+
+Both are fixed by saying what is true rather than showing nothing. The section
+is always drawn, and it says which of three states it is in: nothing recorded
+yet, recorded with none unanswered, or recorded with a list of misses, with a
+count of searches, a count of wordings and the date of the last one. A refused
+write now says so on the screen where the person is standing, with the reason
+attached, instead of into a console nobody is watching.
+
+The client end was measured rather than assumed: typing a question the library
+cannot answer records exactly one row with answered false, typing one it can
+records one with answered true, and neither fires per keystroke. Whatever was
+stopping the round trip is now obliged to announce itself.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

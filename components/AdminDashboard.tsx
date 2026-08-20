@@ -16,7 +16,7 @@ import {
 } from '@/lib/admin'
 import CoachChip from './CoachChip'
 import type { GapRow } from '@/lib/gaps'
-import { unanswered, type AskedRow } from '@/lib/asked'
+import { askedState, unanswered, type AskedRow } from '@/lib/asked'
 import type { AdminLogRow } from '@/lib/adminData'
 import type { WeekBar } from '@/lib/admin'
 import LiftyMark from './LiftyMark'
@@ -323,13 +323,22 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           writes the entry into lib/knowledge.ts. Nothing here is answered
           automatically, because the panel's whole promise is that somebody
           wrote what it says. */}
-      {asked.length ? (
-        <section className="mt-6">
-          <h3 className={LABEL}>What Lifty could not answer</h3>
-          <p className="mt-1 text-xs leading-relaxed text-muted">
-            Questions people typed that the library had nothing for, most asked first. Each one is
-            an entry waiting to be written.
-          </p>
+      {/* Always drawn, even with nothing in it. Hiding the section when the
+          table was empty meant a feature that was never recording anything and
+          a feature nobody had used yet looked exactly the same, and this one
+          went weeks without anybody being able to tell which it was. A count
+          of zero is a fact; a missing section is not. */}
+      <section className="mt-6">
+        <h3 className={LABEL}>What Lifty could not answer</h3>
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          Questions people typed that the library had nothing for, most asked first. Each one is
+          an entry waiting to be written.
+        </p>
+
+        <p className="mt-2 text-xs leading-relaxed text-accent-ink">{askedState(asked)}</p>
+
+        {asked.length ? (
+          <>
           <ul className="mt-2 flex flex-col gap-1.5">
             {unanswered(asked).slice(0, 25).map((row) => (
               <li
@@ -343,11 +352,6 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
               </li>
             ))}
           </ul>
-          {unanswered(asked).length === 0 ? (
-            <p className="mt-2 text-sm text-muted">
-              Nothing asked has gone unanswered yet.
-            </p>
-          ) : null}
           {/* What people search and do find, which is the only honest basis
               for the four questions the panel puts up front. Those four are
               hand picked today, chosen before anybody had asked anything. */}
@@ -355,8 +359,9 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
             Most searched overall:{' '}
             {asked.slice(0, 3).map((r) => r.question).join(', ') || 'nothing yet'}.
           </p>
-        </section>
-      ) : null}
+          </>
+        ) : null}
+      </section>
 
       {/* The gap report's other finding: people who created a movement the
           library already has did not fail to find a gap, they failed to find

@@ -146,7 +146,14 @@ export default function App({
         return
       }
       void db.logQuestion(sb, userId, question, answered).catch((e: unknown) => {
+        // A console warning is only seen by somebody who had the console open
+        // before they typed, which is nobody. This one went weeks looking like
+        // it worked because the only evidence it had not was a line in a place
+        // no one was watching. It says so on the screen now.
         console.warn('Could not record the question:', e)
+        setError(
+          `Could not record that question: ${e instanceof Error ? e.message : String(e)}`,
+        )
       })
     },
     [sb, userId],

@@ -74,7 +74,7 @@ import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, i
 import { TIER_LABELS, isCompound, isFullSet, restFor, restForTier, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
-import { askedKey, askedReport, unanswered } from '../lib/asked'
+import { askedKey, askedReport, askedState, unanswered } from '../lib/asked'
 import { seriesFor, trackedNames } from '../lib/progress'
 import { groupSize, hardestFirst, isHardestFirst, moveRun, topLoads } from '../lib/order'
 import type { CustomWorkoutItem, Exercise } from '../lib/types'
@@ -4503,6 +4503,45 @@ check('the app does not draw the same thing twice', () => {
     1,
     'the start sheet draws the session card more than once',
   )
+})
+
+check('the miss log says which of its three states it is in', () => {
+  // The section was drawn only when the table had rows in it, so a miss log
+  // recording nothing and a miss log nobody had used yet were the same blank
+  // space on the admin screen. That is why nobody could tell for weeks which
+  // one it was. Three states, three different sentences.
+  assert.match(askedState([]), /Nothing recorded yet/)
+
+  const answered = askedReport([
+    { userId: 'a', question: 'is creatine safe', answered: true, at: '2026-08-19T10:00:00Z' },
+  ])
+  assert.match(askedState(answered), /none of them unanswered/)
+  assert.match(askedState(answered), /Last recorded 2026-08-19/)
+
+  const mixed = askedReport([
+    { userId: 'a', question: 'is creatine safe', answered: true, at: '2026-08-19T10:00:00Z' },
+    { userId: 'b', question: 'do i need bcaas', answered: false, at: '2026-08-20T09:00:00Z' },
+    { userId: 'c', question: 'do i need bcaas', answered: false, at: '2026-08-20T11:00:00Z' },
+  ])
+  assert.match(askedState(mixed), /3 searches across 2 wordings, 1 unanswered/)
+  assert.match(askedState(mixed), /Last recorded 2026-08-20/)
+
+  // All three states have to reach the screen, which means the section cannot
+  // be behind a truthiness test on the rows again.
+  const admin = readFileSync(new URL('../components/AdminDashboard.tsx', import.meta.url), 'utf8')
+  const at = admin.indexOf('What Lifty could not answer')
+  const before = admin.slice(Math.max(0, at - 700), at)
+  assert.ok(!/\{asked\.length \? \(\s*<section/.test(before), 'the section hides itself when empty again')
+  assert.ok(admin.includes('askedState('), 'the section does not say what it knows')
+
+  // And a refused write says so on the screen. A console warning is only read
+  // by somebody who had the console open before they typed, which is nobody,
+  // and that is exactly how this hid.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const note = app.slice(app.indexOf('const noteQuestion'))
+  const body = note.slice(0, note.indexOf('[sb, userId]'))
+  assert.ok(body.includes('setError('), 'a refused question is only reported to the console')
+  assert.ok(body.includes('logQuestion'), 'the question is not recorded at all')
 })
 
 check('every link you handed out is listed, and revocable', () => {
