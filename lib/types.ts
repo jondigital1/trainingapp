@@ -91,6 +91,15 @@ export interface CustomWorkout {
 
 // A workout somebody published. The id is the link, so it is a uuid and not a
 // counter. Nothing logged travels with it, only the shape of the session.
+// A link you have handed out: which workout it was, and when. The workout it
+// serves is a copy taken at the moment of sharing, so it is not the same thing
+// as the workout of that name you still have.
+export interface Share {
+  id: string
+  name: string
+  created_at: string
+}
+
 export interface SharedWorkout {
   id: string
   name: string

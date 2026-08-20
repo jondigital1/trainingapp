@@ -1524,6 +1524,8 @@ export default function App({
           }}
           onHelp={() => setSheet('help')}
           onDeleteAccount={() => void deleteAccount()}
+          onListShares={() => db.listShares(sb)}
+          onRevokeShare={(id) => db.unshare(sb, id)}
           onSignOut={async () => {
             await flush()
             // The offline copy is your whole log sitting in this browser. It

@@ -2210,6 +2210,38 @@ it lays out and how long it rests, because those are the answers that matter
 and they were invisible everywhere else. Tapping one opens the same four
 questions.
 
+## Every link you handed out
+
+Sharing a workout publishes a copy of it: the name, the movements, the order,
+the superset tags. Nothing logged travels, so a link cannot leak a number
+anybody lifted, and it is readable signed out because a link you have to make
+an account to look at is a link nobody opens.
+
+What was missing was the other end of it. Sharing inserts rather than upserts,
+so tapping Share on the same workout three times published three separate
+links, all live forever. There was no list, so there was no way to know that
+had happened. There was no revoke, so there was no way to stop it. And deleting
+the workout did not help, because the published copy lives in its own table and
+went on serving after the original was gone.
+
+Settings now has Shared links: every link, newest first, with the workout it
+serves and the day you handed it out. Copy puts it back on the clipboard.
+Revoke takes it down, and asks twice, because there is no putting it back.
+Sharing again makes a new link, not the old one.
+
+The screen says what revoking does not do, which is the part worth being honest
+about: anyone who already opened the link and saved it to their own workouts
+keeps their copy. Revoking stops the link opening. It does not reach into
+somebody else's account, and a screen that let you believe otherwise would be
+worse than no screen.
+
+It reads the list when the section opens rather than at startup, since this is
+somewhere people go rarely and the app already waits on six queries to draw the
+first thing. That read happens once: the handler is a new function on every
+render of the settings sheet, so depending on its identity refetched the whole
+list every time somebody typed a character into the import box further up the
+page, twenty two reads for twenty keystrokes. A check pins it.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

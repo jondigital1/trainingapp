@@ -8,8 +8,9 @@ import { importArtifactData } from '@/lib/importer'
 import { disablePush, enableNudge, enablePush, pushState, type PushState } from '@/lib/push'
 import { NudgeWhen } from './NudgeField'
 import PasswordChange from './PasswordChange'
+import SharedLinks from './SharedLinks'
 import Sheet from './Sheet'
-import type { Goal, TrainingData } from '@/lib/types'
+import type { Goal, Share, TrainingData } from '@/lib/types'
 
 // The radio the goal rows use, since a picked goal is a choice and not an
 // action. The switch is the one control in the app that is genuinely binary.
@@ -51,6 +52,8 @@ export default function SettingsSheet({
   onHelp,
   onSignOut,
   onDeleteAccount,
+  onListShares,
+  onRevokeShare,
   onClose,
 }: {
   data: TrainingData
@@ -62,6 +65,10 @@ export default function SettingsSheet({
   onImport: (data: TrainingData) => Promise<void>
   onSignOut: () => void
   onDeleteAccount: () => void
+  // Links you have handed out. Read when the section is opened rather than at
+  // startup, since this is a screen people visit rarely.
+  onListShares?: () => Promise<Share[]>
+  onRevokeShare?: (id: string) => Promise<void>
   onClose: () => void
 }) {
   const [paste, setPaste] = useState('')
@@ -78,6 +85,8 @@ export default function SettingsSheet({
   const [busy, setBusy] = useState(false)
   // Said out loud when the phone agreed but the server did not hear about it.
   const [failed, setFailed] = useState('')
+  const [origin, setOrigin] = useState('')
+  useEffect(() => setOrigin(window.location.origin), [])
 
   useEffect(() => setAlerts(pushState()), [])
 
@@ -298,6 +307,17 @@ export default function SettingsSheet({
         Import
       </button>
       {status ? <p className="mt-2 text-xs text-accent-ink">{status}</p> : null}
+
+      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+        Shared links
+      </h3>
+      {onListShares && onRevokeShare ? (
+        <SharedLinks
+          origin={origin}
+          onList={onListShares}
+          onRevoke={onRevokeShare}
+        />
+      ) : null}
 
       <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Help</h3>
       <button

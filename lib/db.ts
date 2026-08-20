@@ -7,6 +7,7 @@ import type {
   Goal,
   SetEntry,
   SetType,
+  Share,
   TrainingData,
   Workout,
 } from './types'
@@ -215,12 +216,21 @@ export async function shareCustomWorkout(
   return res.data.id as string
 }
 
-export async function listShares(sb: SupabaseClient): Promise<{ id: string; name: string }[]> {
-  const res = await sb.from('shared_workouts').select('id,name').order('created_at')
+// Every link you have handed out. Sharing inserts rather than upserts, so the
+// same workout shared three times is three live links, and until there was a
+// list there was no way to know that or to do anything about it.
+//
+// Newest first, because the one you are looking for is almost always the one
+// you just made. The policy on the table is the whole security story: it
+// returns your own rows and there is no way to ask for anybody else's.
+export async function listShares(sb: SupabaseClient): Promise<Share[]> {
+  const res = await sb.from('shared_workouts').select('id,name,created_at').order('created_at', { ascending: false })
   if (res.error) throw new Error(res.error.message)
-  return (res.data ?? []) as { id: string; name: string }[]
+  return (res.data ?? []) as Share[]
 }
 
+// Revoking one. The link stops working; anyone who already opened it and saved
+// it to their own workouts keeps their copy, because that copy is theirs now.
 export async function unshare(sb: SupabaseClient, id: string) {
   const res = await sb.from('shared_workouts').delete().eq('id', id)
   if (res.error) throw new Error(res.error.message)

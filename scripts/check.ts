@@ -4505,6 +4505,38 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('every link you handed out is listed, and revocable', () => {
+  // Sharing inserts rather than upserts, so the same workout shared three
+  // times is three live links. Until this screen there was no way to know
+  // that, see them, or stop any of them, and deleting the workout did not
+  // help: the published copy lives in its own table and kept serving.
+  const db = readFileSync(new URL('../lib/db.ts', import.meta.url), 'utf8')
+  const list = db.slice(db.indexOf('export async function listShares'))
+  const body = list.slice(0, list.indexOf('\n}'))
+  assert.ok(body.includes('created_at'), 'the list cannot say when a link was handed out')
+  assert.ok(body.includes('ascending: false'), 'the newest link is not the first one you see')
+
+  // Revoking goes by the link's own id. Going by workout name would take down
+  // every link for that workout, including ones somebody still wants live.
+  const off = db.slice(db.indexOf('export async function unshare'))
+  assert.ok(off.slice(0, off.indexOf('\n}')).includes(".eq('id'"), 'revoking does not target one link')
+
+  const screen = readFileSync(new URL('../components/SharedLinks.tsx', import.meta.url), 'utf8')
+  // Read once on open. The handler is a new function on every render of the
+  // sheet around it, so depending on its identity refetched the whole list
+  // every time somebody typed a character into the import box above.
+  assert.ok(!/\}, \[onList\]\)/.test(screen), 'the list refetches on every parent render')
+  assert.ok(screen.includes('useRef'), 'the list does not hold the handler steady')
+  // Two taps, and honest about what revoking does not do.
+  assert.ok(screen.includes('Tap again to revoke'), 'revoking is one tap')
+  assert.ok(/keeps their copy/.test(screen), 'the screen implies revoking takes back what people saved')
+
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(settings.includes('SharedLinks'), 'there is nowhere to see your links')
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.ok(app.includes('onListShares') && app.includes('onRevokeShare'), 'the screen is not wired up')
+})
+
 check('Lifty points at tabs that are actually there', () => {
   // An answer that names a section of the profile is a signpost, and renaming
   // the pill without it leaves the signpost pointing at nothing. That is how
