@@ -434,7 +434,10 @@ export default function App({
       name: item.name,
       type: item.type,
       superset: item.superset ?? null,
-      sets: seedSets(item.name, item.type, settings.goal, light),
+      // Lighter for the whole plan, or lighter because this one movement
+      // crosses a joint they said was sore. Either is a set fewer, and a sore
+      // knee should not make the bench press shorter.
+      sets: seedSets(item.name, item.type, settings.goal, light || ('lighter' in item && item.lighter === true)),
     }))
 
     // Hardest first applies only to sessions the app generated from the plan.

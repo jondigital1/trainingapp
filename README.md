@@ -597,6 +597,30 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## A sore knee is not a reason to stop training legs
+
+Saying a joint is grumbling used to delete the squat, the split squat and every
+lunge, and hand back two machines. That answers a question nobody asked. Sore
+means you would like the work on that area to go easier for a while; it does
+not mean you have stopped training it, and an app that hears the second thing
+when you said the first gets its flag switched off rather than obeyed.
+
+A sore joint now runs the work lighter and leaves it where it is. Everything
+crossing that joint gets a set fewer while it settles, and nothing else in the
+session changes: same movements, same order, twenty sets down to fifteen on a
+leg day. That is what a person with a grumbling knee actually does.
+
+The escalation was already sitting next to the question and is doing the job
+now instead. Pain that wakes you at night, numbness, the joint giving way: that
+answer still takes movements away, because that is not something to leg press
+around. Two settings rather than one, and the difference between them is the
+difference between a niggle and a reason to see somebody.
+
+Both of the checks guarding the old behaviour failed, and both were right to.
+They had the rule written into them plainly, squat survived a bad knee, which
+is what a check is for when the rule changes: it tells you what you are
+actually changing rather than letting it slide through.
+
 ## Every tap on the profile page saves itself
 
 Picking a session for Monday saved it and then closed the page, because Done

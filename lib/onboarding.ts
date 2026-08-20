@@ -420,6 +420,24 @@ const RED_FLAG_GROUPS: Record<string, string[]> = {
   Neck: ['Traps', 'Shoulders', 'Back'],
 }
 
+// Which muscles a sore joint sits in the middle of. Reused from the red flag
+// map, because the anatomy does not change with how bad it is: what changes is
+// what the app does about it.
+//
+// A sore knee does not mean stop training legs. It means the leg work runs
+// lighter for a while: a set fewer on everything that crosses the joint, on
+// top of swapping the handful of movements that genuinely aggravate it. That
+// is what somebody with a grumbling knee actually does, and telling them to
+// skip leg day instead is how an app gets ignored rather than obeyed.
+export function soreGroups(profile: Profile): Set<string> {
+  const out = new Set<string>()
+  if (profile.redFlag) return out
+  for (const joint of profile.sore ?? []) {
+    for (const group of RED_FLAG_GROUPS[joint] ?? []) out.add(group)
+  }
+  return out
+}
+
 const RED_FLAG_PATTERNS: Record<string, RegExp> = {
   Knee: /Leg Press|Leg Extension|Hack Squat|Wall Sit|Leg Curl|Hip Thrust|Glute Bridge|Sled|Step Up/i,
   'Low back': /Row|Rack Pull|Hip Thrust|Glute Bridge|Hyperextension|Leg Press|Squat|Carry|Swing|Deadlift/i,
@@ -432,10 +450,22 @@ const RED_FLAG_PATTERNS: Record<string, RegExp> = {
 
 function banned(profile: Profile): Set<string> {
   const out = new Set<string>()
-  for (const joint of profile.sore ?? []) {
-    for (const name of SORE_BANS[joint] ?? []) out.add(name)
-    const pattern = SORE_PATTERNS[joint]
-    if (pattern) for (const e of LIBRARY) if (pattern.test(e.name)) out.add(e.name)
+
+  // A sore joint no longer takes movements away, it makes them lighter. Saying
+  // your knee is grumbling is not saying you want to stop training legs, and
+  // an app that answers it by deleting the squat, the split squat and the
+  // lunge and handing back two machines is answering a question nobody asked.
+  // What it does instead is run everything crossing that joint a set short
+  // while it settles, which is what a person with a grumbling knee actually
+  // does. The red flag beside the question is the escalation, and that one
+  // still takes movements away, because pain that wakes you at night is not
+  // something to leg press around.
+  if (profile.redFlag) {
+    for (const joint of profile.sore ?? []) {
+      for (const name of SORE_BANS[joint] ?? []) out.add(name)
+      const pattern = SORE_PATTERNS[joint]
+      if (pattern) for (const e of LIBRARY) if (pattern.test(e.name)) out.add(e.name)
+    }
   }
   // A red flag answer used to be stored and read by nothing, which for a
   // safety question is the worst kind of ignored. The note beside it promises
@@ -517,6 +547,9 @@ function alternative(name: string, profile: Profile, bans: Set<string>, used: Se
 
 export interface PlannedItem extends CustomWorkoutItem {
   swappedFrom?: string
+  // One set fewer, because this crosses a joint they said was sore. Not a ban
+  // and not a whole plan setting: this movement, this session, while it hurts.
+  lighter?: boolean
 }
 
 // How many movements fit in the time they said they had.
@@ -567,7 +600,11 @@ export function buildDay(day: TemplateDay, profile: Profile): PlannedItem[] {
     })
   }
 
-  const ordered = emphasise(withCarriedFocus(out, profile, bans, used), focusOf(profile))
+  const sore = soreGroups(profile)
+  const eased = sore.size
+    ? out.map((i) => (sore.has(groupOf(i.name) ?? '') ? { ...i, lighter: true } : i))
+    : out
+  const ordered = emphasise(withCarriedFocus(eased, profile, bans, used), focusOf(profile))
 
   const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
   if (ordered.length <= CEILING && fits(ordered, profile, goal)) return ordered

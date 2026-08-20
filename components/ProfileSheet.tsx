@@ -513,9 +513,11 @@ function SoreFields({
         <>
           <div className="mt-3 rounded-2xl surface p-3 ring-1 ring-edge">
             <p className="text-sm">
-              Working around it is normal. Keep it at <span className="num text-accent-ink">5 out of 10</span> or
-              under while you lift, and it should be back to its usual self the next morning. Worse the next
-              day means that was too heavy.
+              You will still train it. Everything crossing that joint runs a set shorter while it settles,
+              rather than disappearing, because working around something is not the same as avoiding it.
+              Keep it at <span className="num text-accent-ink">5 out of 10</span> or under while you lift,
+              and it should be back to its usual self the next morning. Worse the next day means that was
+              too heavy.
             </p>
           </div>
           <Field label="Any of these?" hint="Pain that wakes you at night, numbness or pins and needles down the limb, the joint giving way, a recent bad fall, weight loss you cannot explain.">

@@ -146,7 +146,11 @@ check('a swap inside the circuit keeps the superset tag', () => {
   // Ab Wheel Rollout swaps for a wrist, Cable Crunch for nothing here; use a
   // fake day so the swap machinery is exercised inside a tagged group.
   const day = { id: 'fake', name: 'Fake', exercises: [['Back Squat', 'Cable Curl']] as (string | string[])[] }
-  const items = buildDay(day as never, { sore: ['Knee'] })
+  // One movement taken away, so the swap is the only thing under test. A sore
+  // knee no longer does this: it keeps the squat and runs it a set shorter,
+  // and a red flagged knee takes the alternatives with it, so neither is a
+  // clean way to ask whether a tag survives a substitution.
+  const items = buildDay(day as never, { dislikes: ['Back Squat'] })
   assert.equal(items.length, 2)
   assert.ok(items.every((i) => i.superset === items[0].superset && i.superset), 'tag lost in the swap')
   assert.equal(items[0].name, 'Leg Press')
@@ -373,24 +377,55 @@ check('a six day week repeats the upper days and splits the legs', () => {
   assert.equal(counts.get('ppl-pull'), 2)
 })
 
-check('a sore knee changes the movement, not the session', () => {
+check('a sore joint lightens the work, a red flag takes it away', () => {
+  // This used to delete the squat, the split squat and every lunge the moment
+  // somebody said their knee was grumbling, and hand back two machines. That
+  // is not what saying your knee is sore means. It means you would like the
+  // leg work to go easier for a bit, not that you have stopped training legs,
+  // and an app that answers the second question when you asked the first gets
+  // the flag switched off rather than obeyed.
   const day = dayById('ul-lower-a')!
-  const plain = buildDay(day, {}).map((i) => i.name)
+  const plain = buildDay(day, {})
   const knee = buildDay(day, { sore: ['Knee'] })
-  assert.ok(plain.includes('Back Squat'))
-  assert.ok(!knee.some((i) => i.name === 'Back Squat'), 'squat survived a bad knee')
-  assert.equal(knee.length, plain.length, 'the session lost an exercise instead of swapping it')
-  // The quad day already contains the leg press, so the squat cannot swap to
-  // it; what matters is that it swapped to something rather than vanishing.
-  const swap = knee.find((i) => i.swappedFrom === 'Back Squat')
-  assert.ok(swap, 'the squat left without anything taking its place')
-  assert.equal(groupOf(swap!.name), 'Quads', 'and what replaced it still trains quads')
-  assert.ok(!knee.some((i) => /Squat|Lunge|Step Up/.test(i.name)), 'a knee wants none of them')
 
-  // The hinges moved to the posterior day, so that is where a bad back is felt.
-  const backs = buildDay(dayById('ul-lower-b')!, { sore: ['Low back'] })
-  assert.ok(!backs.some((i) => /Deadlift|Good Morning/.test(i.name)), 'a hinge survived a bad back')
-  assert.ok(backs.some((i) => i.swappedFrom === 'Romanian Deadlift'), 'and it was swapped, not dropped')
+  // Same session. Same movements, in the same order.
+  assert.deepEqual(knee.map((i) => i.name), plain.map((i) => i.name), 'a sore knee changed the session')
+
+  // Everything crossing the knee runs a set shorter, and nothing else does.
+  const legs = ['Quads', 'Hamstrings', 'Glutes', 'Calves']
+  for (const item of knee) {
+    const crosses = legs.includes(groupOf(item.name) ?? '')
+    assert.equal(item.lighter === true, crosses, `${item.name} was ${crosses ? 'not ' : ''}eased`)
+  }
+  const squat = knee.find((i) => i.name === 'Back Squat')!
+  assert.equal(
+    prescribedSets(squat.name, squat.type, 'muscle', true),
+    prescribedSets(squat.name, squat.type, 'muscle', false) - 1,
+    'eased is not actually a set fewer',
+  )
+
+  // The red flag beside the question is the escalation, and it still removes
+  // things, because pain that wakes you at night is not something to leg press
+  // around. That is the one path where the movement goes.
+  const flagged = buildDay(day, { sore: ['Knee'], redFlag: true })
+  assert.ok(!flagged.some((i) => /Squat|Lunge|Leg Press|Leg Extension/.test(i.name)), 'a red flag left the leg work in')
+  assert.ok(flagged.length < plain.length, 'a red flag changed nothing')
+
+  // And a flagged joint is not eased on top of being avoided, which would be
+  // the app hedging in two directions at once.
+  assert.ok(flagged.every((i) => !i.lighter), 'a red flagged session is also running short')
+
+  // Every joint, not just the knee: saying one is sore never empties a day.
+  for (const joint of ['Knee', 'Low back', 'Shoulder', 'Hip', 'Elbow', 'Wrist']) {
+    for (const id of ['ul-lower-a', 'ul-lower-b', 'ppl-push', 'ppl-pull']) {
+      const built = buildDay(dayById(id)!, { sore: [joint] })
+      assert.equal(
+        built.length,
+        buildDay(dayById(id)!, {}).length,
+        `a sore ${joint} shortened ${id}`,
+      )
+    }
+  }
 })
 
 check('bodyweight only leaves nothing that needs a rack', () => {
@@ -2065,36 +2100,40 @@ check('five days and up gets two leg days, and they are different days', () => {
   assert.deepEqual(four.dayIds, ['summer4-push', 'summer4-pull', 'summer4-legs', 'summer4-upper'])
 })
 
-check('the templates carry a squat, and the knee answer takes it away', () => {
+check('the templates carry a squat, and the red flag takes it away', () => {
   // The 4 and 5 day splits used to hardcode one person's knee for everybody.
-  // Now they carry the ordinary movement and the questionnaire decides.
+  // Now they carry the ordinary movement and the questionnaire decides, and
+  // what the questionnaire decides has two settings rather than one.
   const quads = dayById('five-quads')!
   assert.ok(dayNames(quads).includes('Back Squat'), 'a quad day has a squat on it')
 
-  // Measured with no ceiling, because under one the two are not comparable by
-  // length: knee friendly movements are lighter and rest less, so more of them
-  // fit in the same hour. The claim being tested is that a swap replaces
-  // rather than removes, which is a claim about the day and not about a clock.
   const fine = buildDay(quads, { minutes: LONG_SESSION }).map((i) => i.name)
   assert.ok(fine.includes('Back Squat'))
 
-  const sore = buildDay(quads, { minutes: LONG_SESSION, sore: ['Knee'] }).map((i) => i.name)
-  assert.ok(!sore.includes('Back Squat'), 'a flagged knee never sees it')
-  assert.ok(!sore.includes('Bulgarian Split Squat'), 'nor the split stance one')
-  assert.equal(sore.length, fine.length, 'and gets something in its place rather than a shorter day')
+  // Sore keeps it and eases it.
+  const sore = buildDay(quads, { minutes: LONG_SESSION, sore: ['Knee'] })
+  assert.ok(sore.some((i) => i.name === 'Back Squat' && i.lighter), 'a sore knee lost the squat instead of easing it')
+  assert.deepEqual(sore.map((i) => i.name), fine, 'a sore knee changed the session')
+
+  // Red flagged takes it, and the split stance one with it.
+  const flagged = buildDay(quads, { minutes: LONG_SESSION, sore: ['Knee'], redFlag: true }).map((i) => i.name)
+  assert.ok(!flagged.includes('Back Squat'), 'a red flagged knee still sees it')
+  assert.ok(!flagged.includes('Bulgarian Split Squat'), 'nor the split stance one')
 
   // Same story on the legs day of the 4 day split.
   const legs = dayById('summer4-legs')!
   assert.ok(dayNames(legs).includes('Back Squat'))
-  assert.ok(!buildDay(legs, { minutes: 60, sore: ['Knee'] }).map((i) => i.name).includes('Back Squat'))
+  const legsSore = buildDay(legs, { minutes: 60, sore: ['Knee'] })
+  assert.ok(legsSore.some((i) => i.name === 'Back Squat' && i.lighter))
+  assert.ok(!buildDay(legs, { minutes: 60, sore: ['Knee'], redFlag: true }).map((i) => i.name).includes('Back Squat'))
 
-  // A sore back takes the hinge out of the posterior day without emptying it.
+  // A red flagged back takes the hinge out of the posterior day without
+  // emptying it. Sore on its own leaves the hinge and shortens it.
   const post = dayById('five-posterior')!
-  const back = buildDay(post, { minutes: 60, sore: ['Low back'] }).map((i) => i.name)
-  assert.ok(!back.includes('Romanian Deadlift'))
-  // Against the same day built without the flag, not against the raw template,
-  // since the minute budget trims both of them the same way.
-  assert.equal(back.length, buildDay(post, { minutes: 60 }).length)
+  const soreBack = buildDay(post, { minutes: 60, sore: ['Low back'] })
+  assert.ok(soreBack.some((i) => i.name === 'Romanian Deadlift' && i.lighter), 'a sore back lost the hinge')
+  const flaggedBack = buildDay(post, { minutes: 60, sore: ['Low back'], redFlag: true }).map((i) => i.name)
+  assert.ok(!flaggedBack.includes('Romanian Deadlift'))
 })
 
 check('somebody who writes their own workouts is not pushed onto a plan', () => {
