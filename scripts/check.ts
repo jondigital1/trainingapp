@@ -3320,6 +3320,29 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
 })
 
+check('a day you picked is saved when you pick it', () => {
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+
+  // Every other answer on the page is a draft you might still be revising and
+  // is flushed when the page unmounts. A weekday is a decision, and resting it
+  // on a clean unmount is resting it on the phone not being backgrounded,
+  // reloaded or killed first.
+  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('</>', sheet.indexOf('<ScheduleCard')))
+  assert.ok(onChange.includes('onSave(next)'), 'a tap on a day is still only a draft')
+
+  // Week is a section of the full page, not a one question detour. When the
+  // focus type gained a third value the branch still said anything but all,
+  // so Lay out your week opened Anything sore.
+  assert.ok(
+    sheet.includes("if (focus === 'minutes' || focus === 'sore')"),
+    'focus week falls into the one question branch again',
+  )
+  assert.ok(
+    sheet.includes("focus === 'minutes' || focus === 'week' ? 'week'"),
+    'focus week no longer opens the week section',
+  )
+})
+
 check('any session can be put on any day, from either direction', () => {
   // Two complaints that turned out to be one hole. The week picker offered
   // only the days the questionnaire derived, so somebody running Full Body

@@ -152,7 +152,11 @@ export default function ProfileSheet({
 
   // Straight to the one question that was asked, when the app asked it in
   // context. The full page is a different job from "how long have you got".
-  if (focus !== 'all') {
+  // Week is a section of the full page, not a one question detour, so it does
+  // not belong in this branch. It landed here when the type gained a third
+  // value and the condition still said anything but all, which meant Lay out
+  // your week opened Anything sore.
+  if (focus === 'minutes' || focus === 'sore') {
     return (
       <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={close}>
         {focus === 'minutes' ? (
@@ -323,7 +327,17 @@ export default function ProfileSheet({
             <ScheduleCard
               profile={draft}
               plan={plan}
-              onChange={(schedule) => set({ schedule })}
+              onChange={(schedule) => {
+                set({ schedule })
+                // Saved on the tap rather than on the way out. Everything else
+                // on this page is an answer you might still be revising; a day
+                // of the week is a decision, and it was resting on the page
+                // unmounting cleanly to survive. Backgrounding a phone does
+                // not always unmount anything.
+                const next = { ...buildNext(), schedule }
+                saved.current = JSON.stringify(next)
+                onSave(next)
+              }}
             />
 
             <Field label="Days a week">
