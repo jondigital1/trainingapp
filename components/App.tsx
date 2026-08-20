@@ -1257,6 +1257,7 @@ export default function App({
           weights={data.bodyWeights}
           workouts={data.workouts}
           onLogWeight={(lb) => void logWeight(lb)}
+          onApply={(next) => void saveProfile(next)}
           onSave={(next) => {
             void saveProfile(next)
             setSheet(null)

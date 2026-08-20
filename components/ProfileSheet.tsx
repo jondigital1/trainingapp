@@ -59,6 +59,7 @@ export default function ProfileSheet({
   workouts,
   inline,
   onSave,
+  onApply,
   onLogWeight,
   onOpenSettings,
   admin,
@@ -71,6 +72,11 @@ export default function ProfileSheet({
   workouts: Workout[]
   inline?: boolean
   onSave: (next: Profile) => void
+  // Saving something that must not also navigate. Done and Save mean save and
+  // leave; tapping a day of the week means save and stay exactly where you
+  // are, and routing both through onSave closed the page under somebody in
+  // the middle of laying out their week.
+  onApply?: (next: Profile) => void
   onLogWeight: (pounds: number) => void
   onOpenSettings?: () => void
   // Set when the person looking at this page can see everybody else's. The
@@ -337,7 +343,7 @@ export default function ProfileSheet({
                 // not always unmount anything.
                 const next = { ...buildNext(), schedule }
                 saved.current = JSON.stringify(next)
-                onSave(next)
+                ;(onApply ?? onSave)(next)
               }}
             />
 

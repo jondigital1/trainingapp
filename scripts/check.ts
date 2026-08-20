@@ -3962,6 +3962,24 @@ check('six days a week can be Push Pull Legs', () => {
   }
 })
 
+check('laying out a week does not close the page under you', () => {
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+
+  // Done and Save mean save and leave. Tapping a day of the week means save
+  // and stay exactly where you are. Both went through onSave, and onSave on
+  // the profile sheet closes it, so picking a session for Monday shut the page
+  // and unmounted it mid save: the tap looked like it had done nothing.
+  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('/>', sheet.indexOf('<ScheduleCard')))
+  assert.ok(onChange.includes('onApply ?? onSave'), 'a schedule tap is back on the leaving path')
+
+  // And the sheet has somewhere to send it that does not navigate.
+  assert.ok(/onApply=\{\(next\) => void saveProfile\(next\)\}/.test(app), 'onApply is not wired to a plain save')
+
+  // The leaving path still leaves, or Save stops working.
+  assert.ok(/onSave=\{\(next\) => \{\s*\n\s*void saveProfile\(next\)\s*\n\s*setSheet\(null\)/.test(app), 'Save no longer closes the sheet')
+})
+
 check('a day you picked is saved when you pick it', () => {
   const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
 
@@ -3969,8 +3987,8 @@ check('a day you picked is saved when you pick it', () => {
   // is flushed when the page unmounts. A weekday is a decision, and resting it
   // on a clean unmount is resting it on the phone not being backgrounded,
   // reloaded or killed first.
-  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('</>', sheet.indexOf('<ScheduleCard')))
-  assert.ok(onChange.includes('onSave(next)'), 'a tap on a day is still only a draft')
+  const onChange = sheet.slice(sheet.indexOf('<ScheduleCard'), sheet.indexOf('/>', sheet.indexOf('<ScheduleCard')))
+  assert.ok(/\(onApply \?\? onSave\)\(next\)/.test(onChange), 'a tap on a day is still only a draft')
 
   // Week is a section of the full page, not a one question detour. When the
   // focus type gained a third value the branch still said anything but all,
