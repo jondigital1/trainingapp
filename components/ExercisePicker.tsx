@@ -1,15 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MUSCLE_GROUPS, groupOf, similarTo } from '@/lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, similarTo } from '@/lib/exercises'
 import { uid } from '@/lib/format'
 import Sheet from './Sheet'
-import { TIER_LABELS, type RestTier } from '@/lib/rest'
-import { fmtTime } from '@/lib/format'
-import { SET_TYPES, type CustomExercise, type SetType } from '@/lib/types'
+import NewExercise from './NewExercise'
+import { type CustomExercise, type Goal, type SetType } from '@/lib/types'
 
 export default function ExercisePicker({
   customs,
+  goal,
   replacing,
   onPick,
   onUnpick,
@@ -18,6 +18,7 @@ export default function ExercisePicker({
   onClose,
 }: {
   customs: CustomExercise[]
+  goal: Goal
   // The movement being swapped out, when this was opened to substitute rather
   // than to add. Picking replaces it in place instead of appending.
   replacing?: string | null
@@ -36,10 +37,6 @@ export default function ExercisePicker({
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string | null>(null)
   const [added, setAdded] = useState<string[]>([])
-  const [newType, setNewType] = useState<SetType>('W')
-  const [newGroup, setNewGroup] = useState<string>(MUSCLE_GROUPS[0])
-  const [newTier, setNewTier] = useState<RestTier>('compound')
-  const [newSets, setNewSets] = useState(3)
   // While this is on, everything picked joins the same superset. Off, and each
   // pick is its own exercise. One tag per run of the toggle.
   const [superset, setSuperset] = useState<string | null>(null)
@@ -168,106 +165,18 @@ export default function ExercisePicker({
         {results.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nothing matches</p> : null}
       </div>
       {query.trim() && !exact ? (
-        <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
-          <p className="text-sm">
-            Create <span className="text-accent-ink">{query.trim()}</span>
-          </p>
-
-          {/* Four questions, because the answers are what let a movement the
-              library has never heard of behave like one it has: counted in the
-              weekly total, swapped around a sore joint, and rested properly. */}
-          <Label>What do you measure</Label>
-          <Chips
-            options={SET_TYPES.map((t) => ({ v: t.type as string, label: t.label }))}
-            value={newType}
-            onPick={(v) => setNewType(v as SetType)}
-          />
-
-          <Label>What does it train</Label>
-          <Chips
-            options={MUSCLE_GROUPS.map((g) => ({ v: g, label: g }))}
-            value={newGroup}
-            onPick={setNewGroup}
-          />
-
-          <Label>How hard is it</Label>
-          <Chips
-            options={TIER_LABELS.map((t) => ({ v: t.tier as string, label: t.label }))}
-            value={newTier}
-            onPick={(v) => setNewTier(v as RestTier)}
-          />
-          <p className="mt-1 text-xs text-muted">
-            {TIER_LABELS.find((t) => t.tier === newTier)?.hint}. Rests{' '}
-            <span className="num">{fmtTime(TIER_SECONDS[newTier])}</span>.
-          </p>
-
-          <Label>Sets to lay out</Label>
-          <Chips
-            options={[1, 2, 3, 4, 5].map((n) => ({ v: String(n), label: String(n) }))}
-            value={String(newSets)}
-            onPick={(v) => setNewSets(Number(v))}
-          />
-
-          <button
-            onClick={() => {
-              const exercise: CustomExercise = {
-                id: uid(),
-                name: query.trim(),
-                type: newType,
-                group: newGroup,
-                tier: newTier,
-                sets: newSets,
-              }
-              onCreate(exercise)
-              pick(exercise.name, exercise.type)
-              setQuery('')
-            }}
-            className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent"
-          >
-            Save and add
-          </button>
-        </div>
+        <NewExercise
+          name={query.trim()}
+          action="Save and add"
+          goal={goal}
+          onCreate={(exercise) => {
+            onCreate(exercise)
+            pick(exercise.name, exercise.type)
+            setQuery('')
+          }}
+        />
       ) : null}
 
     </Sheet>
-  )
-}
-
-const TIER_SECONDS: Record<RestTier, number> = {
-  heavy: 120,
-  compound: 90,
-  isolation: 60,
-  cable: 45,
-  small: 30,
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <h4 className="mt-4 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">{children}</h4>
-}
-
-function Chips({
-  options,
-  value,
-  onPick,
-}: {
-  options: { v: string; label: string }[]
-  value: string
-  onPick: (v: string) => void
-}) {
-  return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
-      {options.map((o) => (
-        <button
-          key={o.v}
-          onClick={() => onPick(o.v)}
-          aria-pressed={value === o.v}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-            value === o.v ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'bg-card text-muted ring-1 ring-edge'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
   )
 }

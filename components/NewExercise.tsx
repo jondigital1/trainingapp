@@ -1,0 +1,114 @@
+'use client'
+
+import { useState } from 'react'
+import { MUSCLE_GROUPS } from '@/lib/exercises'
+import { fmtTime, uid } from '@/lib/format'
+import { TIER_LABELS, restForTier, type RestTier } from '@/lib/rest'
+import { SET_TYPES, type CustomExercise, type Goal, type SetType } from '@/lib/types'
+
+/**
+ * A movement the library has never heard of.
+ *
+ * Four questions, because the answers are what let it behave like one the
+ * library does know: counted in the weekly total, swapped around a sore joint,
+ * and rested properly. A name on its own would be a row that sits outside
+ * everything else the app can reason about.
+ *
+ * One component rather than one per screen. This used to live only inside the
+ * picker you get during a session, so typing a movement into the workout
+ * builder was a dead end while typing the same movement thirty seconds later,
+ * mid session, worked fine. Two screens answering the same question
+ * differently is how that happens, and sharing the answer is how it stops.
+ */
+export default function NewExercise({
+  name,
+  action,
+  goal,
+  onCreate,
+}: {
+  name: string
+  action: string
+  // Read from the real rest table so the promise on this screen and the timer
+  // in the session are the same number.
+  goal: Goal
+  onCreate: (exercise: CustomExercise) => void
+}) {
+  const [type, setType] = useState<SetType>('W')
+  const [group, setGroup] = useState<string>(MUSCLE_GROUPS[0])
+  const [tier, setTier] = useState<RestTier>('compound')
+  const [sets, setSets] = useState(3)
+
+  return (
+    <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
+      <p className="text-sm">
+        Create <span className="text-accent-ink">{name}</span>
+      </p>
+
+      <Label>What do you measure</Label>
+      <Chips
+        options={SET_TYPES.map((t) => ({ v: t.type as string, label: t.label }))}
+        value={type}
+        onPick={(v) => setType(v as SetType)}
+      />
+
+      <Label>What does it train</Label>
+      <Chips options={MUSCLE_GROUPS.map((g) => ({ v: g, label: g }))} value={group} onPick={setGroup} />
+
+      <Label>How hard is it</Label>
+      <Chips
+        options={TIER_LABELS.map((t) => ({ v: t.tier as string, label: t.label }))}
+        value={tier}
+        onPick={(v) => setTier(v as RestTier)}
+      />
+      <p className="mt-1 text-xs text-muted">
+        {TIER_LABELS.find((t) => t.tier === tier)?.hint}. Rests{' '}
+        <span className="num">{fmtTime(restForTier(tier, goal))}</span>.
+      </p>
+
+      <Label>Sets to lay out</Label>
+      <Chips
+        options={[1, 2, 3, 4, 5].map((n) => ({ v: String(n), label: String(n) }))}
+        value={String(sets)}
+        onPick={(v) => setSets(Number(v))}
+      />
+
+      <button
+        onClick={() => onCreate({ id: uid(), name: name.trim(), type, group, tier, sets })}
+        className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent"
+      >
+        {action}
+      </button>
+    </div>
+  )
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <p className="mt-3 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">{children}</p>
+}
+
+function Chips({
+  options,
+  value,
+  onPick,
+}: {
+  options: { v: string; label: string }[]
+  value: string
+  onPick: (v: string) => void
+}) {
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {options.map((o) => (
+        <button
+          key={o.v}
+          onClick={() => onPick(o.v)}
+          aria-pressed={value === o.v}
+          className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+            value === o.v ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'bg-card text-muted ring-1 ring-edge'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}

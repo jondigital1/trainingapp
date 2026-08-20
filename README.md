@@ -2082,6 +2082,33 @@ worst way for anything to fail.
 On an iPhone this only works once the app is added to the home screen and opened
 from there. That is Apple's rule for web push, not a choice made here.
 
+## The same movement, whichever screen you typed it on
+
+Typing a movement the library has never heard of into the picker that opens
+mid session offered to create it. Typing the same movement into the workout
+builder offered nothing at all: the results list came back empty and that was
+the end of it. Same person, same movement, two answers depending on which
+screen they happened to be standing on.
+
+The fix was not a second create block. Two screens answering the same question
+is exactly how they drift apart, and there was already proof of that sitting in
+the picker: a rest table written out by hand next to the real one, still saying
+a compound rests ninety seconds long after the app had moved to two minutes. It
+promised one number and counted down another, and nobody would ever have caught
+it, because a stale copy looks identical to a fresh one.
+
+So both screens now render the same file, and that file reads the real table
+through `restForTier`. A movement created in the builder and the same movement
+created mid session come out identical, because there is only one thing making
+them. A check pins both halves: that neither screen has grown a create block of
+its own, and that nothing under `components/` writes rest seconds at all.
+
+Four questions, unchanged from the picker: what you measure, what it trains,
+how hard it is, how many sets. They are not paperwork. They are what let
+something the library has never heard of be counted in the weekly total, eased
+around a sore joint, and rested properly, rather than being a name on a row
+that the rest of the app cannot reason about.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

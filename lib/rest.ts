@@ -140,6 +140,14 @@ const REST: Record<Goal, Record<RestTier, number>> = {
   endurance: { heavy: 75, compound: 60, isolation: 45, cable: 30, small: 30 },
 }
 
+// What a tier rests, for the screen that asks somebody to pick one. It was a
+// second copy of the table above, written out by hand in a component, and it
+// went stale the moment the real one changed: it promised ninety seconds on a
+// compound while the app rested two minutes. One table, read by both.
+export function restForTier(tier: RestTier, goal: Goal): number {
+  return REST[goal][tier]
+}
+
 // What the week asks for is the app's own read on how hard today is meant to
 // be, and how hard a set was is the only other thing that decides how long you
 // need after it. A peak week where last sets go to the end earns more rest than

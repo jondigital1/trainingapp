@@ -1221,6 +1221,8 @@ export default function App({
           customs={data.custom}
           editing={data.customWorkouts.find((w) => w.id === editingWorkout) ?? null}
           seed={seedWorkout}
+          goal={data.settings.goal}
+          onCreate={(exercise) => void createCustomExercise(exercise)}
           onSave={(name, items, id) => void saveCustomWorkout(name, items, id)}
           onClose={() => {
             setEditingWorkout(null)
@@ -1233,6 +1235,7 @@ export default function App({
       {sheet === 'picker' && targetWorkout ? (
         <ExercisePicker
           customs={data.custom}
+          goal={data.settings.goal}
           replacing={swapping?.name ?? null}
           onPick={(name, type, superset) => {
             if (swapping) {

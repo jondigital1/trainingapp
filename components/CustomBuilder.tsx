@@ -2,19 +2,23 @@
 
 import { useMemo, useState } from 'react'
 import { LIBRARY, MUSCLE_GROUPS } from '@/lib/exercises'
+import NewExercise from './NewExercise'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
 import Sheet from './Sheet'
-import type { CustomExercise, CustomWorkout, CustomWorkoutItem } from '@/lib/types'
+import type { CustomExercise, CustomWorkout, CustomWorkoutItem, Goal } from '@/lib/types'
 
 export default function CustomBuilder({
   customs,
+  goal,
   editing,
   seed,
   onSave,
+  onCreate,
   onClose,
 }: {
   customs: CustomExercise[]
+  goal: Goal
   // The workout being changed, or nothing when building a new one. Editing
   // saves back over the same id rather than leaving a second copy behind.
   editing?: CustomWorkout | null
@@ -22,6 +26,10 @@ export default function CustomBuilder({
   // so saving leaves the template alone and creates one of your own.
   seed?: { name: string; items: CustomWorkoutItem[] } | null
   onSave: (name: string, items: CustomWorkoutItem[], id?: string) => void
+  // A movement the library has never heard of. The same four answers the
+  // picker inside a session asks for, because a movement created here has to
+  // behave like one created there.
+  onCreate: (exercise: CustomExercise) => void
   onClose: () => void
 }) {
   const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
@@ -45,6 +53,9 @@ export default function CustomBuilder({
       return false
     })
   }, [all, query, group])
+
+  // Already in the library, or already yours, so there is nothing to create.
+  const exact = all.some((e) => e.name.toLowerCase() === query.trim().toLowerCase())
 
   function toggle(item: CustomWorkoutItem) {
     setPicked((prev) =>
@@ -182,10 +193,27 @@ export default function CustomBuilder({
             </button>
           )
         })}
-        {results.length === 0 ? (
+        {results.length === 0 && !query.trim() ? (
           <p className="py-6 text-center text-sm text-muted">Pick a muscle group or search</p>
         ) : null}
       </div>
+
+      {/* Typing something the library does not have used to be a dead end
+          here, while the picker inside a live session would happily create it.
+          The same movement, the same person, two different answers depending
+          on which screen they were standing on. */}
+      {query.trim() && !exact ? (
+        <NewExercise
+          name={query.trim()}
+          action="Add it to this workout"
+          goal={goal}
+          onCreate={(exercise) => {
+            onCreate(exercise)
+            toggle({ name: exercise.name, type: exercise.type })
+            setQuery('')
+          }}
+        />
+      ) : null}
 
       <button
         disabled={!name.trim() || picked.length === 0}

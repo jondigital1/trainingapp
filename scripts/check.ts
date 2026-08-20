@@ -60,7 +60,7 @@ import {
 } from '../lib/gamify'
 import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, effortFactor, mondayOf, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
-import { isCompound, isFullSet, restFor, restTier, scaleRest } from '../lib/rest'
+import { TIER_LABELS, isCompound, isFullSet, restFor, restForTier, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { askedKey, askedReport, unanswered } from '../lib/asked'
@@ -4250,6 +4250,41 @@ check('a session can be pulled forward to today, not just pushed back', () => {
   // Everything the session passed over on its way forward is untouched.
   for (const iso of ['2026-08-18', '2026-08-21', '2026-08-25', '2026-08-31']) {
     assert.equal(dayIdFor(pulled, iso), scheduleOf(week)[weekdayOf(iso)] ?? null, `${iso} drifted`)
+  }
+})
+
+check('one create screen, and it reads the real rest table', () => {
+  // A movement typed into the workout builder and the same movement typed into
+  // the picker mid session have to end up identical. They only do that while
+  // both screens ask the same four questions, so both render the same file.
+  const picker = readFileSync(new URL('../components/ExercisePicker.tsx', import.meta.url), 'utf8')
+  const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  for (const [name, src] of [['picker', picker], ['builder', builder]] as const) {
+    assert.ok(src.includes("from './NewExercise'"), `the ${name} grew its own create screen`)
+    assert.ok(/onCreate/.test(src), `the ${name} cannot create a movement`)
+  }
+
+  // The picker used to carry a hand written copy of the rest table, and it went
+  // stale: it promised ninety seconds on a compound long after the app had
+  // moved to two minutes. Nothing under components/ gets to hold that table
+  // again.
+  const create = readFileSync(new URL('../components/NewExercise.tsx', import.meta.url), 'utf8')
+  for (const [name, src] of [['picker', picker], ['builder', builder], ['NewExercise', create]] as const) {
+    assert.ok(!/heavy:\s*\d+/.test(src), `${name} writes rest seconds of its own`)
+  }
+  assert.ok(create.includes('restForTier'), 'the create screen invents its own rest number')
+
+  // And the number it reads is the number the session counts down.
+  for (const goal of ['strength', 'muscle', 'endurance'] as const) {
+    for (const { tier } of TIER_LABELS) {
+      const shown = restForTier(tier, goal)
+      assert.ok(shown > 0, `${tier} on ${goal} rests nothing`)
+      assert.equal(scaleRest(shown, 1), shown, `${tier} on ${goal} is not a round rest`)
+    }
+    // Named movements land on their tier's number, so the promise on the create
+    // screen is the promise the timer keeps.
+    assert.equal(restFor('Back Squat', 'W', goal), restForTier(restTier('Back Squat', 'W'), goal))
+    assert.equal(restFor('Cable Fly', 'W', goal), restForTier(restTier('Cable Fly', 'W'), goal))
   }
 })
 
