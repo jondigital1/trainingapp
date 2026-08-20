@@ -27,6 +27,7 @@ export default function UpcomingList({
   today,
   onPeek,
   onMove,
+  onPlanWeek,
 }: {
   profile: Profile
   workouts: Workout[]
@@ -35,6 +36,9 @@ export default function UpcomingList({
   // Open the day picker for this date. Plans change, and a schedule you cannot
   // bend without editing the pattern it repeats is a schedule people abandon.
   onMove: (date: string) => void
+  // The way out of the empty state, because an instruction to go somewhere
+  // else is worse than the button it is describing.
+  onPlanWeek: () => void
 }) {
   const upcoming = upcomingDays(profile, today).map((u) => ({
     ...u,
@@ -48,9 +52,18 @@ export default function UpcomingList({
         <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
           What is coming
         </h3>
-        <p className="mt-2 rounded-2xl bg-card p-4 text-sm leading-relaxed text-muted ring-1 ring-edge">
-          Lay your week out on your profile and the next ten sessions appear here, dated.
-        </p>
+        <div className="mt-2 rounded-2xl bg-card p-4 ring-1 ring-edge">
+          <p className="text-sm leading-relaxed text-muted">
+            Say which day you train what, once, and the next ten sessions appear here with
+            their dates. You can move any of them afterwards.
+          </p>
+          <button
+            onClick={onPlanWeek}
+            className="mt-3 w-full rounded-xl bg-accent py-3 font-display text-[15px] font-bold text-on-accent"
+          >
+            Lay out your week
+          </button>
+        </div>
       </section>
     )
   }

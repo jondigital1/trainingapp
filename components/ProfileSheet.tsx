@@ -29,7 +29,7 @@ import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
-type Focus = 'minutes' | 'sore' | 'all'
+type Focus = 'minutes' | 'sore' | 'week' | 'all'
 
 // The same five sections the questionnaire asked, in the same order, so coming
 // back to change an answer means going to where you gave it.
@@ -85,7 +85,7 @@ export default function ProfileSheet({
   // nothing and closing a touched one saves everything.
   const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
-  const [section, setSection] = useState<Section>(focus === 'minutes' ? 'week' : focus === 'sore' ? 'body' : 'you')
+  const [section, setSection] = useState<Section>(focus === 'minutes' || focus === 'week' ? 'week' : focus === 'sore' ? 'body' : 'you')
   const unit = unitOf(draft)
 
   const [name, setName] = useState(profile.name ?? '')

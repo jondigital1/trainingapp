@@ -133,7 +133,7 @@ export default function App({
   // that copy was taken. Null when the data is live.
   const [offline, setOffline] = useState<string | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
-  const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'all'>('all')
+  const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'week' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
   const [scoring, setScoring] = useState<string | null>(null)
   const [editingWorkout, setEditingWorkout] = useState<string | null>(null)
@@ -845,6 +845,10 @@ export default function App({
             if (day) reallyStart(day.name, buildDay(day, profile), true)
           }}
           onPeek={setPeekDay}
+          onPlanWeek={() => {
+            setProfileFocus('week')
+            setSheet('profile')
+          }}
         />
       ) : null}
 
@@ -1017,6 +1021,10 @@ export default function App({
             today={now}
             onPeek={setPeekDay}
             onMove={setMoving}
+            onPlanWeek={() => {
+              setProfileFocus('week')
+              setSheet('profile')
+            }}
           />
 
           {/* Everything behind you. This was its own tab until the calendar
@@ -1025,6 +1033,14 @@ export default function App({
               the page by every workout that came before it. */}
           {todays.length === 0 ? (
         <div className="flex flex-col gap-3">
+          {/* Named, because without a heading these sat straight under the
+              list of what is coming and in the same shape, and a finished
+              workout read as a scheduled one. */}
+          {past.length ? (
+            <h3 className="mt-2 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+              Already done
+            </h3>
+          ) : null}
           {past.length === 0 ? <p className="text-sm text-muted">Nothing behind you yet.</p> : null}
           {past.map((workout) =>
             openHistory === workout.id ? (

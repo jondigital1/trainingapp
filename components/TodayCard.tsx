@@ -2,6 +2,7 @@
 
 import { dayById } from '@/lib/onboarding'
 import {
+  hasSchedule,
   scheduledDays,
   todaysDayId,
   dayIdFor,
@@ -27,11 +28,15 @@ export default function TodayCard({
   today,
   onStart,
   onPeek,
+  onPlanWeek,
 }: {
   profile: Profile
   workouts: Workout[]
   today: string
   onStart: (dayId: string) => void
+  // The way to lay a week out, offered from the one card that can tell it has
+  // not been done.
+  onPlanWeek: () => void
   // Opens the day for reading: what is in it, what it costs, and a Start that
   // is its own tap. Browsing Friday must never start Friday's workout.
   onPeek: (dayId: string) => void
@@ -41,6 +46,10 @@ export default function TodayCard({
   const target = scheduledDays(profile) || profile.days || 3
   const streak = weeklyStreak(workouts, today, target)
   const doneToday = trainedOn(workouts, today)
+  // No week laid out at all is not a rest day. A rest day is a decision, and
+  // calling an empty profile one hides the single setup step that makes the
+  // rest of this screen work.
+  const planned7 = hasSchedule(profile)
 
   // This week, Sunday to Saturday, which is the week the streak and the
   // coverage count already use. What is coming next lives in its own list
@@ -67,7 +76,7 @@ export default function TodayCard({
         <div className="min-w-0">
           <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Today</p>
           <p className="mt-0.5 truncate font-display text-[21px] font-semibold tracking-tight">
-            {doneToday ? 'Done' : day ? day.name : 'Rest day'}
+            {doneToday ? 'Done' : day ? day.name : planned7 ? 'Rest day' : 'No week set yet'}
           </p>
         </div>
         {streak > 0 ? (
@@ -129,6 +138,18 @@ export default function TodayCard({
           Start {day.name}
         </button>
       ) : null}
+
+      {/* Said here rather than only in the empty list below it, because this
+          is the card that is wrong without it: seven blank boxes and a heading
+          that cannot say what today is. */}
+      {planned7 ? null : (
+        <button
+          onClick={onPlanWeek}
+          className="mt-3 w-full rounded-xl bg-accent py-3 font-display text-[15px] font-bold text-on-accent"
+        >
+          Lay out your week
+        </button>
+      )}
     </div>
   )
 }
