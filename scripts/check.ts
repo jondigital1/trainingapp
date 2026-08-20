@@ -3424,6 +3424,59 @@ check('two sessions with the same name are the same session', () => {
   assert.equal(dayById('ppl-legs')!.name, 'Legs')
 })
 
+check('a movement somebody cannot do yet has an easier version', () => {
+  // The library climbed away from beginners. Every push up was a push up or
+  // harder, every pull up was a pull up or harder, so a Foundation plan asked
+  // people for movements they could not do and offered nothing below them.
+  // You cannot take five pounds off a pull up; you change the leverage or add
+  // help, and both of those have to exist as entries.
+  const names = new Set(LIBRARY.map((e) => e.name))
+  for (const easier of [
+    'Incline Push Up', 'Knee Push Up',
+    'Assisted Pull Up', 'Band Assisted Pull Up', 'Negative Pull Up', 'Scapular Pull Up',
+  ]) {
+    assert.ok(names.has(easier), `${easier} is missing`)
+  }
+
+  // And the swap has to reach them, or they exist without being findable from
+  // the movement somebody is actually stuck on.
+  for (const [hard, easy] of [['Pull Up', 'Band Assisted Pull Up'], ['Push Up', 'Incline Push Up']]) {
+    assert.ok(similarTo(hard).some((e) => e.name === easy), `${hard} cannot swap to ${easy}`)
+  }
+
+  // Assistance that needs a machine must say so, or somebody training in a
+  // garage is told to use one.
+  assert.equal(equipmentOf('Assisted Pull Up'), 'machine')
+  assert.equal(equipmentOf('Band Assisted Pull Up'), 'bodyweight')
+  assert.equal(equipmentOf('Incline Push Up'), 'bodyweight')
+})
+
+check('core training covers holding still, not only crunching', () => {
+  // Most of what a midsection does is resist movement, and most of the core
+  // work people are actually taught now is that: planks, dead bugs, bird dogs,
+  // Pallof presses, carries. Crunches are the smaller half of the job.
+  const core = LIBRARY.filter((e) => e.group === 'Core')
+  assert.ok(core.length >= 35, `Core has only ${core.length}`)
+
+  const holds = core.filter((e) => e.type === 'T')
+  assert.ok(holds.length >= 8, `only ${holds.length} core holds`)
+
+  for (const n of ['Dead Bug', 'Bird Dog', 'Pallof Press', 'Body Saw', 'Bear Hold', 'Reverse Crunch']) {
+    assert.ok(core.some((e) => e.name === n), `${n} is missing`)
+  }
+
+  // Bodyweight, because a core exercise nobody can do at home is not core work
+  // it is gym work, and this is the group people train in a bedroom.
+  const bw = core.filter((e) => equipmentOf(e.name) === 'bodyweight')
+  assert.ok(bw.length >= 20, `only ${bw.length} core movements need no kit`)
+
+  // And the words for it resolve, including the one somebody would type after
+  // watching their wife do something they had never seen.
+  assert.equal(searchKnowledge('dead bug')[0]?.id, 'basic-dead-bug')
+  assert.equal(searchKnowledge('anti rotation')[0]?.id, 'w-anti-movement')
+  assert.equal(searchKnowledge('i cant do a pull up')[0]?.id, 'basic-cant-pull-up')
+})
+
 check('the thin muscle groups can fill a session', () => {
   // Glutes had ten movements and one of them was a barbell, which is not
   // enough to build a glute led day out of, let alone to swap inside one.

@@ -300,6 +300,27 @@ const NUMBERS: KnowledgeEntry[] = [
 
 const BASICS: KnowledgeEntry[] = [
   {
+    id: 'basic-core-what-for',
+    q: 'What is core training actually for?',
+    group: 'The basics',
+    aliases: ['core training', 'abs', 'dead bug', 'bird dog', 'pallof press', 'anti rotation', 'plank why', 'core exercises'],
+    a: 'Mostly for resisting movement, not producing it. Your midsection spends real life stopping your spine bending, arching and twisting under load, so the exercises that train it best are the ones where nothing moves: planks, dead bugs, bird dogs, Pallof presses, carries. Crunches and leg raises still have a place, they are just the smaller half of the job, and a lot of the newer looking core work is simply this idea done properly.',
+  },
+  {
+    id: 'basic-dead-bug',
+    q: 'How do I do a dead bug?',
+    group: 'The basics',
+    aliases: ['dead bug', 'deadbug', 'opposite arm and leg', 'lying core exercise'],
+    a: 'On your back, knees and arms up over you, lower back pressed flat into the floor. Lower one arm behind your head and the opposite leg toward the floor, slowly, only as far as you can go while the lower back stays flat. Come back and swap sides. The trick is that your torso does not move at all: it looks like a slow motion crunch and is the opposite of one, and the moment your back arches off the floor the set is over.',
+  },
+  {
+    id: 'basic-cant-pull-up',
+    q: 'I cannot do a pull up yet. What do I do?',
+    group: 'The basics',
+    aliases: ['cant do a pull up', 'first pull up', 'assisted pull up', 'no pull ups yet', 'push up too hard'],
+    a: 'Work the same movement in an easier form until you can. Band assisted or machine assisted pull ups let you train the full range with help you can gradually remove. Negatives, where you jump to the top and lower as slowly as possible, build the same strength from the other end. Inverted rows and lat pulldowns cover the pattern in the meantime. The same ladder exists for push ups: incline, then knees, then the floor.',
+  },
+  {
     id: 'basic-superset',
     q: 'What is a superset?',
     group: 'The basics',
@@ -686,6 +707,20 @@ const STRONGER: KnowledgeEntry[] = [
 // know. Different shape, same search box, so RIR finds the definition of RIR
 // rather than a paragraph about effort that happens to mention it.
 const WORDS: KnowledgeEntry[] = [
+  {
+    id: 'w-anti-movement',
+    q: 'What is anti-extension and anti-rotation?',
+    group: 'Words you will see',
+    aliases: ['anti extension', 'anti rotation', 'anti lateral flexion', 'bracing exercises'],
+    a: 'The names for core work whose job is to stop something happening. Anti-extension resists your lower back arching, which is a plank, a dead bug or an ab wheel. Anti-rotation resists twisting, which is a Pallof press. Anti-lateral-flexion resists bending sideways, which is a suitcase carry. If an exercise looks like nothing is happening, this is usually why.',
+  },
+  {
+    id: 'w-regression',
+    q: 'What are regressions and progressions?',
+    group: 'Words you will see',
+    aliases: ['regression', 'progression', 'easier version', 'harder version', 'scaling'],
+    a: 'The same movement made easier or harder. An incline push up is a regression of a push up, a weighted one is a progression. Bodyweight training runs almost entirely on this: you cannot take five pounds off a pull up, so you change the leverage or add help instead. A plan asking for something you cannot do yet is a plan missing its regression, not a plan you have failed.',
+  },
   {
     id: 'w-hypertrophy',
     q: 'What is hypertrophy?',

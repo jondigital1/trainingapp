@@ -384,6 +384,38 @@ it, because it listed knee and back and nothing else, and people do not type
 the words a taxonomy would choose. Findability is content. The entry now
 carries the vocabulary of things that actually go wrong.
 
+## The library had climbed away from beginners
+
+A question about core exercises turned up something worse than a thin core
+section. Every push up in the library was a push up or harder: weighted,
+deficit, diamond, archer. Every pull up was a pull up or harder. There was no
+incline push up, no knees, no assisted pull up, no negative, nothing below the
+thing itself.
+
+Which means the Foundation program, the one for people who have never trained,
+was asking for movements a beginner cannot do and offering nothing underneath
+them but a machine, and somebody training in a garage did not even have that.
+You cannot take five pounds off a pull up. The only way down is leverage or
+assistance, and neither existed.
+
+Eleven regressions now do, and the swap reaches them: a pull up offers band
+assisted, machine assisted and negatives before it offers a row. Assistance
+that needs a machine says so, so a garage does not get told to use one.
+
+Core went from twenty five to thirty eight, and the additions are the half the
+library was missing rather than more crunches. Most of what a midsection does
+is resist movement: stop the back arching, stop the torso twisting, stop the
+ribs folding sideways. Body saws, bear holds, long lever planks, hanging
+windshield wipers, landmine rotations, reverse crunches. Twenty of the
+thirty eight need no equipment at all, which matters for the one group people
+genuinely train on a bedroom floor.
+
+Dead bug was already there. What was missing was anywhere to find out that it
+is not a crunch: the whole point is that the torso does not move, and the set
+ends the moment the lower back lifts off the floor. An exercise that looks like
+nothing is happening needs the paragraph explaining why more than a bench press
+does.
+
 ## Words, as well as questions
 
 A question is something somebody thought to ask. A term is something they read

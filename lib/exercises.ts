@@ -34,6 +34,9 @@ const RAW: Record<string, string[]> = {
     'Dip|R',
     'Weighted Dip|W',
     'Svend Press|W',
+    'Incline Push Up|R',
+    'Knee Push Up|R',
+    'Archer Push Up|R',
   ],
   Back: [
     'Deadlift|W',
@@ -68,6 +71,10 @@ const RAW: Record<string, string[]> = {
     'Back Extension|R',
     'Weighted Back Extension|W',
     'Reverse Hyper|W',
+    'Assisted Pull Up|W',
+    'Band Assisted Pull Up|R',
+    'Negative Pull Up|R',
+    'Scapular Pull Up|R',
   ],
   Shoulders: [
     'Overhead Press|W',
@@ -184,6 +191,10 @@ const RAW: Record<string, string[]> = {
     'Smith Machine Squat|W',
     'Cyclist Squat|W',
     'Wall Sit|T',
+    'Box Squat|W',
+    'Pistol Squat|R',
+    'Cossack Squat|R',
+    'Jump Squat|R',
   ],
   Hamstrings: [
     'Romanian Deadlift|W',
@@ -274,6 +285,19 @@ const RAW: Record<string, string[]> = {
     'V Up|R',
     'Toes to Bar|R',
     'Dragon Flag|R',
+    'Reverse Crunch|R',
+    'Body Saw|R',
+    'Bear Hold|T',
+    'Bear Crawl|T',
+    'Stir the Pot|R',
+    'Hanging Windshield Wiper|R',
+    'Landmine Rotation|W',
+    'Weighted Plank|T',
+    'Long Lever Plank|T',
+    'Hollow Rock|R',
+    'Standing Ab Wheel Rollout|R',
+    'Dumbbell Side Bend|W',
+    'Suitcase Hold|T',
   ],
   Carries: [
     'Farmer Carry|WD',
@@ -329,6 +353,26 @@ export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweig
 
 // Names the keyword rules below get wrong.
 const EQUIPMENT_OVERRIDES: Record<string, Equipment> = {
+  'Assisted Pull Up': 'machine',
+  'Band Assisted Pull Up': 'bodyweight',
+  'Stir the Pot': 'bodyweight',
+  'Body Saw': 'bodyweight',
+  'Hollow Rock': 'bodyweight',
+  'Standing Ab Wheel Rollout': 'bodyweight',
+  'Reverse Crunch': 'bodyweight',
+  'Landmine Rotation': 'barbell',
+  'Suitcase Hold': 'dumbbell',
+  'Box Squat': 'barbell',
+  'Bear Hold': 'bodyweight',
+  'Bear Crawl': 'bodyweight',
+  'Pistol Squat': 'bodyweight',
+  'Cossack Squat': 'bodyweight',
+  'Jump Squat': 'bodyweight',
+  'Long Lever Plank': 'bodyweight',
+  'Hanging Windshield Wiper': 'bodyweight',
+  'Negative Pull Up': 'bodyweight',
+  'Scapular Pull Up': 'bodyweight',
+  'Archer Push Up': 'bodyweight',
   // A bench, a machine or a floor, none of which the name says out loud. This
   // matters more than it looks: equipment decides what a plan may offer, so a
   // hip abduction machine filed as a dumbbell gets programmed for somebody who
