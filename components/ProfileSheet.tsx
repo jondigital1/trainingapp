@@ -270,27 +270,10 @@ export default function ProfileSheet({
         </div>
       ) : (
       <>
-      {onOpenSettings ? (
-        // Named, on the page, rather than only a small pill in the header and
-        // a coloured chip on one other tab. Somebody looking for sign out,
-        // theme, notifications or their data should not have to guess that
-        // the word BUILD MUSCLE is a button.
-        <button
-          onClick={onOpenSettings}
-          className="mt-4 flex w-full items-center justify-between gap-3 rounded-xl bg-ink px-3 py-3 text-left text-sm ring-1 ring-edge"
-        >
-          <span>
-            <span className="font-bold">Settings</span>
-            <span className="mt-0.5 block text-xs text-muted">
-              Theme, notifications, your data, sign out
-            </span>
-          </span>
-          <span aria-hidden className="text-muted">
-            &rarr;
-          </span>
-        </button>
-      ) : null}
-
+      {/* One way in, not two. This page carried a full width Settings card as
+          well as the pill in its own header, on the reasoning that the pill
+          was easy to miss. Two doors to the same room on the same screen is
+          not the fix for a door being small. */}
       <div className="mt-4 flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
           <button

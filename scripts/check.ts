@@ -378,6 +378,20 @@ check('a six day week repeats the upper days and splits the legs', () => {
   assert.equal(counts.get('ppl-pull'), 2)
 })
 
+check('one door into Settings, not two on the same screen', () => {
+  // The profile page carried a full width Settings card as well as the pill in
+  // its own header, added on the reasoning that the pill was easy to miss. Two
+  // doors to the same room on the same screen is not the fix for a door being
+  // small, it is the same confusion with more of it.
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const doors = sheet.match(/onClick=\{onOpenSettings\}/g) ?? []
+  assert.equal(doors.length, 1, `${doors.length} ways into Settings on one page`)
+  assert.ok(!/Theme, notifications, your data, sign out/.test(sheet), 'the card came back')
+
+  // And the one that stayed is still wired up, or the room has no door at all.
+  assert.ok(/action=\{[\s\S]{0,200}onClick=\{onOpenSettings\}/.test(sheet), 'the header pill lost its handler')
+})
+
 check('the word before the first session of the day', () => {
   const today = '2026-08-20'
   const base = { years: 'overTwo' as const, knows: 'yes' as const, days: 4, minutes: 60 as const }
