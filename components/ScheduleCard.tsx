@@ -34,9 +34,18 @@ export default function ScheduleCard({
   // Grouped under their split rather than each chip carrying its split's name,
   // because half these names repeat across splits and Hamstrings and Glutes
   // with 5 Day Split stuck on the end is wider than a phone.
+  // Deduped by name as well as by id, because a few sessions genuinely appear
+  // in two splits with the same movements in them. Offering Quad Dominant
+  // Legs twice under different headings is asking somebody to choose between
+  // two things that are the same thing.
+  const claimed = new Set(mine.map((id) => dayById(id)?.name).filter(Boolean) as string[])
   const others = SPLITS.map((split) => ({
     name: split.name,
-    days: split.days.filter((d) => !mine.includes(d.id)),
+    days: split.days.filter((d) => {
+      if (mine.includes(d.id) || claimed.has(d.name)) return false
+      claimed.add(d.name)
+      return true
+    }),
   })).filter((s) => s.days.length)
 
   function set(weekday: number, dayId: string | null) {

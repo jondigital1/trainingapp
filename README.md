@@ -294,6 +294,52 @@ fails on any tab a piece of copy names that the nav does not render, so the
 next rename cannot leave the help text pointing at a place that no longer
 exists.
 
+## A name is a promise about the first thing you will do
+
+There were four different sessions called Legs and two called Push. On a
+calendar that is a name carrying no information, and in the week picker it is
+a choice between two things nobody can tell apart. Days are named for what
+distinguishes them now: Incline Push, Vertical Pull, Squat Led Legs, Quad
+Dominant Legs, Glute Dominant Legs. Push Pull Legs keeps the plain words,
+being the split those words are the name of.
+
+A check holds the line, and it compares the work rather than the finisher: two
+days may share a name only when they are the same session appearing in two
+splits, which a couple genuinely are. The first version of that check compared
+undefined to undefined and passed everything, which is a reminder that a green
+check nobody watched fail is not evidence of anything.
+
+The count of leg days is taken by id now instead of by matching leg or quad or
+glute against the name. It broke the moment the names changed, which is what a
+test written against English rather than structure does.
+
+## What the public exercise databases are actually worth
+
+The library was 226 movements and the thin end of it was thin: ten glute
+movements, one of them a barbell, which is not enough to build a glute led day
+from, let alone to swap inside one.
+
+The obvious move was to import an open dataset, so that got measured rather
+than assumed. free-exercise-db is 873 entries, public domain, properly
+structured, and mapping it against what was already here turned up far less
+than expected. Its forearm section is twenty ways to write Seated One Arm
+Dumbbell Palms Down Wrist Curl. Its hamstring section is mostly kettlebell
+olympic lifting. Its calf section is our calf section with the plurals moved
+around. It is an old bodybuilding site scrape: heavy on Smith machine
+minutiae, and missing most of what people have actually trained glutes with
+for the last decade.
+
+So the import stayed a report and the entries were written by hand: 38 of
+them, in the five groups that needed it, each one a movement somebody would
+recognise. Glutes 10 to 22, hamstrings 12 to 22, calves, traps and forearms to
+13 or 14 apiece, and every one of them across at least three kinds of
+equipment so a missing machine is not a missing day.
+
+Equipment is worth saying out loud, because it is derived from the name and
+the name does not always say. A hip abduction machine that reads as a dumbbell
+gets programmed for somebody who owns a pair of dumbbells and no machine, so
+the ones the rules get wrong are named explicitly.
+
 ## Any session, on any day
 
 Two complaints, one hole. The week picker offered only the days the

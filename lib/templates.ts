@@ -35,7 +35,7 @@ export const SPLITS: TemplateSplit[] = [
     days: [
       {
         id: 'summer4-push',
-        name: 'Push',
+        name: 'Incline Push',
         exercises: [
           'Incline Dumbbell Press',
           'Machine Chest Press',
@@ -49,7 +49,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'summer4-pull',
-        name: 'Pull',
+        name: 'Vertical Pull',
         exercises: [
           'Weighted Pull Up',
           'Chest Supported Row',
@@ -63,7 +63,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'summer4-legs',
-        name: 'Legs',
+        name: 'Squat Led Legs',
         exercises: [
           'Back Squat',
           'Romanian Deadlift',
@@ -125,7 +125,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'five-legs',
-        name: 'Legs',
+        name: 'Machine Led Legs',
         exercises: [
           'Leg Press',
           'Seated Leg Curl',
@@ -152,7 +152,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'five-quads',
-        name: 'Quads and Calves',
+        name: 'Quad Dominant Legs',
         exercises: [
           'Back Squat',
           'Leg Press',
@@ -164,7 +164,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'five-posterior',
-        name: 'Hamstrings and Glutes',
+        name: 'Glute Dominant Legs',
         exercises: [
           'Romanian Deadlift',
           'Hip Thrust',
@@ -248,7 +248,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'bro-legs',
-        name: 'Legs',
+        name: 'Quads and Hamstrings',
         exercises: [
           'Back Squat',
           'Romanian Deadlift',
@@ -322,7 +322,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-a',
-        name: 'Quads and Calves',
+        name: 'Quad Dominant Legs',
         exercises: [
           'Back Squat',
           'Leg Press',
@@ -346,7 +346,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-b',
-        name: 'Hamstrings and Glutes',
+        name: 'Glute Dominant Legs',
         exercises: [
           'Romanian Deadlift',
           'Hip Thrust',

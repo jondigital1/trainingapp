@@ -1897,9 +1897,16 @@ check('one leg day or two is a choice, and both weeks are real weeks', () => {
 
       // One means one. Counted by day rather than by name, because a week that
       // ran the same Legs session twice is the thing this replaced.
+      // Counted by id rather than by reading the names, because the names are
+      // for people and changed the moment four sessions called Legs became a
+      // problem. A day is a leg day because it is one, not because it says so.
+      const legDayIds = [
+        'summer4-legs', 'five-legs', 'five-quads', 'five-posterior',
+        'bro-legs', 'ppl-legs', 'ul-lower-a', 'ul-lower-b',
+      ]
       const legNames = one.dayIds
-        .map((id) => dayById(id)?.name ?? '')
-        .filter((n) => /leg|quad|hamstring|glute/i.test(n))
+        .filter((id) => legDayIds.includes(id))
+        .map((id) => dayById(id)?.name ?? id)
       assert.equal(legNames.length, 1, `${program} at ${days} has leg days: ${legNames.join(', ')}`)
     }
   }
@@ -3320,6 +3327,72 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
 })
 
+check('two sessions with the same name are the same session', () => {
+  // There were four different days called Legs and two called Push. On a
+  // calendar that is a name that tells you nothing, and in the week picker it
+  // is a choice between two things you cannot tell apart.
+  const days = SPLITS.flatMap((s) => s.days)
+  const byName = new Map<string, string[]>()
+  for (const d of days) byName.set(d.name, [...(byName.get(d.name) ?? []), d.id])
+
+  for (const [name, ids] of byName) {
+    if (ids.length === 1) continue
+    // A shared name is allowed only when the sessions really are the same
+    // workout appearing in two splits, which a couple genuinely are.
+    // Compared on the work, not the finisher. A couple of these days are the
+    // same session in two splits and differ only in whether the core slot is
+    // one movement or a rotating pick, which is not something a name is
+    // supposed to distinguish.
+    const work = (id: string) =>
+      dayById(id)!
+        .exercises.map((e) => (Array.isArray(e) ? e.join('/') : e))
+        .filter((n) => !n.split('/').every((one) => groupOf(one) === 'Core'))
+        .sort()
+        .join('|')
+    const [first, ...rest] = ids.map(work)
+    for (const other of rest) {
+      assert.equal(other, first, `${name} names two different sessions: ${ids.join(', ')}`)
+    }
+  }
+
+  // The vocabulary somebody actually uses for a leg day, rather than Legs
+  // four times over.
+  const names = days.map((d) => d.name)
+  assert.ok(names.includes('Quad Dominant Legs'))
+  assert.ok(names.includes('Glute Dominant Legs'))
+  assert.ok(names.includes('Squat Led Legs'))
+  assert.ok(names.includes('Incline Push'))
+  assert.ok(names.includes('Vertical Pull'))
+
+  // Push Pull Legs keeps the plain names, being the split those words name.
+  assert.equal(dayById('ppl-push')!.name, 'Push')
+  assert.equal(dayById('ppl-pull')!.name, 'Pull')
+  assert.equal(dayById('ppl-legs')!.name, 'Legs')
+})
+
+check('the thin muscle groups can fill a session', () => {
+  // Glutes had ten movements and one of them was a barbell, which is not
+  // enough to build a glute led day out of, let alone to swap inside one.
+  for (const group of ['Glutes', 'Hamstrings', 'Calves', 'Traps', 'Forearms']) {
+    const es = LIBRARY.filter((e) => e.group === group)
+    assert.ok(es.length >= 13, `${group} has only ${es.length}`)
+    // And across enough kit that a missing machine is not a missing day.
+    const kit = new Set(es.map((e) => equipmentOf(e.name)))
+    assert.ok(kit.size >= 3, `${group} is only ${[...kit].join(', ')}`)
+  }
+
+  // One name, one group. Filing a movement under two makes groupOf a coin toss.
+  const names = LIBRARY.map((e) => e.name.toLowerCase())
+  assert.equal(new Set(names).size, names.length, 'a movement is filed under two groups')
+
+  // Equipment decides what a plan may offer, so a machine filed as a dumbbell
+  // gets programmed for somebody who owns a pair of dumbbells and no machine.
+  assert.equal(equipmentOf('Seated Hip Abduction'), 'machine')
+  assert.equal(equipmentOf('Reverse Hyperextension'), 'machine')
+  assert.equal(equipmentOf('45 Degree Back Extension'), 'bodyweight')
+  assert.equal(equipmentOf('Kas Glute Bridge'), 'barbell')
+})
+
 check('six days a week can be Push Pull Legs', () => {
   // Six days was the one place PPL could not be derived: it produced a muscle
   // a day, and running Push Pull Legs twice through is the single most common
@@ -3334,7 +3407,7 @@ check('six days a week can be Push Pull Legs', () => {
 
   // Laid across a week it reads the way somebody running PPL expects.
   const spread = suggestSchedule(six).map((id) => (id ? dayById(id)!.name : 'Rest'))
-  assert.deepEqual(spread, ['Rest', 'Push', 'Pull', 'Quads and Calves', 'Push', 'Pull', 'Hamstrings and Glutes'])
+  assert.deepEqual(spread, ['Rest', 'Push', 'Pull', 'Quad Dominant Legs', 'Push', 'Pull', 'Glute Dominant Legs'])
 
   // A plan naming the same session twice must not offer it twice to pick.
   const card = readFileSync(new URL('../components/ScheduleCard.tsx', import.meta.url), 'utf8')
