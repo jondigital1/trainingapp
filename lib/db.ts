@@ -290,3 +290,19 @@ export async function deleteAccount(sb: SupabaseClient) {
   const res = await sb.rpc('delete_me')
   if (res.error) throw res.error
 }
+
+// A question somebody typed at Lifty, and whether the library had an answer.
+//
+// Fire and forget on purpose: this is telemetry for deciding what to write
+// next, and a search box that surfaces an error because a logging insert
+// failed would be a worse feature than one that quietly loses a row.
+export async function logQuestion(
+  sb: SupabaseClient,
+  userId: string,
+  question: string,
+  answered: boolean,
+) {
+  const asked = question.trim().replace(/\s+/g, ' ').slice(0, 200)
+  if (asked.length < 2) return
+  await sb.from('asked_questions').insert({ user_id: userId, question: asked, answered })
+}

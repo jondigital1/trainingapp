@@ -209,3 +209,20 @@ export async function loadAdminLog(limit = 20): Promise<AdminLogRow[]> {
     targetEmail: r.target_email as string,
   }))
 }
+
+// Every question anybody has typed at Lifty. Whole table, like the rest of
+// this file, and for the same reason: there is one user today.
+export async function loadAskedRows(): Promise<
+  { userId: string; question: string; answered: boolean; at: string }[]
+> {
+  const sb = supabaseAdmin()
+  if (!sb) return []
+  const { data, error } = await sb.from('asked_questions').select('user_id,question,answered,at')
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => ({
+    userId: r.user_id as string,
+    question: r.question as string,
+    answered: r.answered as boolean,
+    at: r.at as string,
+  }))
+}

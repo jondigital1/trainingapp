@@ -16,6 +16,7 @@ import {
 } from '@/lib/admin'
 import CoachChip from './CoachChip'
 import type { GapRow } from '@/lib/gaps'
+import { unanswered, type AskedRow } from '@/lib/asked'
 import type { AdminLogRow } from '@/lib/adminData'
 import type { WeekBar } from '@/lib/admin'
 import LiftyMark from './LiftyMark'
@@ -36,6 +37,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
   // for on the way past.
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [gaps, setGaps] = useState<GapRow[]>([])
+  const [asked, setAsked] = useState<AskedRow[]>([])
   const [missed, setMissed] = useState(0)
   const [trend, setTrend] = useState<WeekBar[]>([])
   const [quietIds, setQuietIds] = useState<string[]>([])
@@ -63,6 +65,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
         return (await res.json()) as {
           users: AdminUser[]
           gaps?: GapRow[]
+          asked?: AskedRow[]
           failedSearches?: number
           trend?: WeekBar[]
           quiet?: string[]
@@ -74,6 +77,7 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
         if (!alive) return
         setUsers(body.users)
         setGaps(body.gaps ?? [])
+        setAsked(body.asked ?? [])
         setMissed(body.failedSearches ?? 0)
         setTrend(body.trend ?? [])
         setQuietIds(body.quiet ?? [])
@@ -311,6 +315,46 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
           {gaps.length > 20 ? (
             <p className="mt-1.5 text-xs text-muted">And {gaps.length - 20} more, below two users each.</p>
           ) : null}
+        </section>
+      ) : null}
+
+      {/* What Lifty was asked and could not answer. The same argument as the
+          exercise gaps and the same discipline: the report points, a person
+          writes the entry into lib/knowledge.ts. Nothing here is answered
+          automatically, because the panel's whole promise is that somebody
+          wrote what it says. */}
+      {asked.length ? (
+        <section className="mt-6">
+          <h3 className={LABEL}>What Lifty could not answer</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Questions people typed that the library had nothing for, most asked first. Each one is
+            an entry waiting to be written.
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {unanswered(asked).slice(0, 25).map((row) => (
+              <li
+                key={row.question}
+                className="flex items-baseline justify-between gap-3 rounded-2xl bg-card px-3.5 py-2.5 ring-1 ring-edge"
+              >
+                <span className="min-w-0 text-sm font-bold">{row.question}</span>
+                <span className="num shrink-0 text-xs font-bold text-accent-ink">
+                  {row.people === 1 ? '1 person' : `${row.people} people`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {unanswered(asked).length === 0 ? (
+            <p className="mt-2 text-sm text-muted">
+              Nothing asked has gone unanswered yet.
+            </p>
+          ) : null}
+          {/* What people search and do find, which is the only honest basis
+              for the four questions the panel puts up front. Those four are
+              hand picked today, chosen before anybody had asked anything. */}
+          <p className="mt-4 text-xs leading-relaxed text-muted">
+            Most searched overall:{' '}
+            {asked.slice(0, 3).map((r) => r.question).join(', ') || 'nothing yet'}.
+          </p>
         </section>
       ) : null}
 

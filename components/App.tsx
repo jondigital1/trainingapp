@@ -121,6 +121,16 @@ export default function App({
   const [sheet, setSheet] = useState<SheetName>(null)
   // The date whose session is being moved, while the day picker is open.
   const [moving, setMoving] = useState<string | null>(null)
+
+  // What somebody asked Lifty. Fire and forget: telemetry deciding what to
+  // write next must never be able to break the search box it sits behind.
+  const noteQuestion = useCallback(
+    (question: string, answered: boolean) => {
+      if (!userId) return
+      void db.logQuestion(sb, userId, question, answered).catch(() => {})
+    },
+    [sb, userId],
+  )
   const [pickerTarget, setPickerTarget] = useState<string | null>(null)
   // The exercise being swapped out, when the picker was opened to substitute
   // rather than to add.
@@ -1120,7 +1130,7 @@ export default function App({
 
 
 
-      {!loading && tab === 'lifty' ? <HelpSheet inline onClose={() => setTab('calendar')} /> : null}
+      {!loading && tab === 'lifty' ? <HelpSheet inline onAsk={noteQuestion} onClose={() => setTab('calendar')} /> : null}
 
       {!loading && tab === 'profile' ? (
         <ProfileSheet
@@ -1345,7 +1355,7 @@ export default function App({
         />
       ) : null}
 
-      {sheet === 'help' ? <HelpSheet onClose={() => setSheet(null)} /> : null}
+      {sheet === 'help' ? <HelpSheet onAsk={noteQuestion} onClose={() => setSheet(null)} /> : null}
 
       {sheet === 'settings' ? (
         <SettingsSheet

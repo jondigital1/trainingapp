@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { resolveAdmin } from '@/lib/adminAuth'
-import { loadAdminLog, loadGapRows, loadPulse, loadUsers, logAdminAction } from '@/lib/adminData'
+import { loadAdminLog, loadAskedRows, loadGapRows, loadPulse, loadUsers, logAdminAction } from '@/lib/adminData'
 import { failedSearches, gapReport } from '@/lib/gaps'
+import { askedReport } from '@/lib/asked'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { weeklyTrend, wentQuiet } from '@/lib/admin'
 import { supabaseServer } from '@/lib/supabase/server'
@@ -27,17 +28,19 @@ export async function GET() {
     return new NextResponse('Not found', { status: 404 })
   }
   try {
-    const [users, gapRows, pulse, log] = await Promise.all([
+    const [users, gapRows, pulse, log, askedRows] = await Promise.all([
       loadUsers(),
       loadGapRows(),
       loadPulse(),
       loadAdminLog(),
+      loadAskedRows(),
     ])
     const today = new Date().toISOString().slice(0, 10)
     return NextResponse.json({
       users: users ?? [],
       gaps: gapReport(gapRows),
       failedSearches: failedSearches(gapRows),
+      asked: askedReport(askedRows),
       trend: weeklyTrend(pulse.dates, today),
       quiet: wentQuiet(users ?? [], today).map((u) => u.id),
       adoption: {

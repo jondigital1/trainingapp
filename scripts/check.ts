@@ -62,6 +62,7 @@ import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, i
 import { isCompound, isFullSet, restFor, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
+import { askedKey, askedReport, unanswered } from '../lib/asked'
 import { seriesFor, trackedNames } from '../lib/progress'
 import { groupSize, hardestFirst, isHardestFirst, moveRun, topLoads } from '../lib/order'
 import type { CustomWorkoutItem, Exercise } from '../lib/types'
@@ -3182,6 +3183,84 @@ check('every card in the list can reach every other card', () => {
   assert.ok(ahead.every((d) => d >= '2026-08-17'))
 })
 
+check('the app answers questions about itself, in the words people use', () => {
+  // A panel that can explain progressive overload but not how to move Tuesday
+  // to Thursday is answering the questions we found interesting rather than
+  // the ones people have while holding the phone.
+  const first = (q: string) => searchKnowledge(q)[0]?.id
+  assert.equal(first('how do i move a workout to another day'), 'app-move-day')
+  assert.equal(first('can i swap tuesday and thursday'), 'app-move-day')
+  assert.equal(first('how do i delete my account'), 'app-delete')
+  assert.equal(first('what if i get a new phone'), 'app-new-phone')
+  assert.equal(first('turn off notifications'), 'app-notifications')
+  assert.equal(first('how do i put this on my home screen'), 'app-install')
+  assert.equal(first('why did my estimated max go down'), 'num-max-drop')
+  assert.equal(first('my gym does not have a leg press'), 'basic-equipment')
+  assert.ok(searchKnowledge('export my data').some((e) => e.id === 'app-export'))
+
+  // The one that has to be right: the move answer has to say it is dated, or
+  // somebody will read it as editing their whole schedule.
+  const move = KNOWLEDGE.find((e) => e.id === 'app-move-day')!
+  assert.ok(/does not move every Tuesday/.test(move.a), 'the move answer does not say it is dated')
+})
+
+check('what Lifty could not answer is written down, not lost', () => {
+  // Writing more entries without knowing what people ask is guessing. Every
+  // question that misses is now a row, and the top of that list is the next
+  // entry to write.
+  const rows = [
+    { userId: 'a', question: 'Can I train with a torn rotator cuff?', answered: false, at: '2026-08-10' },
+    { userId: 'b', question: 'can i train with a torn rotator cuff', answered: false, at: '2026-08-12' },
+    { userId: 'a', question: 'can i train with a torn rotator cuff', answered: false, at: '2026-08-14' },
+    { userId: 'c', question: 'is the gym open on sunday', answered: false, at: '2026-08-11' },
+    { userId: 'a', question: 'deload', answered: true, at: '2026-08-09' },
+  ]
+  const report = askedReport(rows)
+
+  // Case and trailing punctuation are the same question, and the spelling
+  // reported is the one people typed most.
+  const top = report[0]
+  assert.equal(top.people, 2, 'one person asking three times is one person')
+  assert.equal(top.times, 3)
+  assert.equal(top.question, 'can i train with a torn rotator cuff', 'the spelling reported is not the one most people typed')
+  // An even split falls back to alphabetical rather than to whatever order the
+  // database returned, so the report does not change under its own feet.
+  const tied = askedReport([
+    { userId: 'a', question: 'Zebra question', answered: false, at: '2026-08-01' },
+    { userId: 'b', question: 'Alpha question', answered: false, at: '2026-08-02' },
+  ])
+  assert.equal(tied.length, 2)
+  assert.equal(askedKey('Can I train with a torn rotator cuff?'), 'can i train with a torn rotator cuff')
+
+  // Two spellings, one row, but never merged further than the words allow.
+  assert.notEqual(askedKey('sore shoulder'), askedKey('shoulder pain'))
+
+  // The work list is the misses. What was answered stays in the report,
+  // because what people find is how Asked most eventually becomes true.
+  const todo = unanswered(report)
+  assert.equal(todo.length, 2)
+  assert.ok(!todo.some((r) => r.question === 'deload'))
+  assert.ok(report.some((r) => r.question === 'deload' && r.answered))
+
+  // An entry written since it was first asked closes the question, so it
+  // stops sitting at the top of a list of work to do.
+  const closed = askedReport([
+    { userId: 'a', question: 'what is a deload', answered: false, at: '2026-08-01' },
+    { userId: 'b', question: 'what is a deload', answered: true, at: '2026-08-20' },
+  ])
+  assert.equal(unanswered(closed).length, 0)
+
+  // The write is fire and forget. Telemetry that decides what to write next
+  // must never be able to break the search box it sits behind.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.ok(/logQuestion\([^)]*\)\.catch\(/.test(app), 'a failed log can surface as an error')
+
+  // Recorded when the typing settles, not per keystroke.
+  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(sheet.includes('setTimeout'), 'every keystroke is a question')
+  assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
+})
+
 check('Lifty does not dress a lookup up as a conversation', () => {
   // An avatar over a single line input is the shape of a chat window, and a
   // shape is read before any words under it. What is actually there is a
@@ -3195,12 +3274,24 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   // rather than reaching for the nearest entry.
   // A long question that shares a word or two with the library used to come
   // back looking answered. Half of what somebody asked has to land now.
-  assert.deepEqual(searchKnowledge('can i train with a torn rotator cuff'), [])
   assert.deepEqual(searchKnowledge('is the gym open on sunday'), [])
   assert.deepEqual(searchKnowledge('how do i cancel my subscription'), [])
   assert.deepEqual(searchKnowledge('how do i fix my golf swing'), [])
   // And a question the library really does answer still answers.
   assert.ok(searchKnowledge('creatine').some((e) => e.id === 'basic-supplements'))
+
+  // The gate is not an excuse for a thin library. An answer that says the
+  // right thing is worthless if nobody typing about an injury can reach it, so
+  // the words people use when something is actually wrong all land on it.
+  for (const q of [
+    'can i train with a torn rotator cuff',
+    'my shoulder hurts when i press',
+    'i think i pulled a hamstring',
+    'elbow tendonitis lifting',
+    'sharp twinge in my lower back',
+  ]) {
+    assert.ok(searchKnowledge(q).some((e) => e.id === 'basic-pain'), `${q} finds nothing about pain`)
+  }
   assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
 })
 

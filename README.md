@@ -294,6 +294,49 @@ fails on any tab a piece of copy names that the nav does not render, so the
 next rename cannot leave the help text pointing at a place that no longer
 exists.
 
+## What Lifty is, and what it is not
+
+The panel is a keyword lookup over hand written answers. It was wearing the
+costume of something else: a round avatar above a single line box that said
+Ask about training or the app, which is the shape of a chat window, and a
+shape is read before any words under it. It now says how many answers there
+are and that Lifty looks them up rather than making them up, and the box says
+Search rather than Ask.
+
+The costume was the smaller half of the problem. Scoring was absolute, so a
+long question accumulated points from body prose until it cleared the bar:
+"can I train with a torn rotator cuff" came back with five confident entries,
+not one of which had ever heard of a rotator cuff. A confident wrong answer to
+somebody asking about an injury is the worst thing this feature can do, and it
+was doing it.
+
+An entry now has to name at least half the words somebody actually typed, and
+only wording an author chose counts: the question and its aliases. Body text
+is rank, never evidence. Filler is stripped first, because "I think I pulled a
+hamstring" is three content words of which one is think.
+
+That gate then exposed the opposite failure. The library already had the right
+answer about pain, written plainly, saying see a clinician. Nobody could reach
+it, because it listed knee and back and nothing else, and people do not type
+the words a taxonomy would choose. Findability is content. The entry now
+carries the vocabulary of things that actually go wrong.
+
+## The next entry to write is not a guess
+
+Every question that misses is recorded, and the admin screen ranks them by how
+many separate people asked. One person typing a question is a person; six
+people typing it in a fortnight is the library being told what it lacks. This
+is the same argument the exercise gap report makes, and it keeps the same
+discipline: the report points, a person writes the entry.
+
+Answered searches are kept too. Asked most is four questions chosen by hand
+before anybody had asked anything, and this is what eventually makes that list
+true.
+
+Nothing is generated. The whole promise of the panel is that a human wrote
+what it says, and a database of questions is worth having precisely because it
+tells that human where to sit down.
+
 ## The week, and what is coming
 
 The tab called Calendar showed today and nothing else, which on a rest day was

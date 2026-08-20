@@ -96,6 +96,59 @@ const APP: KnowledgeEntry[] = [
     a: 'Settings, then paste your exported history into the import box. Both old formats are understood, including text sets like 135x8 @8. Everything can also leave again as CSV, one row per set, from the same screen.',
   },
   {
+    id: 'app-move-day',
+    q: 'How do I move a workout to a different day?',
+    group: 'Using the app',
+    aliases: [
+      'swap my workout days', 'change the day', 'move a session', 'reschedule workout',
+      'shift a day', 'swap monday tuesday wednesday', 'swap thursday friday saturday sunday',
+      'train on a different day', 'plans changed',
+    ],
+    a: 'On the Calendar tab, every session in the What is coming list has a Move button. Tap it, pick the day you want, and the two days trade what they hold: whatever was on the day you picked comes back to the day you moved from. Rest days are on the list too, so you can move a session onto an empty day. It only changes those two dates, so moving one Tuesday does not move every Tuesday after it.',
+  },
+  {
+    id: 'app-schedule',
+    q: 'How do I change which days I train?',
+    group: 'Using the app',
+    aliases: ['set my week', 'training days', 'lay out my week', 'change my split days'],
+    a: 'Profile, then the week section, where you say which session belongs to which weekday. That is the pattern the app repeats, so it is the thing to edit when your normal week has genuinely changed. If it is only this week that is different, move the individual day from the Calendar tab instead and leave the pattern alone.',
+  },
+  {
+    id: 'app-notifications',
+    q: 'How do I turn notifications on or off?',
+    group: 'Using the app',
+    aliases: ['push notifications', 'reminders', 'rest timer alert', 'weekly check in', 'stop notifications'],
+    a: 'Settings has two switches and they are separate. Alert me when rest is up buzzes you when a rest timer finishes. Check in on my week sends one message a week at a day and time you choose. Turning either off is immediate. On an iPhone, notifications only work if LiftyBot is on your home screen, and your phone only asks permission once, so if you said no to it earlier you have to change it in your phone settings rather than in the app.',
+  },
+  {
+    id: 'app-install',
+    q: 'How do I put LiftyBot on my home screen?',
+    group: 'Using the app',
+    aliases: ['install the app', 'add to home screen', 'app store', 'download liftybot'],
+    a: 'There is no app store download, and there does not need to be. In Safari on an iPhone, tap the share button and then Add to Home Screen. In Chrome on Android, use Install app from the menu. It then opens like any other app, works without signal, and on an iPhone it is the only way notifications can reach you.',
+  },
+  {
+    id: 'app-new-phone',
+    q: 'What happens to my training if I get a new phone?',
+    group: 'Using the app',
+    aliases: ['new phone', 'does my data sync', 'lost my phone', 'second device', 'log in elsewhere'],
+    a: 'Nothing happens to it. Your sessions live on the server against your account, not on the handset, so signing in on a new phone brings everything with it: every workout, your bodyweight history, your profile and your schedule. The copy held on the phone is a mirror for training without signal, not the only copy.',
+  },
+  {
+    id: 'app-export',
+    q: 'Can I get my data out?',
+    group: 'Using the app',
+    aliases: ['export csv', 'download my data', 'spreadsheet', 'back up my log'],
+    a: 'Settings, then Export CSV. You get one row per set, which opens in any spreadsheet and is the format to keep if you ever want your history somewhere else. It is your log; nothing about it is locked in here.',
+  },
+  {
+    id: 'app-delete',
+    q: 'How do I delete my account?',
+    group: 'Using the app',
+    aliases: ['delete my data', 'close my account', 'remove my account', 'wipe everything'],
+    a: 'Settings, at the bottom, Delete my account. It removes every session, every set, your bodyweight history and your profile, and it is not reversible. Export a CSV first if there is any chance you want the record. Signing out, just above it, leaves everything where it is.',
+  },
+  {
     id: 'app-nutrition',
     q: 'Does the app track food or protein?',
     group: 'Using the app',
@@ -141,6 +194,13 @@ const NUMBERS: KnowledgeEntry[] = [
     group: 'Your numbers',
     aliases: ['week streak', 'grid', '28 days', 'consistency'],
     a: 'It counts weeks that met the days you said you would train, not consecutive days, so a rest day costs nothing and a quiet current week cannot break the run behind it. The grid above it is the last 28 days, one dot per day trained.',
+  },
+  {
+    id: 'num-max-drop',
+    q: 'Why did my estimated max go down?',
+    group: 'Your numbers',
+    aliases: ['estimate dropped', 'max went down', 'losing strength', 'e1rm fell'],
+    a: 'Because the estimate reads your recent hard sets, and a set taken further from failure produces a lower estimate even at the same weight. A light day, a session cut short, a set you stopped with three left in the tank: all of those pull it down without anything being wrong. Read the line over months rather than between two sessions. If it is genuinely flat or falling across a whole block, that is a real signal and the deload and stuck lifts answers are the place to go.',
   },
   {
     id: 'num-wave',
@@ -284,8 +344,38 @@ const BASICS: KnowledgeEntry[] = [
     id: 'basic-pain',
     q: 'Something hurts when I lift. Should I push through?',
     group: 'The basics',
-    aliases: ['pain when lifting', 'knee pain', 'back hurts', 'injury or soreness'],
+    aliases: [
+      'pain when lifting', 'knee pain', 'back hurts', 'injury or soreness',
+      'rotator cuff', 'shoulder pain', 'elbow pain', 'wrist pain', 'hip pain',
+      'tendon tendonitis', 'strain sprain', 'pulled muscle', 'torn muscle',
+      'tweaked something', 'herniated disc sciatica', 'impingement',
+      'sharp twinge', 'hurt myself', 'train around an injury',
+      'hamstring', 'quad', 'calf', 'groin', 'chest', 'bicep', 'tricep', 'neck',
+      'ankle', 'lower back', 'shoulder', 'elbow', 'knee', 'wrist', 'hip',
+      'tennis elbow', 'golfers elbow', 'rotator', 'cuff', 'torn', 'sprained',
+    ],
     a: 'No. Sharp pain, joint pain, or pain that persists is a question for a clinician, and this app will not diagnose it. Stop the movement that hurts, train around it, and get it looked at if it lasts or worsens. Flagging the joint on your profile makes sessions swap around it in the meantime. Next day muscle soreness is different and normal.',
+  },
+  {
+    id: 'basic-sleep',
+    q: 'Does sleep actually matter for lifting?',
+    group: 'The basics',
+    aliases: ['sleep and muscle', 'not sleeping enough', 'tired all the time', 'recovery sleep'],
+    a: 'More than any supplement and more than the exact split you run. Training is the stimulus and the rest of it happens while you are asleep: short sleep costs you strength on the day and recovery across the week, and it shows up first as sessions that feel heavier than the numbers say they should. If you are choosing between an extra hour of sleep and an extra session, take the sleep.',
+  },
+  {
+    id: 'basic-age',
+    q: 'Am I too old to start lifting?',
+    group: 'The basics',
+    aliases: ['starting at 50', 'starting at 60', 'too old to lift', 'older beginner'],
+    a: 'No. Resistance training is one of the few things that meaningfully holds off the loss of muscle and bone that comes with age, and beginners in their fifties, sixties and beyond respond to it. What changes is not whether you should lift but how fast you add weight and how much recovery you leave between hard sessions, and the app already leans conservative on both. If you have a heart condition or a joint problem, clear it with a clinician first.',
+  },
+  {
+    id: 'basic-equipment',
+    q: 'What if my gym does not have the equipment?',
+    group: 'The basics',
+    aliases: ['no machine', 'home gym', 'only dumbbells', 'missing equipment', 'busy gym'],
+    a: 'Swap it. Every exercise in a session has a swap button that offers movements training the same thing with what you do have, and if you answered that a piece of equipment is not available, the app stops programming it altogether. A dumbbell version of a barbell lift is not a compromise worth worrying about, and a machine that is occupied is not a reason to skip the session.',
   },
   {
     id: 'basic-supplements',
@@ -369,7 +459,16 @@ function tokens(text: string): string[] {
     .filter((t) => t.length > 1)
 }
 
-const STOP = new Set(['what', 'is', 'the', 'a', 'an', 'do', 'does', 'how', 'my', 'in', 'to', 'of', 'for', 'and', 'or', 'it', 'are', 'can', 'should', 'best', 'good', 'need'])
+// Words that are how somebody phrases a question rather than what they are
+// asking about. They have to go, because half the question has to land now and
+// filler counting as content makes a real question look half unmatched: "I
+// think I pulled a hamstring" was three words of which one was think.
+const STOP = new Set([
+  'what', 'is', 'the', 'a', 'an', 'do', 'does', 'how', 'my', 'in', 'to', 'of', 'for', 'and', 'or',
+  'it', 'are', 'can', 'should', 'best', 'good', 'need',
+  'think', 'about', 'this', 'that', 'there', 'from', 'with', 'when', 'why', 'me', 'im', 'ive',
+  'have', 'has', 'be', 'been', 'am', 'was', 'will', 'would', 'could', 'if', 'on', 'at', 'by',
+])
 
 // Local scoring over authored text, nothing else.
 //

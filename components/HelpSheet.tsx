@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   commonQuestions,
   KNOWLEDGE,
@@ -31,12 +31,41 @@ function Entry({ entry, open, onToggle }: { entry: KnowledgeEntry; open: boolean
   )
 }
 
-export default function HelpSheet({ onClose, inline }: { onClose: () => void; inline?: boolean }) {
+export default function HelpSheet({
+  onClose,
+  inline,
+  onAsk,
+}: {
+  onClose: () => void
+  inline?: boolean
+  // A question that settled, and whether the library had anything for it.
+  // What Lifty cannot answer is the list of what to write next, and before
+  // this it vanished the moment somebody closed the sheet.
+  onAsk?: (question: string, answered: boolean) => void
+}) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<string | null>(null)
   const [group, setGroup] = useState<string | null>(null)
 
   const results = useMemo(() => (query.trim() ? searchKnowledge(query) : null), [query])
+
+  // Recorded once the typing stops, not per keystroke, so "how" and "how m"
+  // and "how much" are not three questions. Each wording is recorded once per
+  // visit, because one person searching the same thing eleven times is one
+  // person who could not find it.
+  const logged = useRef(new Set<string>())
+  useEffect(() => {
+    if (!onAsk) return
+    const asked = query.trim()
+    if (asked.length < 4) return
+    const timer = setTimeout(() => {
+      const key = asked.toLowerCase()
+      if (logged.current.has(key)) return
+      logged.current.add(key)
+      onAsk(asked, searchKnowledge(asked).length > 0)
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [query, onAsk])
   const common = useMemo(() => commonQuestions(), [])
   const browse = useMemo(() => (group ? KNOWLEDGE.filter((e) => e.group === group) : []), [group])
   const searching = results !== null
