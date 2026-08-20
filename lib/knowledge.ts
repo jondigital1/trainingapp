@@ -79,7 +79,7 @@ const APP: KnowledgeEntry[] = [
     id: 'app-swap',
     q: 'Why did the app swap an exercise in my plan?',
     group: 'Using the app',
-    aliases: ['different exercise', 'substitution', 'sore joint swap', 'knee swap'],
+    aliases: ['different exercise', 'substitution', 'why did it change my plan', 'not the exercise i expected'],
     a: 'You flagged a joint, so sessions swap the movement and keep the pattern: a sore knee gets leg press instead of squats, not a day without legs. Flags live on your profile, under Your body, and every swap is undoable by picking the original from the library.',
   },
   {
@@ -300,6 +300,27 @@ const NUMBERS: KnowledgeEntry[] = [
 
 const BASICS: KnowledgeEntry[] = [
   {
+    id: 'basic-sixpack',
+    q: 'How do I get a six pack?',
+    group: 'The basics',
+    aliases: ['six pack', 'abs showing', 'visible abs', 'belly fat', 'lose my gut', 'get lean', 'stomach'],
+    a: 'Everybody already has one. Whether it shows is decided almost entirely by how much fat is sitting over it, which is a kitchen question rather than a training one, and no amount of crunches changes it. Train your core because a strong midsection helps everything else, eat at a deficit if you want to see it, and be patient: the last bit of belly fat is the last to go and there is nothing you can do about the order.',
+  },
+  {
+    id: 'basic-maintain',
+    q: 'How do I keep the muscle I have?',
+    group: 'The basics',
+    aliases: ['losing muscle', 'lose my gains', 'keep my muscle', 'maintain', 'time off', 'stop training', 'detrain'],
+    a: 'Far less work than building it took. Roughly a third of your usual volume holds what you have, and a single hard session a week per muscle will keep most of it for months. Muscle also comes back much faster than it went, so a fortnight off is not a rebuild. What actually costs you muscle is a long stretch of eating far too little while doing nothing, not a missed week.',
+  },
+  {
+    id: 'basic-bulk',
+    q: 'Should I eat more to get bigger?',
+    group: 'The basics',
+    aliases: ['eat more', 'bulking', 'gain weight', 'put on size', 'calorie surplus', 'get bigger'],
+    a: 'A little more, not a lot. Building muscle needs slightly more food than you burn, and past that the extra goes on as fat rather than making the muscle come faster. A few hundred calories over maintenance and a gain of half a pound a week is plenty for most people. If you are new to lifting or coming back to it, you can build perfectly well without eating more at all.',
+  },
+  {
     id: 'basic-cooldown',
     q: 'Should I cool down after lifting?',
     group: 'The basics',
@@ -366,7 +387,7 @@ const BASICS: KnowledgeEntry[] = [
     id: 'basic-start-weight',
     q: 'How much weight should I start with?',
     group: 'The basics',
-    aliases: ['starting weight', 'how heavy should I go', 'is the weight too heavy', 'empty bar'],
+    aliases: ['starting weight', 'how heavy should I go', 'how much should i be lifting', 'how much weight', 'is the weight too heavy', 'empty bar'],
     a: 'Lighter than feels impressive. Pick a weight you can lift for your target reps with clean form while finishing the set feeling like 2 to 3 reps were left. On barbell lifts, starting near the empty bar and learning the movement is normal. Where you start barely matters, because the whole game is adding to it steadily, and the log is how you see that happening.',
   },
   {
@@ -436,7 +457,7 @@ const BASICS: KnowledgeEntry[] = [
     id: 'basic-missed',
     q: 'What if I miss a workout or a week?',
     group: 'The basics',
-    aliases: ['skipped a week', 'lose gains', 'restart program', 'coming back after a break'],
+    aliases: ['skipped a week', 'skip leg day', 'skip a session', 'cant make it', 'no time this week', 'lose gains', 'restart program', 'coming back after a break'],
     a: 'A missed session means nothing: do the next one. Muscle takes weeks of full stop to fade, and after 2 or more weeks away, restarting about 10 percent lighter gets you back fast because rebuilt strength returns quicker than it was earned. The ghost line tells you exactly where you left off.',
   },
   {
@@ -469,7 +490,7 @@ const BASICS: KnowledgeEntry[] = [
       'rotator cuff', 'shoulder pain', 'elbow pain', 'wrist pain', 'hip pain',
       'tendon tendonitis', 'strain sprain', 'pulled muscle', 'torn muscle',
       'tweaked something', 'herniated disc sciatica', 'impingement',
-      'sharp twinge', 'hurt myself', 'train around an injury',
+      'sharp twinge', 'hurt myself', 'train around an injury', 'clicks', 'pops', 'aches', 'feels tight',
       'hamstring', 'quad', 'calf', 'groin', 'chest', 'bicep', 'tricep', 'neck',
       'ankle', 'lower back', 'shoulder', 'elbow', 'knee', 'wrist', 'hip',
       'tennis elbow', 'golfers elbow', 'rotator', 'cuff', 'torn', 'sprained',
@@ -996,8 +1017,82 @@ const STOP = new Set([
   'it', 'are', 'can', 'should', 'best', 'good', 'need',
   'think', 'about', 'this', 'that', 'there', 'from', 'with', 'when', 'why', 'me', 'im', 'ive',
   'have', 'has', 'be', 'been', 'am', 'was', 'will', 'would', 'could', 'if', 'on', 'at', 'by',
-  'mean', 'means', 'meaning', 'called', 'actually', 'even', 'really', 'much', 'many',
+  'mean', 'means', 'meaning', 'called', 'actually', 'even', 'really',
 ])
+
+// The words people use for the thing, rather than the word an author chose.
+//
+// Matching on the terms somebody typed has a ceiling, and the library reached
+// it. My knee clicks when I squat found nothing, because clicks is not a word
+// anybody thought to write beside an answer about pain, and neither is pops or
+// twinges or aches. Six pack found nothing against an answer about core. You
+// cannot enumerate the vocabulary of pain one alias at a time.
+//
+// So both sides are read into concepts first. A phrase on either side of the
+// search puts its concept into play, and the concepts are what get compared.
+// It is a hand written map of one domain rather than anything clever, which is
+// the right size of tool for a hundred and thirty answers about lifting.
+const CONCEPTS: Record<string, string[]> = {
+  pain: [
+    'hurt', 'hurts', 'pain', 'painful', 'sore joint', 'click', 'clicks', 'clicking',
+    'pop', 'pops', 'popping', 'twinge', 'ache', 'aches', 'aching', 'tight', 'tweak',
+    'tweaked', 'pulled', 'strain', 'sprain', 'injury', 'injured', 'torn', 'tear',
+    'niggle', 'flare', 'grinding', 'stiff', 'unstable', 'giving way',
+  ],
+  core: ['six pack', 'sixpack', 'abs', 'ab', 'midsection', 'stomach', 'belly', 'tummy', 'obliques', 'core'],
+  progress: [
+    'not growing', 'no growth', 'not getting bigger', 'not seeing', 'no changes',
+    'no results', 'no progress', 'stuck', 'plateau', 'stalled', 'gains', 'progress',
+    'improving', 'not improving', 'going nowhere',
+  ],
+  bulk: ['eat more', 'gain weight', 'put on size', 'bulk', 'bulking', 'surplus', 'get bigger', 'gain muscle'],
+  cut: ['lose fat', 'losing fat', 'cut', 'cutting', 'deficit', 'lean out', 'lose weight'],
+  missed: [
+    'skip', 'skipped', 'skipping', 'miss', 'missed', 'missing', 'cant make it',
+    'cannot make it', 'no time', 'away', 'busy', 'fell off', 'stopped training',
+  ],
+  frequency: ['every day', 'everyday', 'daily', 'how often', 'times a week', 'days a week', 'twice', 'three times'],
+  rest: ['rest', 'resting', 'between sets', 'recover', 'recovery', 'day off', 'rest day'],
+  load: ['heavy', 'light', 'how much weight', 'what weight', 'how much should i lift', 'load'],
+  effort: ['hard enough', 'push', 'pushing', 'all out', 'failure', 'to failure', 'intensity', 'how hard'],
+  food: ['calories', 'macros', 'protein', 'eat', 'eating', 'diet', 'nutrition', 'food', 'meal'],
+  maintain: ['losing muscle', 'lose muscle', 'keep my muscle', 'maintain', 'maintenance', 'detrain', 'atrophy'],
+}
+
+const CONCEPT_OF = new Map<string, string>()
+for (const [concept, phrases] of Object.entries(CONCEPTS)) {
+  for (const phrase of phrases) CONCEPT_OF.set(phrase, concept)
+}
+const MULTI = [...CONCEPT_OF.keys()].filter((k) => k.includes(' ')).sort((a, b) => b.length - a.length)
+
+// Plurals and the handful of endings that turn one word into another spelling
+// of the same word. Deliberately shallow: a real stemmer would fold squats and
+// squatting into squat and also fold universal into univers, and this file
+// would rather miss a match than invent one.
+function stem(word: string): string {
+  for (const [suffix, keep] of [['ing', 4], ['ies', 3], ['ed', 4], ['es', 4], ['s', 3]] as [string, number][]) {
+    if (word.length > keep && word.endsWith(suffix)) return word.slice(0, -suffix.length)
+  }
+  return word
+}
+
+// Everything a piece of text puts into play: its words, their stems, and any
+// concept a phrase in it names.
+function meaningOf(text: string): Set<string> {
+  const flat = ' ' + text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' '
+  const out = new Set<string>()
+  for (const word of flat.split(' ')) {
+    if (!word || word.length < 2 || STOP.has(word)) continue
+    out.add(word)
+    out.add(stem(word))
+    const own = CONCEPT_OF.get(word)
+    if (own) out.add('~' + own)
+  }
+  for (const phrase of MULTI) {
+    if (flat.includes(' ' + phrase + ' ')) out.add('~' + CONCEPT_OF.get(phrase)!)
+  }
+  return out
+}
 
 // Local scoring over authored text, nothing else.
 //
@@ -1010,36 +1105,80 @@ const STOP = new Set([
 // A wrong answer delivered confidently to somebody asking about an injury is
 // worse than no answer, which is the whole reason the gate exists.
 export function searchKnowledge(query: string, limit = 6): KnowledgeEntry[] {
+  const asked = meaningOf(query)
+  // What the person actually asked about, as opposed to everything their
+  // sentence put into play. Stems and concepts are how two spellings meet;
+  // they are not extra things to have asked.
   const terms = [...new Set(tokens(query).filter((t) => !STOP.has(t)))]
   if (!terms.length) return []
 
   const scored = KNOWLEDGE.map((entry) => {
-    const inQ = new Set(tokens(entry.q))
-    const inAlias = new Set(entry.aliases.flatMap(tokens))
-    const inBody = new Set(tokens(entry.a))
+    // Aliases are the deliberate ones: somebody listing knee pain and torn and
+    // twinge beside an answer is saying this entry is about that. A concept
+    // that turns up in the question by accident is not the same claim, and
+    // must not score like one. Does cardio hurt my gains contains hurt, and it
+    // is not an answer about pain.
+    const named2 = meaningOf(entry.aliases.join(' '))
+    const asked2 = meaningOf(entry.q)
+    const authored = new Set([...named2, ...asked2])
+    const body = meaningOf(entry.a)
+
     let score = 0
-    // How many of the asker's own words this entry actually names, counting
-    // only the places an author chose the wording: the question and its
-    // aliases. Body prose is rank, never evidence.
     let named = 0
     for (const term of terms) {
-      if (inQ.has(term)) {
+      // The word and its stem only. Putting the concept in here made every
+      // entry about food count macros as a direct hit, because macros is one
+      // of the words that names the food concept: the fallback was standing in
+      // for the thing it is a fallback for.
+      const forms = [term, stem(term)]
+      // A word somebody actually typed, found where an author wrote it, beats
+      // a concept inferred from it. Concepts exist for when the words do not
+      // meet at all; they are not a better signal than the words meeting.
+      if (forms.some((f) => authored.has(f))) {
+        score += 6
+        named += 1
+      } else if (prefixHit(authored, term)) {
         score += 4
         named += 1
-      } else if (inAlias.has(term)) {
-        score += 3
-        named += 1
-      } else if (prefixHit(inQ, term) || prefixHit(inAlias, term)) {
-        // prefix match keeps "supersets" finding "superset", but only between
-        // real words: short fragments like "be" must never anchor a match
-        score += 3
-        named += 1
-      } else if (inBody.has(term)) {
+      } else if (forms.some((f) => body.has(f))) {
         score += 1
       }
     }
 
-    return { entry, score, named }
+    // A concept the whole phrase named, which no single word did: my knee
+    // clicks names pain, and not one of those three words is pain. Worth most
+    // where an author put it in the aliases on purpose, least where it fell
+    // out of the wording of a question about something else.
+    for (const c of asked) {
+      if (!c.startsWith('~') || named >= terms.length) continue
+      if (named2.has(c)) {
+        score += 5
+        named += 1
+      } else if (asked2.has(c)) {
+        score += 2
+      } else if (body.has(c)) {
+        score += 1
+      }
+    }
+
+    // What shape of answer was asked for. What is a drop set and how do I log
+    // a drop set are both about drop sets and are not the same question, and
+    // once stems and concepts made the words match, the two became
+    // indistinguishable on wording alone.
+    if (shapeOf(query) && shapeOf(query) === shapeOf(entry.q)) score += 3
+
+    // How much of the entry's own question the asker covered. The dumbbells
+    // jump too much covers all of the entry by that name and one word of How
+    // big should each weight jump be, and character count cannot tell those
+    // apart: it just prefers the shorter one, which was the wrong one here and
+    // the right one for drop sets. This is the thing length was standing in
+    // for.
+    const own = tokens(entry.q).filter((t) => !STOP.has(t))
+    const covered = own.length
+      ? own.filter((w) => asked.has(w) || asked.has(stem(w))).length / own.length
+      : 0
+
+    return { entry, score, named, covered }
   })
 
   // Half the question has to land, so a single shared word cannot carry a five
@@ -1049,9 +1188,29 @@ export function searchKnowledge(query: string, limit = 6): KnowledgeEntry[] {
 
   return scored
     .filter((s) => s.named >= floor && s.score >= 3)
-    .sort((a, b) => b.score - a.score)
+    // Level on score, the more focused entry wins. What is a drop set and What
+    // are supersets, drop sets and giant sets both answer the question; the
+    // one that is only about drop sets answers it better, and the shorter
+    // question is a fair proxy for which of the two that is.
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.named - a.named ||
+        b.covered - a.covered ||
+        a.entry.q.length - b.entry.q.length ||
+        a.entry.q.localeCompare(b.entry.q),
+    )
     .slice(0, limit)
     .map((s) => s.entry)
+}
+
+// Definition or instruction. Nothing clever: the first few words of an English
+// question say which one it is, and a question that is neither gets no say.
+function shapeOf(text: string): 'what' | 'how' | null {
+  const flat = text.trim().toLowerCase()
+  if (/^(what|whats|which)\b/.test(flat)) return 'what'
+  if (/^how (do|can|should|would)\b/.test(flat)) return 'how'
+  return null
 }
 
 function prefixHit(words: Set<string>, term: string): boolean {

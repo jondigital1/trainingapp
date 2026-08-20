@@ -974,7 +974,9 @@ check('the questions people actually type find their answers', () => {
   assert.ok(['strong-progression', 'strong-increments'].includes(first('how should I increase my weights week by week')!))
   // Somebody typing this is asking about a thing the app no longer has, so
   // either answer is the honest one: what happened to it, or how hard to push.
-  assert.ok(['app-rpe-hidden', 'basic-rpe'].includes(first('what does rpe 8 mean')!))
+  // The glossary did not exist when this was written, and What is RPE is a
+  // better answer to what does rpe 8 mean than either of the two it allowed.
+  assert.equal(first('what does rpe 8 mean'), 'w-rpe-term')
   assert.ok(searchKnowledge('how hard should a set be').some((e) => e.id === 'basic-rpe'))
   assert.ok(searchKnowledge('what is a training block').some((e) => e.id === 'num-wave'))
   assert.ok(searchKnowledge('protein').some((e) => e.id === 'basic-protein'))
@@ -3414,6 +3416,63 @@ check('what Lifty could not answer is written down, not lost', () => {
   const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
   assert.ok(sheet.includes('setTimeout'), 'every keystroke is a question')
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
+})
+
+check('Lifty reads the question, not only the words in it', () => {
+  // Matching on the terms somebody typed has a ceiling and the library reached
+  // it. My knee clicks when I squat found nothing, because clicks is not a
+  // word anybody thought to write beside an answer about pain, and neither is
+  // pops or twinges or aches. Seven of fourteen ordinary paraphrases came back
+  // empty. You cannot enumerate the vocabulary of pain one alias at a time.
+  const first = (q: string) => searchKnowledge(q)[0]?.id
+  for (const [q, id] of [
+    // Nobody typing these uses a word the answer contains.
+    ['my knee clicks when i squat', 'basic-pain'],
+    ['my shoulder pops when i press', 'basic-pain'],
+    ['my back is tight after deadlifts', 'basic-pain'],
+    ['my elbow aches', 'basic-pain'],
+    ['my arms are not growing', 'strong-plateau'],
+    ['im knackered all the time', 'basic-sleep'],
+    ['can i skip leg day', 'basic-missed'],
+    ['what if i cant make it in this week', 'basic-missed'],
+    ['how do i get a six pack', 'basic-sixpack'],
+    ['how do i stop losing muscle', 'basic-maintain'],
+    ['should i eat more to get bigger', 'basic-bulk'],
+    ['is it bad to work out every day', 'basic-restdays'],
+    ['i can only get to the gym twice', 'basic-two-days'],
+  ] as [string, string][]) {
+    assert.equal(first(q), id, `"${q}" does not reach ${id}`)
+  }
+
+  // Reading further must not make it vaguer. A definition question wants the
+  // definition, and a how question wants the instructions, which is a
+  // distinction that only survives because the shape of the question counts.
+  assert.equal(first('what is a drop set'), 'basic-dropset')
+  assert.equal(first('how do i log a drop set'), 'app-dropset-how')
+  assert.equal(first('what is a superset'), 'basic-superset')
+  assert.equal(first('how do i make a superset'), 'app-superset-how')
+  assert.equal(first('how many warm up sets'), 'strong-warm-up-sets')
+  assert.equal(first('how should i warm up'), 'basic-warmup')
+
+  // A word somebody actually typed beats a concept inferred from it. Macros is
+  // one of the words that names the food concept, and for a while every entry
+  // about eating counted it as a direct hit.
+  assert.equal(first('macros'), 'w-macros')
+  assert.equal(first('tdee'), 'w-tdee')
+
+  // An entry about substitution must not advertise itself with the vocabulary
+  // of pain, or it competes with the answer that says see a clinician.
+  const swap = KNOWLEDGE.find((e) => e.id === 'app-swap')!
+  assert.ok(
+    !swap.aliases.some((a) => /pain|sore|hurt|ache/.test(a)),
+    'the swap answer is claiming to be about pain again',
+  )
+
+  // And the gate still holds with every word in the library reachable through
+  // a stem or a concept.
+  for (const off of ['best crypto to buy', 'who won the election', 'is the gym open on sunday', 'how do i fix my golf swing']) {
+    assert.deepEqual(searchKnowledge(off), [], `${off} found something`)
+  }
 })
 
 check('the jargon has somewhere to be looked up', () => {

@@ -597,6 +597,48 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## Reading the question rather than the words in it
+
+Matching on the terms somebody typed has a ceiling, and the library reached it.
+Twenty ordinary paraphrases went in and eleven came back with anything, several
+of those wrong. My knee clicks when I squat found nothing, because clicks is not
+a word anybody thought to write beside an answer about pain, and neither is pops
+or twinges or aches. How do I get a six pack found nothing against an answer
+about core. You cannot enumerate the vocabulary of pain one alias at a time.
+
+Both sides are read into concepts now. Roughly a dozen of them, hand written for
+one domain: the words for pain, the words for having stopped progressing, the
+words for skipping a session, the words for eating more. A phrase on either side
+of the search puts its concept into play and the concepts are what get compared,
+on top of the words and their stems. It is a map of one subject rather than
+anything clever, which is the right size of tool for a hundred and thirty
+answers about lifting.
+
+Reading further has to not make it vaguer, and getting that right took four
+goes, each caught by a check that was already there.
+
+A concept inferred from a word must never outscore the word itself. Macros is
+one of the words that names the food concept, so for a while every entry about
+eating counted macros as a direct hit and the definition of macros lost to the
+definition of TDEE. The fallback was standing in for the thing it is a fallback
+for.
+
+An entry must not advertise itself with vocabulary it is not about. The answer
+explaining why the app swapped an exercise listed sore joint swap among its
+aliases, which made it claim the pain concept, which made it beat the answer
+that says see a clinician. That is the worst ranking bug this feature can have
+and it came from four words in an alias list.
+
+The shape of a question is part of it. What is a drop set and how do I log a
+drop set are the same words and different questions, and once stems and concepts
+made the words match, only the shape kept them apart.
+
+And how many is not filler. It had been stopped out as noise, which in a subject
+made of counting is most of what somebody is asking.
+
+Twenty of twenty now, and the gate still refuses crypto, elections and golf
+swings.
+
 ## Words, as well as questions
 
 A question is something somebody thought to ask. A term is something they read
