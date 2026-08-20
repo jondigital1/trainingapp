@@ -47,8 +47,14 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
         <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-full bg-midnight">
           <LiftyMark size={28} />
         </span>
+        {/* A round avatar over a text box is the shape of a chat window, and
+            people read shapes before they read words. This is a lookup over
+            answers somebody sat down and wrote, so the line under the name
+            says the number out loud rather than implying a coach who is
+            listening. */}
         <p className="text-[13px] font-bold leading-snug text-muted">
-          Every answer is written into the app
+          {KNOWLEDGE.length} answers, written by hand. Lifty looks them up rather than
+          making them up.
         </p>
       </div>
       <input
@@ -57,8 +63,8 @@ export default function HelpSheet({ onClose, inline }: { onClose: () => void; in
           setQuery(e.target.value)
           setOpen(null)
         }}
-        placeholder="Ask about training or the app"
-        aria-label="Ask about training or the app"
+        placeholder="Search the answers"
+        aria-label="Search Lifty's answers"
         className="w-full rounded-xl surface px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 

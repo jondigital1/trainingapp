@@ -3182,6 +3182,28 @@ check('every card in the list can reach every other card', () => {
   assert.ok(ahead.every((d) => d >= '2026-08-17'))
 })
 
+check('Lifty does not dress a lookup up as a conversation', () => {
+  // An avatar over a single line input is the shape of a chat window, and a
+  // shape is read before any words under it. What is actually there is a
+  // keyword search over hand written answers, so nothing may promise more.
+  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(sheet.includes('Search the answers'), 'the box still invites a conversation')
+  assert.ok(!sheet.includes('placeholder="Ask about'), 'the old chat placeholder came back')
+  assert.ok(sheet.includes('{KNOWLEDGE.length} answers'), 'the count is not said out loud')
+
+  // The miss is honest and stays that way: a question outside the file says so
+  // rather than reaching for the nearest entry.
+  // A long question that shares a word or two with the library used to come
+  // back looking answered. Half of what somebody asked has to land now.
+  assert.deepEqual(searchKnowledge('can i train with a torn rotator cuff'), [])
+  assert.deepEqual(searchKnowledge('is the gym open on sunday'), [])
+  assert.deepEqual(searchKnowledge('how do i cancel my subscription'), [])
+  assert.deepEqual(searchKnowledge('how do i fix my golf swing'), [])
+  // And a question the library really does answer still answers.
+  assert.ok(searchKnowledge('creatine').some((e) => e.id === 'basic-supplements'))
+  assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
+})
+
 check('a week nobody laid out does not pretend to be a rest day', () => {
   // A profile with no schedule showed Rest day, seven blank boxes and an
   // empty list, which reads as an app with nothing in it rather than a setup

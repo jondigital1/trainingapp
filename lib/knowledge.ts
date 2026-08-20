@@ -371,10 +371,18 @@ function tokens(text: string): string[] {
 
 const STOP = new Set(['what', 'is', 'the', 'a', 'an', 'do', 'does', 'how', 'my', 'in', 'to', 'of', 'for', 'and', 'or', 'it', 'are', 'can', 'should', 'best', 'good', 'need'])
 
-// Local scoring over authored text, nothing else. Question and alias words
-// count most, body words keep long tails findable.
+// Local scoring over authored text, nothing else.
+//
+// Two things have to be true at once, and the second is the one that matters.
+// An entry has to score, and the query's own distinctive words have to be the
+// reason. Without that second rule a long question piles up points from body
+// text and comes back looking answered: "can I train with a torn rotator cuff"
+// returned five confident entries, not one of which had ever heard of a
+// rotator cuff, because train and with and cuff-adjacent prose were enough.
+// A wrong answer delivered confidently to somebody asking about an injury is
+// worse than no answer, which is the whole reason the gate exists.
 export function searchKnowledge(query: string, limit = 6): KnowledgeEntry[] {
-  const terms = tokens(query).filter((t) => !STOP.has(t))
+  const terms = [...new Set(tokens(query).filter((t) => !STOP.has(t)))]
   if (!terms.length) return []
 
   const scored = KNOWLEDGE.map((entry) => {
@@ -382,29 +390,48 @@ export function searchKnowledge(query: string, limit = 6): KnowledgeEntry[] {
     const inAlias = new Set(entry.aliases.flatMap(tokens))
     const inBody = new Set(tokens(entry.a))
     let score = 0
+    // How many of the asker's own words this entry actually names, counting
+    // only the places an author chose the wording: the question and its
+    // aliases. Body prose is rank, never evidence.
+    let named = 0
     for (const term of terms) {
-      if (inQ.has(term)) score += 4
-      else if (inAlias.has(term)) score += 3
-      else if (inBody.has(term)) score += 1
-      else {
+      if (inQ.has(term)) {
+        score += 4
+        named += 1
+      } else if (inAlias.has(term)) {
+        score += 3
+        named += 1
+      } else if (prefixHit(inQ, term) || prefixHit(inAlias, term)) {
         // prefix match keeps "supersets" finding "superset", but only between
         // real words: short fragments like "be" must never anchor a match
-        for (const w of inQ) {
-          if (w.length >= 4 && term.length >= 4 && (w.startsWith(term) || term.startsWith(w))) {
-            score += 3
-            break
-          }
-        }
+        score += 3
+        named += 1
+      } else if (inBody.has(term)) {
+        score += 1
       }
     }
-    return { entry, score }
+
+    return { entry, score, named }
   })
 
+  // Half the question has to land, so a single shared word cannot carry a five
+  // word question. One word asked alone still works, because "deload" is a
+  // whole question and the person typing it knows it.
+  const floor = Math.max(1, Math.ceil(terms.length / 2))
+
   return scored
-    .filter((s) => s.score >= 3)
+    .filter((s) => s.named >= floor && s.score >= 3)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((s) => s.entry)
+}
+
+function prefixHit(words: Set<string>, term: string): boolean {
+  if (term.length < 4) return false
+  for (const w of words) {
+    if (w.length >= 4 && (w.startsWith(term) || term.startsWith(w))) return true
+  }
+  return false
 }
 
 export function commonQuestions(): KnowledgeEntry[] {
