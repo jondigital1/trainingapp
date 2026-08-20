@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { dayById } from '@/lib/onboarding'
 import { weekdayOf } from '@/lib/week'
 import { fmtDate } from '@/lib/format'
@@ -28,6 +29,7 @@ export default function UpcomingList({
   today,
   onPeek,
   onMove,
+  onSkip,
 }: {
   profile: Profile
   workouts: Workout[]
@@ -36,7 +38,13 @@ export default function UpcomingList({
   // Open the day picker for this date. Plans change, and a schedule you cannot
   // bend without editing the pattern it repeats is a schedule people abandon.
   onMove: (date: string) => void
+  // Not doing this one at all. Moving was the only way to clear a date, and
+  // moving is a swap, so the session came back on whatever day you sent it
+  // to. There was no way to say a week is a write off without editing the
+  // pattern that repeats every week after it.
+  onSkip?: (date: string) => void
 }) {
+  const [confirm, setConfirm] = useState<string | null>(null)
   const upcoming = upcomingDays(profile, today).map((u) => ({
     ...u,
     done: trainedOn(workouts, u.date),
@@ -109,13 +117,28 @@ export default function UpcomingList({
                     between are left alone. A day already trained stays where
                     it happened, so it offers nothing. */}
                 {u.done ? null : (
-                  <button
-                    onClick={() => onMove(u.date)}
-                    aria-label={`Move ${its?.name ?? 'this session'} from ${fmtDate(u.date)} to another day`}
-                    className="shrink-0 rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
-                  >
-                    Move
-                  </button>
+                  <span className="flex shrink-0 gap-2">
+                    <button
+                      onClick={() => onMove(u.date)}
+                      aria-label={`Move ${its?.name ?? 'this session'} from ${fmtDate(u.date)} to another day`}
+                      className="rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
+                    >
+                      Move
+                    </button>
+                    {/* Two taps, because the card goes when you do it and a
+                        card that vanishes under a stray thumb is worse than
+                        one extra tap. Nothing is lost: the weekly pattern is
+                        untouched, so the same session is back next week. */}
+                    {onSkip ? (
+                      <button
+                        onClick={() => (confirm === u.date ? onSkip(u.date) : setConfirm(u.date))}
+                        aria-label={`Skip ${its?.name ?? 'this session'} on ${fmtDate(u.date)}`}
+                        className="rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
+                      >
+                        {confirm === u.date ? 'Tap again' : 'Skip'}
+                      </button>
+                    ) : null}
+                  </span>
                 )}
               </div>
             </div>

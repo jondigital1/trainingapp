@@ -2279,6 +2279,29 @@ is a real second search that happens to start with the first. Merging those
 would delete a question somebody actually asked, and a stray prefix in a list
 is untidy where a lost question is a gap nobody ever writes an entry for.
 
+## Skipping one
+
+The upcoming list could move a session and not cancel one. Move is a swap, so
+sending Friday's session to a rest day put it on that rest day: the session
+always landed somewhere. There was no way to say a week is a write off, short
+of editing the pattern that repeats every week after it, which is the wrong
+answer to "I am away this Friday".
+
+Skip says the date holds nothing, and says it about the date rather than about
+Fridays. The weekly pattern is untouched, so the same session is there next
+week, and the days on either side keep what they had.
+
+Two taps, because the card goes when you do it and a card that vanishes under a
+stray thumb is worse than one extra tap. And since the thing it happened to is
+no longer on screen, the app says what happened out loud: the date is a rest
+day now, and the session is still on your week after this one. A change you
+have to infer from something that is no longer there is a change people do not
+trust.
+
+Nothing new underneath. Assigning a day already stored an empty string for "the
+pattern says train, this date says otherwise"; nothing had ever called it with
+nothing to assign.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

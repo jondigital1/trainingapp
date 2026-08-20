@@ -4505,6 +4505,45 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('a session can be skipped, and only that date is', () => {
+  // Moving was the only way to clear a date, and moving is a swap, so the
+  // session came back on whatever day it was sent to. There was no way to say
+  // a week is a write off without editing the pattern that repeats after it.
+  const week = { schedule: [null, 'ppl-push', 'ppl-pull', null, 'ppl-legs', 'ppl-push', null] }
+  const today = '2026-08-17' // a Monday
+  const friday = '2026-08-21'
+
+  const skipped = { ...week, moves: assignDay(week, friday, null, today) }
+  assert.equal(dayIdFor(skipped, friday), null, 'the session did not go')
+  assert.equal(dayIdFor(skipped, '2026-08-28'), 'ppl-push', 'skipping one Friday took every Friday with it')
+  assert.deepEqual(skipped.moves, { [friday]: '' }, 'skipping wrote more than the one date')
+
+  // It leaves the list, and nothing else moves up into its slot on the wrong
+  // date: the days around it keep their own sessions.
+  const dates = upcomingDays(skipped, today).map((u) => u.date)
+  assert.ok(!dates.includes(friday), 'the skipped day is still being offered')
+  for (const iso of ['2026-08-18', '2026-08-20', '2026-08-24', '2026-08-28']) {
+    assert.equal(dayIdFor(skipped, iso), dayIdFor(week, iso), `${iso} moved when another day was skipped`)
+  }
+
+  // Putting it back is the same machinery from the other direction.
+  const back = { ...week, moves: assignDay(skipped, friday, 'ppl-push', today) }
+  assert.equal(dayIdFor(back, friday), 'ppl-push', 'a skipped day cannot be filled again')
+
+  // Two taps in the list, because the card goes when you do it.
+  const list = readFileSync(new URL('../components/UpcomingList.tsx', import.meta.url), 'utf8')
+  assert.ok(list.includes('onSkip'), 'there is no way to skip a session')
+  assert.ok(list.includes('Tap again'), 'skipping is one tap')
+
+  // And the app says what happened, since the card it happened to is gone.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const skip = app.slice(app.indexOf('async function skipDay'))
+  const body = skip.slice(0, skip.indexOf('\n  async function'))
+  assert.ok(body.includes('assignDay'), 'skipping does not go through the day map')
+  assert.ok(body.includes('null'), 'skipping assigns something rather than clearing')
+  assert.ok(body.includes('setError('), 'the card vanishes and nothing says why')
+})
+
 check('a half typed search is not a second question', () => {
   // The search is recorded once typing stops for a beat, which handles a fast
   // typist and not a person who pauses mid word. Live data had one person

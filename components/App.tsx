@@ -666,6 +666,19 @@ export default function App({
 
   // Day one bodyweight is a real reading on a real date, not a profile field,
   // so it goes in beside every reading that follows it.
+  // Not doing this one. Moving was the only way to clear a date and moving is
+  // a swap, so the session simply arrived somewhere else. This says the date
+  // holds nothing, and says it about the date rather than about Fridays, so
+  // the pattern that repeats is untouched and next week is normal.
+  //
+  // The card goes when you do it, so what happened is said out loud rather
+  // than left to be inferred from something that is no longer on screen.
+  async function skipDay(date: string) {
+    const its = dayById(dayIdFor(profile, date) ?? '')?.name ?? 'That session'
+    await saveProfile({ ...profile, moves: assignDay(profile, date, null, now) })
+    setError(`${fmtDate(date)} is a rest day now. ${its} is still on your week after this one.`)
+  }
+
   async function logWeight(pounds: number, date = today()) {
     const entry = { date, weight: pounds }
     setData((prev) => ({
@@ -1121,6 +1134,7 @@ export default function App({
             today={now}
             onPeek={setPeekDay}
             onMove={setMoving}
+            onSkip={(date) => void skipDay(date)}
           />
 
           {/* Everything behind you. This was its own tab until the calendar
