@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { MUSCLE_GROUPS } from '@/lib/exercises'
+import { TextInput } from './Form'
 import { fmtTime, uid } from '@/lib/format'
 import { TIER_LABELS, restForTier, type RestTier } from '@/lib/rest'
 import { SET_TYPES, type CustomExercise, type Goal, type SetType } from '@/lib/types'
@@ -19,30 +20,58 @@ import { SET_TYPES, type CustomExercise, type Goal, type SetType } from '@/lib/t
  * builder was a dead end while typing the same movement thirty seconds later,
  * mid session, worked fine. Two screens answering the same question
  * differently is how that happens, and sharing the answer is how it stops.
+ *
+ * The same four questions come back to change an answer. They had to: getting
+ * one wrong used to be permanent, and these are not decorative. A movement
+ * filed under the wrong group credits the wrong muscle in the weekly count
+ * every week, and the wrong tier rests the wrong length every session. You
+ * could fix it by hand in the session you were in and it was wrong again the
+ * next time.
  */
 export default function NewExercise({
   name,
   action,
   goal,
+  editing,
   onCreate,
+  onDelete,
 }: {
   name: string
   action: string
   // Read from the real rest table so the promise on this screen and the timer
   // in the session are the same number.
   goal: Goal
+  // The movement being changed, or nothing when making a new one. Editing
+  // keeps the id, so a rename moves the movement you have rather than leaving
+  // the old spelling behind next to the new one.
+  editing?: CustomExercise | null
   onCreate: (exercise: CustomExercise) => void
+  onDelete?: (exercise: CustomExercise) => void
 }) {
-  const [type, setType] = useState<SetType>('W')
-  const [group, setGroup] = useState<string>(MUSCLE_GROUPS[0])
-  const [tier, setTier] = useState<RestTier>('compound')
-  const [sets, setSets] = useState(3)
+  const [type, setType] = useState<SetType>(editing?.type ?? 'W')
+  const [group, setGroup] = useState<string>(editing?.group ?? MUSCLE_GROUPS[0])
+  const [tier, setTier] = useState<RestTier>(editing?.tier ?? 'compound')
+  const [sets, setSets] = useState(editing?.sets ?? 3)
+  // Only editable when editing. While creating, the name is whatever you typed
+  // into the search box above, and two places to type it is one too many.
+  const [named, setNamed] = useState(editing?.name ?? '')
+  const [confirm, setConfirm] = useState(false)
+  const finalName = (editing ? named : name).trim()
 
   return (
     <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
-      <p className="text-sm">
-        Create <span className="text-accent-ink">{name}</span>
-      </p>
+      {editing ? (
+        <>
+          <Label>Called</Label>
+          <div className="mt-1.5">
+            <TextInput value={named} onChange={setNamed} placeholder="Name" />
+          </div>
+        </>
+      ) : (
+        <p className="text-sm">
+          Create <span className="text-accent-ink">{name}</span>
+        </p>
+      )}
 
       <Label>What do you measure</Label>
       <Chips
@@ -73,11 +102,32 @@ export default function NewExercise({
       />
 
       <button
-        onClick={() => onCreate({ id: uid(), name: name.trim(), type, group, tier, sets })}
-        className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent"
+        disabled={!finalName}
+        onClick={() =>
+          onCreate({ id: editing?.id ?? uid(), name: finalName, type, group, tier, sets })
+        }
+        className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent disabled:opacity-40"
       >
         {action}
       </button>
+
+      {/* Two taps, because this is the one button here that cannot be undone.
+          Everything else on this screen can be changed back. */}
+      {editing && onDelete ? (
+        <button
+          onClick={() => (confirm ? onDelete(editing) : setConfirm(true))}
+          className="mt-2 w-full rounded-xl py-2.5 text-sm font-bold text-alert"
+        >
+          {confirm ? 'Tap again to delete it' : 'Delete this movement'}
+        </button>
+      ) : null}
+
+      {editing ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          Changes apply from here on. Sessions you have already logged keep what
+          they were logged with.
+        </p>
+      ) : null}
     </div>
   )
 }

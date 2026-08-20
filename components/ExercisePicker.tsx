@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MUSCLE_GROUPS, similarTo } from '@/lib/exercises'
+import { LIBRARY, MINE, MUSCLE_GROUPS, similarTo } from '@/lib/exercises'
 import { uid } from '@/lib/format'
 import Sheet from './Sheet'
 import NewExercise from './NewExercise'
@@ -15,6 +15,8 @@ export default function ExercisePicker({
   onUnpick,
   onOpen,
   onCreate,
+  onEdit,
+  onDelete,
   onClose,
 }: {
   customs: CustomExercise[]
@@ -32,8 +34,13 @@ export default function ExercisePicker({
   // rather than making the row do two jobs.
   onOpen?: (name: string) => void
   onCreate: (exercise: CustomExercise) => void
+  // Changing one of your own. Same four questions, kept in one place, because
+  // an answer you cannot change is an answer that is wrong forever.
+  onEdit?: (exercise: CustomExercise) => void
+  onDelete?: (exercise: CustomExercise) => void
   onClose: () => void
 }) {
+  const [editing, setEditing] = useState<CustomExercise | null>(null)
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string | null>(null)
   const [added, setAdded] = useState<string[]>([])
@@ -42,7 +49,7 @@ export default function ExercisePicker({
   const [superset, setSuperset] = useState<string | null>(null)
 
   const all = useMemo(
-    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: 'My exercises' })), ...LIBRARY],
+    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: MINE })), ...LIBRARY],
     [customs],
   )
 
@@ -82,7 +89,7 @@ export default function ExercisePicker({
     setAdded((prev) => [...prev, name])
   }
 
-  const groups = customs.length ? ['My exercises', ...MUSCLE_GROUPS] : MUSCLE_GROUPS
+  const groups = customs.length ? [MINE, ...MUSCLE_GROUPS] : MUSCLE_GROUPS
 
   return (
     <Sheet title={replacing ? `Swap out ${replacing}` : 'Add exercise'} onClose={onClose}>
@@ -151,7 +158,18 @@ export default function ExercisePicker({
                 {added.includes(e.name) ? 'Added' : e.group}
               </span>
             </button>
-            {onOpen ? (
+            {/* Your own movement gets the pencil rather than the info button.
+                The library has nothing to tell you about something you
+                invented, and fixing it is the thing you actually came for. */}
+            {e.group === MINE && onEdit ? (
+              <button
+                onClick={() => setEditing(customs.find((c) => c.name === e.name) ?? null)}
+                aria-label={`Edit ${e.name}`}
+                className="ml-3 grid h-7 w-7 flex-none place-items-center rounded-full text-xs text-muted ring-1 ring-edge"
+              >
+                &#9998;
+              </button>
+            ) : onOpen ? (
               <button
                 onClick={() => onOpen(e.name)}
                 aria-label={`About ${e.name}`}
@@ -164,7 +182,23 @@ export default function ExercisePicker({
         ))}
         {results.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nothing matches</p> : null}
       </div>
-      {query.trim() && !exact ? (
+      {editing ? (
+        <NewExercise
+          key={editing.id}
+          name={editing.name}
+          action="Save changes"
+          goal={goal}
+          editing={editing}
+          onCreate={(exercise) => {
+            onEdit?.(exercise)
+            setEditing(null)
+          }}
+          onDelete={(exercise) => {
+            onDelete?.(exercise)
+            setEditing(null)
+          }}
+        />
+      ) : query.trim() && !exact ? (
         <NewExercise
           name={query.trim()}
           action="Save and add"

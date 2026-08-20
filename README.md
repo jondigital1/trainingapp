@@ -2156,6 +2156,39 @@ Deleting your account cleared it; signing out left it there. The function to
 clear it had been written and nothing ever called it, which is the quietest way
 for a gap to hide.
 
+## A movement you made is yours to change
+
+A custom exercise already lived in the account: its own table, keyed to your
+user id, row level security on, loaded on any device you sign in from, and gone
+with the account if you delete it. Inside a session it already behaved like any
+other movement, with sets added and reps edited freely.
+
+What was frozen was the definition. The four answers you gave when you made it
+could not be changed, renamed or removed. There was no edit screen, and the
+guard that stops you creating the same movement twice also stopped you retyping
+the name to answer again, so the only way back was no way back.
+
+That mattered more than it sounds, because those four answers do real work. A
+movement filed under the wrong group credits the wrong muscle in the weekly
+count, every week. The wrong tier rests the wrong length, every session. The
+wrong number of sets is laid out every time you use it. You could fix any of it
+by hand in the session you were in, and it was wrong again the next time.
+
+Your own movements now carry a pencil where the library's carry an info button,
+because the library has nothing to tell you about something you invented and
+fixing it is what you came for. The pencil opens the same four questions with
+your answers already in them, plus the name. It is the same component that
+creates one, so the two can never come to mean different things.
+
+Changes apply from here on. Sessions already logged keep the name and the
+numbers they were logged with, because a log you can rewrite is not a log. A
+saved workout is the one thing a rename does follow, since that is a plan for
+next time rather than a record of last time, and leaving it behind would point
+it at a movement that no longer answers to that name.
+
+Deleting is one button on the same screen, and asks twice, because it is the
+only thing there that cannot be changed back.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

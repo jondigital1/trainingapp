@@ -4505,6 +4505,43 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('a movement you made can be changed, and only from here on', () => {
+  // The four answers are not decorative. The group decides which muscle it
+  // credits in the weekly count, the tier decides how long it rests, the sets
+  // decide how many get laid out. Getting one wrong used to be permanent:
+  // there was no rename, no edit, and the guard that stops duplicates also
+  // stopped you retyping the name to answer again.
+  const create = readFileSync(new URL('../components/NewExercise.tsx', import.meta.url), 'utf8')
+  assert.ok(create.includes('editing?: CustomExercise | null'), 'the four questions cannot be reopened')
+  assert.ok(/editing\?\.group \?\?/.test(create), 'editing does not start from the answers you gave')
+  assert.ok(/editing\?\.tier \?\?/.test(create), 'editing does not start from the answers you gave')
+  assert.ok(/editing\?\.sets \?\?/.test(create), 'editing does not start from the answers you gave')
+
+  // A rename has to move the row rather than leave the old spelling next to
+  // the new one, which means going by id. The upsert goes by (user_id, name)
+  // and would miss every existing row, then collide on the primary key.
+  const db = readFileSync(new URL('../lib/db.ts', import.meta.url), 'utf8')
+  const update = db.slice(db.indexOf('export async function updateCustomExercise'))
+  assert.ok(update.slice(0, update.indexOf('\n}')).includes(".eq('id'"), 'a rename does not move the movement you have')
+
+  // Both screens can reach it, because a movement made on either behaves the
+  // same and has to be fixable on either.
+  for (const file of ['ExercisePicker', 'CustomBuilder']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(src.includes('onEdit'), `${file} cannot change one of your own`)
+    assert.ok(src.includes('Edit ${e.name}'), `${file} has no way in`)
+  }
+
+  // Nothing already logged is touched. A saved workout is a plan for next
+  // time and does follow a rename; a logged session is a record and does not.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const edit = app.slice(app.indexOf('async function editCustomExercise'))
+  const body = edit.slice(0, edit.indexOf('\n  async function removeCustomExercise'))
+  assert.ok(body.includes('customWorkouts'), 'a rename leaves your saved workouts pointing at nothing')
+  assert.ok(!/\bworkouts:/.test(body), 'editing a movement rewrites sessions already logged')
+  assert.ok(!body.includes('db.saveWorkout'), 'editing a movement writes to the log')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

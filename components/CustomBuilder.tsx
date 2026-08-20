@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MUSCLE_GROUPS } from '@/lib/exercises'
+import { LIBRARY, MINE, MUSCLE_GROUPS } from '@/lib/exercises'
 import NewExercise from './NewExercise'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
@@ -15,6 +15,8 @@ export default function CustomBuilder({
   seed,
   onSave,
   onCreate,
+  onEdit,
+  onDelete,
   onClose,
 }: {
   customs: CustomExercise[]
@@ -30,6 +32,9 @@ export default function CustomBuilder({
   // picker inside a session asks for, because a movement created here has to
   // behave like one created there.
   onCreate: (exercise: CustomExercise) => void
+  // Changing one of your own, from the same screen you made it on.
+  onEdit?: (exercise: CustomExercise) => void
+  onDelete?: (exercise: CustomExercise) => void
   onClose: () => void
 }) {
   const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
@@ -39,9 +44,12 @@ export default function CustomBuilder({
   // While on, everything picked joins the same superset, exactly like the
   // picker in a live session. Off and on again starts a new group.
   const [superset, setSuperset] = useState<string | null>(null)
+  // Named apart from the `editing` prop above, which is the workout being
+  // changed. This is one movement inside it.
+  const [fixing, setFixing] = useState<CustomExercise | null>(null)
 
   const all = useMemo(
-    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: 'My exercises' })), ...LIBRARY],
+    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: MINE })), ...LIBRARY],
     [customs],
   )
 
@@ -82,7 +90,7 @@ export default function CustomBuilder({
     }
   }
 
-  const groups = customs.length ? ['My exercises', ...MUSCLE_GROUPS] : MUSCLE_GROUPS
+  const groups = customs.length ? [MINE, ...MUSCLE_GROUPS] : MUSCLE_GROUPS
 
   return (
     <Sheet
@@ -183,14 +191,26 @@ export default function CustomBuilder({
         {results.map((e) => {
           const on = picked.some((p) => p.name === e.name)
           return (
-            <button
-              key={`${e.group}-${e.name}`}
-              onClick={() => toggle(e)}
-              className="flex items-center justify-between border-b border-edge py-3 text-left"
-            >
-              <span className="text-sm">{e.name}</span>
-              <span className={`text-xs ${on ? 'text-accent-ink' : 'text-muted'}`}>{on ? 'Added' : e.group}</span>
-            </button>
+            <div key={`${e.group}-${e.name}`} className="flex items-center border-b border-edge">
+              <button
+                onClick={() => toggle(e)}
+                className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
+              >
+                <span className="text-sm">{e.name}</span>
+                <span className={`shrink-0 text-xs ${on ? 'text-accent-ink' : 'text-muted'}`}>
+                  {on ? 'Added' : e.group}
+                </span>
+              </button>
+              {e.group === MINE && onEdit ? (
+                <button
+                  onClick={() => setFixing(customs.find((c) => c.name === e.name) ?? null)}
+                  aria-label={`Edit ${e.name}`}
+                  className="ml-3 grid h-7 w-7 flex-none place-items-center rounded-full text-xs text-muted ring-1 ring-edge"
+                >
+                  &#9998;
+                </button>
+              ) : null}
+            </div>
           )
         })}
         {results.length === 0 && !query.trim() ? (
@@ -202,7 +222,29 @@ export default function CustomBuilder({
           here, while the picker inside a live session would happily create it.
           The same movement, the same person, two different answers depending
           on which screen they were standing on. */}
-      {query.trim() && !exact ? (
+      {fixing ? (
+        <NewExercise
+          key={fixing.id}
+          name={fixing.name}
+          action="Save changes"
+          goal={goal}
+          editing={fixing}
+          onCreate={(exercise) => {
+            onEdit?.(exercise)
+            // A rename has to follow into the list being built, or the workout
+            // saves a movement under a name nothing has any more.
+            setPicked((prev) =>
+              prev.map((p) => (p.name === fixing.name ? { ...p, name: exercise.name, type: exercise.type } : p)),
+            )
+            setFixing(null)
+          }}
+          onDelete={(exercise) => {
+            onDelete?.(exercise)
+            setPicked((prev) => prev.filter((p) => p.name !== exercise.name))
+            setFixing(null)
+          }}
+        />
+      ) : query.trim() && !exact ? (
         <NewExercise
           name={query.trim()}
           action="Add it to this workout"

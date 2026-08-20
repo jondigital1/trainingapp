@@ -168,6 +168,24 @@ export async function saveCustomExercise(sb: SupabaseClient, userId: string, ex:
   if (res.error) throw res.error
 }
 
+// Changing one you already have, by id rather than by name, because the name
+// is one of the things you might be changing. The upsert above targets
+// (user_id, name), so a rename would miss every existing row and then collide
+// on the primary key instead of moving the movement you meant.
+export async function updateCustomExercise(sb: SupabaseClient, ex: CustomExercise) {
+  const res = await sb
+    .from('custom_exercises')
+    .update({
+      name: ex.name,
+      type: ex.type,
+      muscle_group: ex.group ?? null,
+      rest_tier: ex.tier ?? null,
+      default_sets: ex.sets ?? null,
+    })
+    .eq('id', ex.id)
+  if (res.error) throw res.error
+}
+
 export async function deleteCustomExercise(sb: SupabaseClient, id: string) {
   const res = await sb.from('custom_exercises').delete().eq('id', id)
   if (res.error) throw res.error

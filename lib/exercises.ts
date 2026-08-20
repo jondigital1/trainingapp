@@ -351,6 +351,11 @@ const RAW: Record<string, string[]> = {
 
 export const MUSCLE_GROUPS = Object.keys(RAW)
 
+// The group your own movements are filed under. Not a muscle, which is why it
+// is not in the list above, and a magic string written out in four places
+// until a row needed to know whether it was yours.
+export const MINE = 'My exercises'
+
 export const LIBRARY: LibraryExercise[] = MUSCLE_GROUPS.flatMap((group) =>
   RAW[group].map((entry) => {
     const [name, type] = entry.split('|')

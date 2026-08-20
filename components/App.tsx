@@ -551,6 +551,60 @@ export default function App({
     }
   }
 
+  // Changing one of your own movements. The four answers are not decorative:
+  // the group decides which muscle it credits in the weekly count, the tier
+  // decides how long it rests, and the sets decide how many are laid out. This
+  // is how you take a wrong one back.
+  //
+  // From here on only. Sessions already logged keep the name and the numbers
+  // they were logged with, because a log you can rewrite is not a log.
+  async function editCustomExercise(exercise: CustomExercise) {
+    const before = data.custom.find((c) => c.id === exercise.id)
+    const renamed = before && before.name !== exercise.name ? before.name : null
+
+    setData((prev) => ({
+      ...prev,
+      custom: prev.custom.map((c) => (c.id === exercise.id ? exercise : c)),
+      // A saved workout is a plan for next time, not a record of last time, so
+      // a rename follows it. Leaving it behind would point the template at a
+      // movement that no longer answers to that name.
+      customWorkouts: renamed
+        ? prev.customWorkouts.map((w) => ({
+            ...w,
+            items: w.items.map((i) =>
+              i.name === renamed ? { ...i, name: exercise.name, type: exercise.type } : i,
+            ),
+          }))
+        : prev.customWorkouts,
+    }))
+
+    try {
+      await db.updateCustomExercise(sb, exercise)
+      if (renamed) {
+        for (const w of data.customWorkouts) {
+          if (!w.items.some((i) => i.name === renamed)) continue
+          await db.saveCustomWorkout(sb, userId, {
+            ...w,
+            items: w.items.map((i) =>
+              i.name === renamed ? { ...i, name: exercise.name, type: exercise.type } : i,
+            ),
+          })
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save exercise')
+    }
+  }
+
+  async function removeCustomExercise(exercise: CustomExercise) {
+    setData((prev) => ({ ...prev, custom: prev.custom.filter((c) => c.id !== exercise.id) }))
+    try {
+      await db.deleteCustomExercise(sb, exercise.id)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete exercise')
+    }
+  }
+
   async function saveCustomWorkout(name: string, items: CustomWorkoutItem[], id?: string) {
     const editing = !!id
     const workout = { id: id ?? uid(), name, items }
@@ -1223,6 +1277,8 @@ export default function App({
           seed={seedWorkout}
           goal={data.settings.goal}
           onCreate={(exercise) => void createCustomExercise(exercise)}
+          onEdit={(exercise) => void editCustomExercise(exercise)}
+          onDelete={(exercise) => void removeCustomExercise(exercise)}
           onSave={(name, items, id) => void saveCustomWorkout(name, items, id)}
           onClose={() => {
             setEditingWorkout(null)
@@ -1258,6 +1314,8 @@ export default function App({
             if (doomed) updateWorkout({ ...w, exercises: w.exercises.filter((e) => e.id !== doomed.id) })
           }}
           onCreate={(exercise) => void createCustomExercise(exercise)}
+          onEdit={(exercise) => void editCustomExercise(exercise)}
+          onDelete={(exercise) => void removeCustomExercise(exercise)}
           onClose={() => {
             setSheet(null)
             setPickerTarget(null)
