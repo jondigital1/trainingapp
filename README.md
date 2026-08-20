@@ -305,10 +305,14 @@ It carries two things now, and they answer two different questions. The card
 at the top is the week you are in, Sunday to Saturday, the same week the streak
 and the coverage count already use: filled where you trained, outlined where
 the schedule asks for something, ringed on today. Underneath it is what is
-coming, the next ten sessions the schedule holds as a list you scroll, with
-real dates on them so it can be read against a calendar that has the rest of
-your life in it: Fri 21 Aug, Hamstrings and Glutes. Then everything behind you,
-hidden while a session is live.
+coming, the next ten sessions the schedule holds, one card each: the day
+spelled out with its date, what that day is, and the way in. Ten separate
+things to plan around rather than one list to scan, each carrying the same
+three facts in the same places. Then everything behind you, hidden while a
+session is live.
+
+The way in is written on the card rather than implied by it, because a whole
+card being tappable is not an affordance anybody can see.
 
 Names only in that list, no movements. Ten sessions with six exercises each is
 sixty lines of text nobody reads, and what is in a day is one tap away on the

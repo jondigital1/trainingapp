@@ -2,21 +2,24 @@
 
 import { dayById } from '@/lib/onboarding'
 import { fmtDate } from '@/lib/format'
-import { trainedOn, upcomingDays } from '@/lib/schedule'
+import { trainedOn, upcomingDays, WEEKDAY_NAMES, weekdayOf } from '@/lib/schedule'
 import type { Profile } from '@/lib/onboarding'
 import type { Workout } from '@/lib/types'
 
 /**
- * What is coming, as a list you scroll rather than a grid you decode.
+ * What is coming, one card per day.
  *
  * The week above answers where you are in the week you are in. This answers
- * the other question, which is what the next fortnight actually asks of you:
- * Monday arms, Tuesday shoulders, Thursday legs, with real dates on them so it
- * can be read against a calendar that has the rest of your life in it.
+ * the other question, which is what the next fortnight actually asks of you,
+ * with real dates on it so it can be read against a calendar that has the rest
+ * of your life in it.
  *
- * Names only, no movements. A list of ten sessions with six exercises each is
- * sixty lines of text nobody reads, and what is in a day is one tap away on
- * the day itself.
+ * A card each rather than rows in one, because these are ten separate things
+ * to plan around rather than one list to scan, and each one carries the same
+ * three facts in the same places: which day it is, what it is, and the way in.
+ *
+ * Names only, no movements. Ten sessions with six exercises each is sixty
+ * lines of text nobody reads, so what is in a day sits one tap inside it.
  */
 export default function UpcomingList({
   profile,
@@ -37,11 +40,11 @@ export default function UpcomingList({
 
   if (!upcoming.length) {
     return (
-      <section className="rounded-2xl bg-card p-4 ring-1 ring-edge">
+      <section>
         <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
           What is coming
         </h3>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
+        <p className="mt-2 rounded-2xl bg-card p-4 text-sm leading-relaxed text-muted ring-1 ring-edge">
           Lay your week out on your profile and the next ten sessions appear here, dated.
         </p>
       </section>
@@ -49,31 +52,32 @@ export default function UpcomingList({
   }
 
   return (
-    <section className="rounded-2xl bg-card p-4 ring-1 ring-edge">
+    <section>
       <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
         What is coming
       </h3>
-      <ul className="mt-2 flex flex-col">
-        {upcoming.map((u, i) => {
+      <div className="mt-2 flex flex-col gap-2">
+        {upcoming.map((u) => {
           const its = dayById(u.dayId)
+          // "Thu 21 Aug" is the app's date everywhere else; the weekday is
+          // spelled out here because a card has the room and a day you are
+          // planning around deserves its name.
+          const when = `${WEEKDAY_NAMES[weekdayOf(u.date)]} ${fmtDate(u.date).slice(4)}`
           return (
-            <li key={u.date}>
-              <button
-                onClick={() => onPeek(u.dayId)}
-                aria-label={`${fmtDate(u.date)}, ${its?.name ?? ''}${u.done ? ', trained' : ''}`}
-                className={`flex w-full items-center justify-between gap-3 py-3 text-left ${
-                  i > 0 ? 'border-t border-edge' : ''
-                }`}
-              >
-                <span className="min-w-0">
-                  <span
-                    className={`num block text-xs font-extrabold ${
-                      u.today ? 'text-accent-ink' : 'text-faint'
-                    }`}
-                  >
-                    {u.today ? 'Today' : fmtDate(u.date)}
-                  </span>
-                  <span className="mt-0.5 block truncate text-sm font-bold">{its?.name ?? ''}</span>
+            <button
+              key={u.date}
+              onClick={() => onPeek(u.dayId)}
+              className={`w-full rounded-2xl bg-card p-4 text-left ring-1 ${
+                u.today ? 'ring-[1.5px] ring-accent-ink' : 'ring-edge'
+              }`}
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span
+                  className={`text-[10.5px] font-extrabold uppercase tracking-[1.5px] ${
+                    u.today ? 'text-accent-ink' : 'text-faint'
+                  }`}
+                >
+                  {u.today ? `Today, ${when}` : when}
                 </span>
                 {/* Lime means done, here as everywhere. Nothing else needs a
                     badge: a day that has not happened yet is just a day. */}
@@ -82,11 +86,19 @@ export default function UpcomingList({
                     Done
                   </span>
                 ) : null}
-              </button>
-            </li>
+              </div>
+              <p className="mt-1 truncate font-display text-[17px] font-semibold tracking-tight">
+                {its?.name ?? ''}
+              </p>
+              {/* Said out loud, because the whole card being tappable is not an
+                  affordance anybody can see. */}
+              <p className="mt-2 text-[12.5px] font-extrabold text-accent-ink">
+                See the exercises &rarr;
+              </p>
+            </button>
           )
         })}
-      </ul>
+      </div>
     </section>
   )
 }
