@@ -597,6 +597,24 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## Two boxes that said what the thing above them said
+
+The profile page carried a full width Settings card as well as the pill in its
+own header. The card was added because the pill was easy to miss, which was
+fair, and is not something a second door to the same room on the same screen
+fixes. The pill stays.
+
+Underneath the Today card, on any day with nothing logged, sat a box. On a rest
+day it said Rest day, under a card headed Rest day. On a training day it said
+Tap Start below, under a card carrying a Start button, pointing down at a
+second one. There is no state in which it said anything the card above had not
+just said, so it is gone, and a rest day now reads Rest day once and then goes
+straight to what is coming.
+
+Both are the same habit: reaching for another element when the worry is that
+somebody might miss the one already there. It never works, because the reason
+they missed it was not that there was only one of it.
+
 ## The word before the first session of the day
 
 Once a day, on the way into training, the app asks how you are. Nothing is

@@ -40,7 +40,7 @@ import { sharePlainLink } from '@/lib/share'
 import { durationOf, wantsScore } from '@/lib/session'
 import { summarise } from '@/lib/summary'
 import { forToday, greetedOn, recordHello } from '@/lib/hello'
-import { assignDay, dayIdFor, hasSchedule, scheduledDays, suggestSchedule, swapDays, todaysDayId } from '@/lib/schedule'
+import { assignDay, dayIdFor, hasSchedule, scheduledDays, suggestSchedule, swapDays } from '@/lib/schedule'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '@/lib/advance'
 import { hardestFirst, topLoads } from '@/lib/order'
 import {
@@ -1014,16 +1014,12 @@ export default function App({
 
       {!loading && tab === 'calendar' ? (
         <div className="flex flex-col gap-6">
-          {todays.length === 0 ? (
-            // On a scheduled rest day this card must not argue with the Today
-            // card above it: telling somebody to train on the day the plan
-            // told them to rest is the app contradicting its own training.
-            <p className="rounded-2xl bg-card p-4 text-sm text-muted ring-1 ring-edge">
-              {hasSchedule(profile) && !todaysDayId(profile, today())
-                ? 'Rest day. Nothing to log unless you feel like logging something anyway.'
-                : 'Nothing logged today. Tap Start below.'}
-            </p>
-          ) : null}
+          {/* Nothing here on a day with nothing logged.
+              There was a box, and every branch of it repeated the card
+              directly above: Rest day under a card headed Rest day, and Tap
+              Start below under a card carrying a Start button, pointing the
+              wrong way at a second one. A card whose whole job is to say what
+              the card above just said is not an empty state, it is furniture. */}
           {todays.map((workout) => (
             <WorkoutEditor
               key={workout.id}

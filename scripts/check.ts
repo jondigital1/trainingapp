@@ -378,6 +378,25 @@ check('a six day week repeats the upper days and splits the legs', () => {
   assert.equal(counts.get('ppl-pull'), 2)
 })
 
+check('the calendar does not say what the card above it just said', () => {
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+
+  // A box sat under the Today card on any day with nothing logged, and every
+  // branch of it repeated the card directly above: Rest day underneath a card
+  // headed Rest day, and Tap Start below underneath a card carrying a Start
+  // button, pointing down at a second one. An empty state whose whole job is
+  // to restate the thing above it is furniture.
+  assert.ok(!/Nothing to log unless/.test(app), 'the rest day box came back')
+  assert.ok(!/Tap Start below/.test(app), 'the tap start box came back')
+
+  // The card above still says all three of those things itself, which is why
+  // the box could go.
+  const card = readFileSync(new URL('../components/TodayCard.tsx', import.meta.url), 'utf8')
+  assert.ok(/'Rest day'/.test(card), 'a rest day is now nowhere on the screen')
+  assert.ok(/'No week set yet'/.test(card))
+  assert.ok(/Start \{day.name\}/.test(card), 'and nothing offers to start the session')
+})
+
 check('one door into Settings, not two on the same screen', () => {
   // The profile page carried a full width Settings card as well as the pill in
   // its own header, added on the reasoning that the pill was easy to miss. Two
