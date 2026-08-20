@@ -3418,6 +3418,53 @@ check('what Lifty could not answer is written down, not lost', () => {
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
 })
 
+check('a training log does not answer health questions', () => {
+  // The library drifted into giving health advice, and it read well, which is
+  // exactly what made it a problem: paragraphs about growth plates, oestrogen
+  // and whether a worn joint should be loaded, written confidently by a thing
+  // that has never met the person asking and cannot be told when it is wrong.
+  //
+  // The rule is not silence. A question deserves the plainly safe answer and
+  // then the name of whoever it actually belongs to. What it must not get is
+  // a judgement only a clinician can make, or a number only a dietitian
+  // should be handing out.
+  const CLINICAL = [
+    'basic-teens', 'basic-women-50', 'basic-arthritis', 'basic-age', 'basic-sick',
+    'basic-pain', 'basic-supplements', 'basic-water',
+  ]
+  const NUTRITION = [
+    'basic-protein', 'basic-protein-timing', 'basic-what-to-eat-before', 'basic-bulk',
+    'basic-recomp', 'basic-sixpack', 'basic-cardio-fatloss', 'w-macros', 'w-bulk-cut',
+  ]
+  const DEFERS = /doctor|clinician|dietitian|pharmacist|physio|qualified|professional/i
+
+  // And the panel says it out loud rather than leaving it to be inferred from
+  // fifteen individual answers.
+  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(/not a medical\s*\n?\s*or nutrition service/.test(sheet), 'the panel stopped saying what it is not')
+
+  for (const id of [...CLINICAL, ...NUTRITION]) {
+    const entry = KNOWLEDGE.find((e) => e.id === id)
+    assert.ok(entry, `${id} has gone, and the rule with it`)
+    assert.ok(DEFERS.test(entry!.a), `${id} answers without saying whose question it is`)
+  }
+
+  // No prescribed amounts. A gram per pound and a calorie target are the
+  // shapes this most easily slides back into.
+  for (const id of NUTRITION) {
+    const a = KNOWLEDGE.find((e) => e.id === id)!.a
+    assert.ok(!/\d+\s*(g|gram|calorie|kcal)/i.test(a), `${id} prescribes an amount`)
+    assert.ok(!/per (pound|kilo|kg|lb)/i.test(a), `${id} prescribes a rate`)
+  }
+
+  // And no claims about what a body will do, which is the tell for an answer
+  // that has stopped being about training.
+  for (const id of CLINICAL) {
+    const a = KNOWLEDGE.find((e) => e.id === id)!.a
+    assert.ok(!/growth plate|oestrogen|estrogen|hormone|osteoporosis|injury rate/i.test(a), `${id} is making a medical claim`)
+  }
+})
+
 check('the questions the whole internet asks have answers here', () => {
   // Found by looking outward rather than inward: sweeping what people actually
   // ask about lifting, then checking each theme against the library rather

@@ -304,7 +304,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Do I need protein straight after training?',
     group: 'The basics',
     aliases: ['anabolic window', 'protein after workout', 'shake after training', 'post workout meal', '30 minute window'],
-    a: 'No. The anabolic window turned out to be a barn door: muscle stays sensitive to protein for a day or more after training, so what matters is how much you eat across the day rather than whether it lands within half an hour. If a shake straight after is convenient, have one. If you would rather eat a proper meal an hour later, that is just as good, and neither beats simply hitting your protein total.',
+    a: 'No. The idea that protein has to land within half an hour of training has not held up: what you eat across the whole day matters far more than the timing of any one part of it. Beyond that, how much and when is a question for a dietitian rather than a training log.',
   },
   {
     id: 'basic-rate-of-gain',
@@ -325,21 +325,21 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Is lifting safe for teenagers?',
     group: 'The basics',
     aliases: ['teenager lifting', 'kids weight training', 'stunt growth', 'growth plates', 'young lifter', 'is 15 too young'],
-    a: 'Yes, and the growth plate story is a myth that will not die. Supervised resistance training is one of the better things a teenager can do for bone density, coordination and confidence, and the injury rate is lower than most sports they already play. What matters is technique before load, sensible progression and no maximal singles, which is good advice at any age. Anyone under about sixteen is better off with a coach watching than with an app.',
+    a: 'Lifting is safe for teenagers and adults alike when the basics are respected: technique before load, sensible progression, no maximal attempts, and supervision from a coach or qualified trainer while the movements are being learned. Whether it is right for a particular young person, and at what point they start, is a question for their doctor or a qualified strength coach who can see them. This app is a training log, not the right place to make that call.',
   },
   {
     id: 'basic-women-50',
     q: 'Does lifting change after 50, or after menopause?',
     group: 'The basics',
     aliases: ['menopause', 'after 50', 'women over 50', 'bone density', 'osteoporosis', 'hrt and lifting', 'perimenopause'],
-    a: 'The training does not change much. What changes is that it matters more: the drop in oestrogen accelerates loss of both muscle and bone, and resistance training is the most effective thing anyone has found to slow both. Heavier work with proper rest does more for bone than light circuits do. Recovery between hard sessions often needs a little longer. Anything to do with symptoms, medication or a diagnosis of osteoporosis belongs with a clinician, not a training log.',
+    a: 'The training itself does not change: the same movements, the same progression, the same principles apply at any age. Strength training is widely recommended through and after menopause, and the specifics of how it fits alongside your health, your bone density and anything you are being treated for is a conversation for your doctor. Bring the plan to them rather than the other way round.',
   },
   {
     id: 'basic-arthritis',
     q: 'I have arthritis or a worn joint. Should I lift?',
     group: 'The basics',
     aliases: ['arthritis', 'worn joint', 'osteoarthritis', 'bad knees', 'joint replacement', 'cartilage', 'bone on bone'],
-    a: 'Usually yes, and often it helps, which surprises people. Strengthening the muscles around a painful joint tends to reduce the pain rather than add to it, and the old advice to rest a worn joint has largely been reversed. What that does not mean is training through sharp pain, or deciding for yourself what your particular joint tolerates. Get the plan cleared by whoever knows the joint, flag it on your profile so sessions build around it, and expect to work in ranges that feel fine rather than in the ones that do not.',
+    a: 'That is a question for the clinician who knows the joint, and it is worth asking rather than guessing, because the answer is often yes with adjustments rather than no. What this app can do once you have that answer is work around it: flag the joint on your profile and sessions build without the movements that aggravate it. What it cannot do is tell you what your particular joint will tolerate.',
   },
   {
     id: 'basic-gym-nerves',
@@ -360,7 +360,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'How much water do I need?',
     group: 'The basics',
     aliases: ['water', 'hydration', 'dehydrated', 'drink during workout', 'electrolytes'],
-    a: 'Enough that you are not thirsty and your urine is pale. That is genuinely the whole test, and it beats any fixed number of litres because how much you need depends on your size, the weather and how much you sweat. A bottle to sip through a session is plenty for an hour indoors. Being properly dehydrated does cost you strength and makes everything feel harder, but it takes more than forgetting a glass of water to get there.',
+    a: 'Drink enough that you are not thirsty. That is as far as a training log should go on it, and it covers most people most of the time. Being properly dehydrated does make training harder, and how much you personally need depends on your size, the weather and how much you sweat, which a dietitian or your doctor is better placed to talk about than this is.',
   },
   {
     id: 'basic-time-of-day',
@@ -381,14 +381,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I do cardio or weights to lose fat?',
     group: 'The basics',
     aliases: ['cardio for fat loss', 'weights or cardio', 'best exercise to lose weight', 'burn fat', 'treadmill or weights'],
-    a: 'Weights, with cardio alongside if you like it. Cardio burns more during the session and lifting protects the muscle you already have, which is what decides whether you end up smaller or simply lighter. Losing fat is mostly settled in the kitchen either way: a deficit you can hold for months beats any amount of exercise chosen to burn it off. Walking is the most underrated part of this and the easiest to keep doing.',
+    a: 'Do both, and keep lifting whichever you prefer. Lifting protects the muscle you already have, which is what decides whether you end up smaller or simply lighter, and cardio and walking are worth doing for your heart regardless. Losing fat is settled mostly by eating, and how to do that safely for you is a question for a dietitian or your doctor rather than a training log.',
   },
   {
     id: 'basic-sixpack',
     q: 'How do I get a six pack?',
     group: 'The basics',
     aliases: ['six pack', 'abs showing', 'visible abs', 'belly fat', 'lose my gut', 'get lean', 'stomach'],
-    a: 'Everybody already has one. Whether it shows is decided almost entirely by how much fat is sitting over it, which is a kitchen question rather than a training one, and no amount of crunches changes it. Train your core because a strong midsection helps everything else, eat at a deficit if you want to see it, and be patient: the last bit of belly fat is the last to go and there is nothing you can do about the order.',
+    a: 'Everybody has one. Whether it shows is mostly about how much fat is sitting over it, which is a nutrition question rather than a training one, and no amount of crunches changes it. Train your core because a strong midsection helps everything else you do. For the eating side, and for anything you would want to be careful about, ask a dietitian or your doctor.',
   },
   {
     id: 'basic-maintain',
@@ -402,14 +402,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I eat more to get bigger?',
     group: 'The basics',
     aliases: ['eat more', 'bulking', 'gain weight', 'put on size', 'calorie surplus', 'get bigger'],
-    a: 'A little more, not a lot. Building muscle needs slightly more food than you burn, and past that the extra goes on as fat rather than making the muscle come faster. A few hundred calories over maintenance and a gain of half a pound a week is plenty for most people. If you are new to lifting or coming back to it, you can build perfectly well without eating more at all.',
+    a: 'Building muscle needs a little more food than you burn, and only a little: eating far above that adds fat rather than making the muscle arrive faster. How much more, and whether it is the right thing for you at all, depends on where you are starting from and is a conversation for a dietitian rather than a training log. If you are new to lifting or coming back to it, you can make good progress without eating more at all.',
   },
   {
     id: 'basic-cooldown',
     q: 'Should I cool down after lifting?',
     group: 'The basics',
     aliases: ['cool down', 'cooldown', 'stretch after', 'walk after training', 'soreness prevention'],
-    a: 'You can, and it will not do much. Cooling down and stretching afterwards has been tested against doing nothing repeatedly and does not meaningfully reduce next day soreness or speed recovery. If a few minutes of easy walking helps you feel better or clears your head, do it because you like it, which is a good enough reason. It is not a step you are skipping.',
+    a: 'You can, and it is unlikely to make much difference to how sore you are the next day. If a few minutes of easy walking helps you feel better or clears your head, that is a good enough reason on its own. It is not a step you are skipping.',
   },
   {
     id: 'basic-why-no-warmup-row',
@@ -556,14 +556,14 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Can I lose fat and build muscle at the same time?',
     group: 'The basics',
     aliases: ['body recomposition', 'bulk or cut', 'scale not moving'],
-    a: 'As a newer lifter, yes: lift hard, eat enough protein, and hold a small calorie deficit or maintenance. The scale can sit still while your shape changes, so trust measurements and logged strength over weight. Diet planning beyond that headline is outside this app, deliberately.',
+    a: 'Yes, and it is most likely if you are new to lifting, coming back after a break, or carrying more fat to begin with. For everyone else it is slow, and picking one thing to focus on tends to work better. The eating side of it, and what is sensible for you specifically, is a question for a dietitian or your doctor.',
   },
   {
     id: 'basic-protein',
     q: 'How much protein do I need?',
     group: 'The basics',
     aliases: ['protein per day', 'protein shake', 'what to eat to build muscle'],
-    a: 'The consensus headline: roughly 0.7 to 1 g per lb of bodyweight per day, and the daily total matters far more than timing around the workout. Beyond that one line, nutrition is outside this app: no calorie targets, no meal plans, no pretending. A tool that takes food seriously is the right place for those.',
+    a: 'Enough, spread across the day, and more than most people starting out are eating. Protein is the one part of eating that clearly matters for building muscle, and the amount that suits you depends on your size, your training and the rest of your diet. For an actual number, and for anything to do with a medical condition or a restricted diet, ask a dietitian or your doctor. This app logs training and does not track food.',
   },
   {
     id: 'basic-pain',
@@ -593,7 +593,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Am I too old to start lifting?',
     group: 'The basics',
     aliases: ['starting at 50', 'starting at 60', 'too old to lift', 'older beginner'],
-    a: 'No. Resistance training is one of the few things that meaningfully holds off the loss of muscle and bone that comes with age, and beginners in their fifties, sixties and beyond respond to it. What changes is not whether you should lift but how fast you add weight and how much recovery you leave between hard sessions, and the app already leans conservative on both. If you have a heart condition or a joint problem, clear it with a clinician first.',
+    a: 'No, and starting later is well supported. The sensible version is the same one at any age: learn the movements before adding load, progress slowly, and leave decent recovery between hard sessions, which is what this app leans toward anyway. If you have a heart condition, a joint problem, or anything you are being treated for, get it cleared with your doctor before you start rather than after.',
   },
   {
     id: 'basic-equipment',
@@ -614,7 +614,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Do I need supplements?',
     group: 'The basics',
     aliases: ['creatine', 'pre workout', 'protein powder needed'],
-    a: 'No supplement is required for progress, and this app does not give supplement advice. The honest summary: creatine monohydrate is the only one with deep evidence behind a modest benefit, most of the rest is marketing, and anything beyond that belongs with a professional, not a training log.',
+    a: 'No supplement is required to make progress, and this app does not give supplement advice. Anything you are considering taking, including the popular ones, is worth running past a pharmacist or your doctor first, particularly alongside any medication or condition. Sleep, food and consistent training account for almost all of it.',
   },
   {
     id: 'basic-how-many-exercises',
@@ -656,7 +656,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I train when I am ill?',
     group: 'The basics',
     aliases: ['training sick', 'cold', 'flu', 'under the weather', 'fever'],
-    a: 'Above the neck and mild, a lighter session is usually fine and sometimes helps. A fever, body aches, or anything in your chest means rest, and that is not a training question. Nothing is lost by taking a week off: strength is very slow to fade compared with how quickly it feels like it should.',
+    a: 'Rest, and let how you feel decide rather than a rule from an app. Training while genuinely unwell is not something a training log should be talking anybody into, and anything with a fever, your chest, or that is not clearing belongs with a doctor. Nothing is lost by taking a week off: strength fades far more slowly than it feels like it should.',
   },
   {
     id: 'basic-travel',
@@ -691,7 +691,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I eat before training?',
     group: 'The basics',
     aliases: ['eat before training', 'fasted', 'pre workout meal', 'empty stomach'],
-    a: 'If it feels better, yes, an hour or two before, with some carbohydrate in it. Training fasted is not harmful and does not burn meaningfully more fat over a day. What matters far more is total food and total protein across the whole day, and neither is decided by the hour before your session.',
+    a: 'If it feels better, eat something an hour or two before, and if training on an empty stomach suits you, that is fine too. Which one you choose matters far less than what you eat across the whole day. Anything more specific than that, particularly alongside a medical condition, is a question for a dietitian or your doctor.',
   },
   {
     id: 'basic-alcohol',
@@ -1041,7 +1041,7 @@ const WORDS: KnowledgeEntry[] = [
     q: 'What are bulking, cutting and maintenance?',
     group: 'Words you will see',
     aliases: ['bulking', 'cutting', 'maintenance', 'recomp', 'deficit', 'surplus'],
-    a: 'Eating above what you burn to build, below it to lose fat, or at it to stay put. A surplus builds muscle faster and adds some fat; a deficit does the reverse and makes building slow. Recomp is doing both slowly at once, which genuinely works for beginners and for people returning, and is frustratingly slow for everyone else.',
+    a: 'Eating above what you burn, below it, or at it. Bulking is the first, cutting the second, maintenance the third, and recomp is the name for doing a little of both at once. Which of them makes sense for somebody, and what the numbers should be, is a conversation for a dietitian or a doctor; these are just the words you will see people use.',
   },
   {
     id: 'w-tdee',
@@ -1055,7 +1055,7 @@ const WORDS: KnowledgeEntry[] = [
     q: 'What are macros?',
     group: 'Words you will see',
     aliases: ['macros', 'macronutrients', 'protein carbs fat'],
-    a: 'Protein, carbohydrate and fat, the three things calories come from. For training, protein is the one worth counting: roughly seven tenths of a gram to a gram per pound of bodyweight. Carbohydrate fuels hard sessions and fat handles hormones, and past hitting protein and total calories the split between them matters far less than people argue.',
+    a: 'Protein, carbohydrate and fat, the three things calories come from. For training, protein is the one usually worth paying attention to; carbohydrate fuels hard sessions and fat handles a lot of other jobs. How much of each suits you is a question for a dietitian rather than a glossary, and past hitting your protein and your total the split matters far less than people argue about it.',
   },
   {
     id: 'w-lockout',

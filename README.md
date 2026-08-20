@@ -597,6 +597,34 @@ ends the moment the lower back lifts off the floor. An exercise that looks like
 nothing is happening needs the paragraph explaining why more than a bench press
 does.
 
+## A training log does not answer health questions
+
+The library drifted into giving health advice, and it read well, which is
+exactly what made it a problem. Paragraphs about growth plates, about oestrogen
+and bone density, about whether a worn joint should be rested or loaded, about
+grams of protein per pound of bodyweight. All of it written confidently by a
+thing that has never met the person asking, cannot see them, and has no way of
+being told when it is wrong about them.
+
+The rule now is not silence, because silence in front of a real question is its
+own kind of unhelpful. A question gets the plainly safe answer and then the name
+of whoever it actually belongs to. Is lifting safe for teenagers gets yes, when
+technique comes before load and somebody qualified is watching while the
+movements are learned, and then says the rest is for their doctor or a coach who
+can see them. Arthritis gets the honest thing, which is that the answer is
+usually yes with adjustments and that the clinician who knows the joint is the
+one to say so, followed by what the app can actually do about it once they have.
+
+Fifteen answers were rewritten under that rule and two glossary entries with
+them. What must never come back is a judgement only a clinician can make, or a
+number only a dietitian should be handing out, and a check fails on either: it
+looks for a deferral in every clinical and nutrition answer, and fails on any
+prescribed amount or rate, or any claim about what a body will do.
+
+The panel says it out loud too, rather than leaving it to be inferred from
+fifteen individual answers. This is a training log and not a medical or
+nutrition service.
+
 ## Looking outward for the questions
 
 Everything in the library up to here came from imagining what somebody would

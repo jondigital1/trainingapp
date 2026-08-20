@@ -171,9 +171,14 @@ export default function HelpSheet({
         </div>
       ) : null}
 
+      {/* Said here rather than left to be inferred. The library drifted into
+          answering health questions once and it read well, which is what made
+          it a problem. */}
       <p className="mt-6 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
         Every answer here is written into the app. Nothing searches the internet, and a question
-        Lifty cannot answer says so rather than guessing.
+        Lifty cannot answer says so rather than guessing. This is a training log and not a medical
+        or nutrition service: anything about an injury, a condition, medication or what you should
+        be eating belongs with a doctor, a physio or a dietitian, and the answers here say so.
       </p>
     </Sheet>
   )
