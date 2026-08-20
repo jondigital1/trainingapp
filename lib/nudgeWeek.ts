@@ -1,5 +1,6 @@
-import { weekStart } from './schedule'
-import { daysBetween, type WeekState } from './nudge'
+import { type WeekState } from './nudge'
+import { daysBetween } from './week'
+import { weekStart } from './week'
 
 // The week, counted. Split out from the data layer so it can be tested against
 // a list of dates rather than a database, and out of nudge.ts so that file

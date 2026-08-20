@@ -1,3 +1,5 @@
+import { daysBetween, shiftDays, weekStart } from './week'
+
 // Who gets in, and what the admin screen is looking at.
 //
 // The allowlist is an environment variable rather than a column, deliberately.
@@ -69,12 +71,6 @@ export const HEALTH_LABEL: Record<Health, string> = {
   slipping: 'Slipping',
   dormant: 'Gone quiet',
   never: 'Never started',
-}
-
-export function daysBetween(from: string, to: string): number {
-  const a = new Date(from.slice(0, 10) + 'T00:00:00').getTime()
-  const b = new Date(to.slice(0, 10) + 'T00:00:00').getTime()
-  return Math.round((b - a) / 86_400_000)
 }
 
 export interface Totals {
@@ -184,30 +180,18 @@ export interface WeekBar {
 
 export function weeklyTrend(dates: string[], today: string, weeks = 12): WeekBar[] {
   const bars: WeekBar[] = []
-  const thisWeek = weekStartOf(today)
+  const thisWeek = weekStart(today)
   for (let i = weeks - 1; i >= 0; i -= 1) {
     bars.push({ start: shiftDays(thisWeek, -7 * i), sessions: 0 })
   }
   const first = bars[0].start
   for (const date of dates) {
-    const start = weekStartOf(date.slice(0, 10))
+    const start = weekStart(date.slice(0, 10))
     if (start < first || start > thisWeek) continue
     const bar = bars.find((b) => b.start === start)
     if (bar) bar.sessions += 1
   }
   return bars
-}
-
-// The same Sunday week everything else counts in, without importing the
-// schedule module into a file the checks load standalone.
-function weekStartOf(iso: string): string {
-  const d = new Date(iso + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() - d.getUTCDay())
-  return d.toISOString().slice(0, 10)
-}
-
-function shiftDays(iso: string, days: number): string {
-  return new Date(Date.parse(iso + 'T00:00:00Z') + days * 86400000).toISOString().slice(0, 10)
 }
 
 // People who were regulars and stopped. The chip about never-started catches

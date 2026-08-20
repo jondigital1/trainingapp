@@ -1,6 +1,6 @@
 import { groupOf, MUSCLE_GROUPS } from './exercises'
-import { isEmptySet } from './format'
-import { weekStart } from './schedule'
+import { shiftDays, weekStart } from './week'
+import { happened, isEmptySet } from './format'
 import type { Exercise, Goal, SetEntry, SetType, Workout } from './types'
 
 // Epley. Lets a set of 80 x 9 register as progress over 80 x 8 without anyone
@@ -161,15 +161,12 @@ export interface DayDot {
 export function trainingGrid(workouts: Workout[], today: string, days = 28): DayDot[] {
   const trained = new Set(
     workouts
-      .filter((w) => w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type))))
+      .filter(happened)
       .map((w) => w.date),
   )
-  const end = new Date(today + 'T00:00:00')
   const out: DayDot[] = []
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(end)
-    d.setDate(d.getDate() - i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso = shiftDays(today, -i)
     out.push({ date: iso, trained: trained.has(iso) })
   }
   return out
@@ -177,24 +174,33 @@ export function trainingGrid(workouts: Workout[], today: string, days = 28): Day
 
 // Weeks where the days you said you would train actually happened. Rest days
 // cost nothing, which is the whole point of counting weeks rather than days.
-export function weeklyStreak(workouts: Workout[], today: string, target: number): number {
+// Which days you actually trained, filed by the week they fall in. This was
+// written out twice, once for the streak you are on and once for the longest
+// one, which put the rule for what counts as a session in two places where it
+// could have come to mean two things.
+function trainedWeeks(workouts: Workout[]): Map<string, Set<string>> {
   const trained = new Map<string, Set<string>>()
   for (const w of workouts) {
-    if (!w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type)))) continue
+    if (!happened(w)) continue
     const key = weekStart(w.date)
     if (!trained.has(key)) trained.set(key, new Set())
     trained.get(key)!.add(w.date)
   }
+  return trained
+}
+
+export function weeklyStreak(workouts: Workout[], today: string, target: number): number {
+  const trained = trainedWeeks(workouts)
 
   let streak = 0
-  const cursor = new Date(weekStart(today) + 'T00:00:00')
+  let cursor = weekStart(today)
   // The current week only counts once it is met, it never breaks the streak.
-  if ((trained.get(cursor.toISOString().slice(0, 10))?.size ?? 0) >= target) streak += 1
-  cursor.setDate(cursor.getDate() - 7)
+  if ((trained.get(cursor)?.size ?? 0) >= target) streak += 1
+  cursor = shiftDays(cursor, -7)
 
-  while ((trained.get(cursor.toISOString().slice(0, 10))?.size ?? 0) >= target) {
+  while ((trained.get(cursor)?.size ?? 0) >= target) {
     streak += 1
-    cursor.setDate(cursor.getDate() - 7)
+    cursor = shiftDays(cursor, -7)
   }
   return streak
 }
@@ -253,13 +259,7 @@ export function nextLandmark(value: number, ladder: number[]): Landmark {
 // does not delete the winter you strung twelve weeks together.
 export function longestStreak(workouts: Workout[], target: number): number {
   const met = new Set<string>()
-  const trained = new Map<string, Set<string>>()
-  for (const w of workouts) {
-    if (!w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type)))) continue
-    const key = weekStart(w.date)
-    if (!trained.has(key)) trained.set(key, new Set())
-    trained.get(key)!.add(w.date)
-  }
+  const trained = trainedWeeks(workouts)
   for (const [week, days] of trained) if (days.size >= target) met.add(week)
   if (!met.size) return 0
 
@@ -267,9 +267,7 @@ export function longestStreak(workouts: Workout[], target: number): number {
   let best = 1
   let run = 1
   for (let i = 1; i < weeks.length; i += 1) {
-    const previous = new Date(weeks[i - 1] + 'T00:00:00')
-    previous.setDate(previous.getDate() + 7)
-    if (previous.toISOString().slice(0, 10) === weeks[i]) run += 1
+    if (shiftDays(weeks[i - 1], 7) === weeks[i]) run += 1
     else run = 1
     if (run > best) best = run
   }

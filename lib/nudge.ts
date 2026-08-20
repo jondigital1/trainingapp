@@ -18,6 +18,7 @@
 //   billboard, it is the wrong sentence.
 
 import { WEEKDAYS, WEEKDAY_NAMES } from './schedule'
+import { daysBetween } from './week'
 
 export interface NudgePrefs {
   day: number | null
@@ -191,12 +192,6 @@ function cap(text: string): string {
 
 function round(n: number): string {
   return (Math.round(n * 10) / 10).toString()
-}
-
-export function daysBetween(from: string, to: string): number {
-  const a = Date.parse(from + 'T00:00:00Z')
-  const b = Date.parse(to + 'T00:00:00Z')
-  return Math.round((b - a) / 86400000)
 }
 
 const MONTHS = [

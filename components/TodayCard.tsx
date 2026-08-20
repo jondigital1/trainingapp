@@ -1,6 +1,7 @@
 'use client'
 
 import { dayById } from '@/lib/onboarding'
+import { shiftDays, weekStart, weekdayOf } from '@/lib/week'
 import {
   hasSchedule,
   scheduledDays,
@@ -8,8 +9,6 @@ import {
   dayIdFor,
   trainedOn,
   WEEKDAYS,
-  weekdayOf,
-  weekStart,
 } from '@/lib/schedule'
 import { weeklyStreak } from '@/lib/gamify'
 
@@ -57,9 +56,7 @@ export default function TodayCard({
   // are you in the week you are in.
   const sunday = weekStart(today)
   const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(sunday + 'T00:00:00')
-    d.setDate(d.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso = shiftDays(sunday, i)
     const weekday = weekdayOf(iso)
     return {
       iso,

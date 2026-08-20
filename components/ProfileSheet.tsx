@@ -20,7 +20,8 @@ import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
 import { fmtDelta, fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtDate, today } from '@/lib/format'
-import { blockWeek, mondayOf } from '@/lib/block'
+import { blockWeek } from '@/lib/block'
+import { weekStart } from '@/lib/week'
 import type { BodyWeight, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
@@ -403,7 +404,7 @@ export default function ProfileSheet({
                 onPick={(v) =>
                   set(
                     v === 'on'
-                      ? { block: true, blockStart: draft.blockStart ?? mondayOf(today()) }
+                      ? { block: true, blockStart: draft.blockStart ?? weekStart(today()) }
                       : { block: false },
                   )
                 }

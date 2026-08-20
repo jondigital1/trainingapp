@@ -1,5 +1,5 @@
-import { weekStart } from './schedule'
 import type { Profile } from './onboarding'
+import { daysBetween, weekStart } from './week'
 import type { Workout } from './types'
 
 // A training block, six weeks long, replacing the three week wave that came
@@ -67,18 +67,11 @@ export const BLOCK: BlockWeek[] = [
   },
 ]
 
-// Kept under its old name because a block week is still a week, and this is
-// where the rest of the app reaches for one. It is Sunday now, like everything
-// else, so the block, the streak and the strip on the Workout tab all agree
-// about which week you are in.
-export { weekStart as mondayOf } from './schedule'
 
 // How many weeks since the block began. Negative means the start is in the
 // future, which is treated as week one rather than as an error.
 function weeksSince(start: string, today: string): number {
-  const from = new Date(weekStart(start) + 'T00:00:00').getTime()
-  const to = new Date(weekStart(today) + 'T00:00:00').getTime()
-  const weeks = Math.floor((to - from) / (7 * 86400000))
+  const weeks = Math.floor(daysBetween(weekStart(start), weekStart(today)) / 7)
   return weeks < 0 ? 0 : weeks
 }
 

@@ -1,7 +1,7 @@
 import { GOAL_FROM_CHOICE, GOAL_LABEL, goalsOf, primaryGoal, program } from './onboarding'
+import { weekStart } from './week'
 import type { GoalChoice, Profile, Program } from './onboarding'
-import { weekStart } from './schedule'
-import { isEmptySet } from './format'
+import { happened } from './format'
 import type { Workout } from './types'
 
 // The two offers the log earns.
@@ -27,7 +27,7 @@ export function trainedSince(workouts: Workout[], since: string): { days: number
   for (const w of workouts) {
     const date = w.date.slice(0, 10)
     if (date < since) continue
-    if (!w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type)))) continue
+    if (!happened(w)) continue
     dates.add(date)
   }
   const weeks = new Set([...dates].map((d) => weekStart(d)))

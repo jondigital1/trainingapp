@@ -1,5 +1,6 @@
 import { dayById, type Plan, type Profile } from './onboarding'
-import { isEmptySet } from './format'
+import { shiftDays, weekdayOf } from './week'
+import { happened } from './format'
 import type { Workout } from './types'
 
 // Which day of the week you do which session. A week rather than a calendar,
@@ -34,20 +35,6 @@ export function hasSchedule(profile: Profile): boolean {
 // four sessions for is met at four, whatever the questionnaire once said.
 export function scheduledDays(profile: Profile): number {
   return scheduleOf(profile).filter(Boolean).length
-}
-
-export function weekdayOf(iso: string): number {
-  return new Date(iso + 'T00:00:00').getDay()
-}
-
-// A week runs Sunday to Saturday, which is how the schedule reads and how a
-// phone draws a calendar. One definition, used by the streak, the coverage
-// count and the block, so the strip on the Workout tab and the number beside
-// it can never disagree about which week you are in.
-export function weekStart(iso: string): string {
-  const d = new Date(iso + 'T00:00:00')
-  d.setDate(d.getDate() - d.getDay())
-  return d.toISOString().slice(0, 10)
 }
 
 // What a given date asks of you: the one off move if there is one, otherwise
@@ -135,7 +122,7 @@ export function suggestSchedule(plan: Plan | null): Schedule {
 // it is not a session, the same rule the streak and the grid already use.
 export function trainedOn(workouts: Workout[], date: string): boolean {
   return workouts.some(
-    (w) => w.date === date && w.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type))),
+    (w) => w.date === date && happened(w),
   )
 }
 
@@ -156,9 +143,7 @@ export interface UpcomingDay {
 export function upcomingDays(profile: Profile, today: string, count = 10, horizon = 28): UpcomingDay[] {
   const out: UpcomingDay[] = []
   for (let i = 0; i < horizon && out.length < count; i += 1) {
-    const d = new Date(today + 'T00:00:00')
-    d.setDate(d.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso = shiftDays(today, i)
     const dayId = dayIdFor(profile, iso)
     if (dayId) out.push({ date: iso, dayId })
   }
@@ -172,15 +157,8 @@ export function upcomingDays(profile: Profile, today: string, count = 10, horizo
 export function datesAhead(today: string, days: number): string[] {
   const out: string[] = []
   for (let i = 0; i < days; i += 1) {
-    const d = new Date(today + 'T00:00:00')
-    d.setDate(d.getDate() + i)
-    out.push(d.toISOString().slice(0, 10))
+    out.push(shiftDays(today, i))
   }
   return out
 }
 
-// How far apart two dates are, in days.
-export function daysBetween(a: string, b: string): number {
-  const ms = new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()
-  return Math.round(ms / 86400000)
-}

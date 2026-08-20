@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { daysBetween } from '@/lib/week'
 import { fmtDate } from '@/lib/format'
 import {
   HEALTH_LABEL,
-  daysBetween,
   health,
   matches,
   neverStarted,

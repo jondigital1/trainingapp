@@ -18,7 +18,7 @@ import {
   type Profile,
 } from '@/lib/onboarding'
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
-import { mondayOf } from '@/lib/block'
+import { weekStart } from '@/lib/week'
 import { today as todayIso } from '@/lib/format'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import { GoalPicker } from './GoalPicker'
@@ -157,7 +157,7 @@ export default function Onboarding({
       // know they want.
       // A rerun keeps a running block where it was: answering the questions
       // again is not starting week one again.
-      profile: plan.block ? { ...merged, block: true, blockStart: initial?.blockStart ?? mondayOf(todayIso()) } : merged,
+      profile: plan.block ? { ...merged, block: true, blockStart: initial?.blockStart ?? weekStart(todayIso()) } : merged,
       goal,
       startDayId,
       build,

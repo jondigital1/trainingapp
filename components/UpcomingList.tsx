@@ -1,8 +1,9 @@
 'use client'
 
 import { dayById } from '@/lib/onboarding'
+import { weekdayOf } from '@/lib/week'
 import { fmtDate } from '@/lib/format'
-import { trainedOn, upcomingDays, WEEKDAY_NAMES, weekdayOf } from '@/lib/schedule'
+import { trainedOn, upcomingDays, WEEKDAY_NAMES } from '@/lib/schedule'
 import type { Profile } from '@/lib/onboarding'
 import type { Workout } from '@/lib/types'
 

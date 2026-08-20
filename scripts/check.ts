@@ -1,6 +1,7 @@
 // Plain assertions over the pure logic: library, templates, coaching, the
 // artifact importer and CSV export. Run with npm run check.
 import { readFileSync } from 'node:fs'
+import { daysBetween, shiftDays, weekStart, weekdayOf } from '../lib/week'
 import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
@@ -48,17 +49,26 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { assignDay, datesAhead, daysBetween, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays, weekdayOf } from '../lib/schedule'
+import { assignDay, datesAhead, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
 import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import {
-  beatsLast, bestsFor, e1rm, LADDERS, lifetime, nextLandmark, prsFor, trainingGrid, volumePr,
-  weeklyCoverage, weeklyStreak, weekStart,
+  beatsLast,
+  bestsFor,
+  e1rm,
+  LADDERS,
+  lifetime,
+  nextLandmark,
+  prsFor,
+  trainingGrid,
+  volumePr,
+  weeklyCoverage,
+  weeklyStreak,
 } from '../lib/gamify'
-import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, effortFactor, mondayOf, readBlock } from '../lib/block'
+import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, effortFactor, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
 import { TIER_LABELS, isCompound, isFullSet, restFor, restForTier, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
@@ -769,8 +779,10 @@ check('a block runs six weeks and repeats', () => {
   assert.equal(BLOCK.length, BLOCK_WEEKS)
   assert.ok(BLOCK_WEEKS >= 6, 'a block is at least six weeks')
   // A block week is the same week as everything else: Sunday to Saturday.
-  assert.equal(mondayOf('2026-08-19'), '2026-08-16')
-  assert.equal(mondayOf('2026-08-19'), weekStart('2026-08-19'), 'one definition, not two')
+  // This used to compare mondayOf against weekStart and call it proof of one
+  // definition. They were the same function under two names, so it could only
+  // ever pass, and the name was wrong besides: it returns a Sunday.
+  assert.equal(weekStart('2026-08-19'), '2026-08-16')
   // Effort climbs to the peak and then drops off for the deload.
   assert.deepEqual(BLOCK.map((w) => w.score[1]), [6, 7, 8, 9, 10, 4])
 })
@@ -4285,6 +4297,81 @@ check('one create screen, and it reads the real rest table', () => {
     // screen is the promise the timer keeps.
     assert.equal(restFor('Back Squat', 'W', goal), restForTier(restTier('Back Squat', 'W'), goal))
     assert.equal(restFor('Cable Fly', 'W', goal), restForTier(restTier('Cable Fly', 'W'), goal))
+  }
+})
+
+// Monday, Tuesday and Wednesday of the week beginning 2026-08-16.
+const THREE_SESSIONS = [17, 18, 19].map((d) => ({
+  id: `s${d}`,
+  date: `2026-08-${d}`,
+  name: 'Push',
+  exercises: [{ id: 'e', name: 'Bench Press', type: 'W' as const, sets: [{ id: 's', w: 100, r: 5 }] }],
+})) as unknown as Workout[]
+
+check('the calendar does not depend on where the phone is', () => {
+  // Every date this app stores is a bare day. Handing one to Date parses it as
+  // local midnight and reading it back with toISOString prints UTC, and those
+  // are the same day only west of Greenwich. In London the streak read zero
+  // with three sessions logged that week, the activity grid stopped a day
+  // short of today, and the list of days you can move a session to opened on
+  // yesterday. It never showed up because this runs on a UTC box.
+  const zones = ['UTC', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney', 'America/Los_Angeles', 'Pacific/Kiritimati']
+  const original = process.env.TZ
+
+  const run = () => ({
+    week: weekStart('2026-08-19'),
+    shifted: shiftDays('2026-08-19', 5),
+    back: shiftDays('2026-08-19', -5),
+    weekday: weekdayOf('2026-08-19'),
+    apart: daysBetween('2026-08-17', '2026-08-21'),
+    ahead: datesAhead('2026-08-19', 3).join(' '),
+    grid: trainingGrid([], '2026-08-19', 3).map((d) => d.date).join(' '),
+    streak: weeklyStreak(THREE_SESSIONS, '2026-08-19', 3),
+    longest: longestStreak(THREE_SESSIONS, 3),
+  })
+
+  try {
+    let first: ReturnType<typeof run> | null = null
+    for (const zone of zones) {
+      process.env.TZ = zone
+      const got = run()
+      if (!first) first = got
+      else assert.deepEqual(got, first, `${zone} reads the calendar differently`)
+    }
+    // And the answers are the right ones, not merely the same wrong one.
+    assert.equal(first!.week, '2026-08-16', 'a Wednesday belongs to the Sunday before it')
+    assert.equal(first!.shifted, '2026-08-24')
+    assert.equal(first!.back, '2026-08-14')
+    assert.equal(first!.weekday, 3, 'Wednesday is 3')
+    assert.equal(first!.apart, 4)
+    assert.equal(first!.ahead, '2026-08-19 2026-08-20 2026-08-21', 'the list of days ahead starts today')
+    assert.equal(first!.grid, '2026-08-17 2026-08-18 2026-08-19', 'the grid ends today')
+    assert.equal(first!.streak, 1, 'three sessions this week is a week on the streak')
+    assert.equal(first!.longest, 1)
+  } finally {
+    if (original === undefined) delete process.env.TZ
+    else process.env.TZ = original
+  }
+})
+
+check('one place does the calendar arithmetic', () => {
+  // weekStart lived in schedule.ts, again in admin.ts under another name, and
+  // was re-exported from block.ts as mondayOf, which returns a Sunday.
+  // daysBetween had three implementations. A concept with four names is a
+  // concept that can hold four answers, and it did.
+  const week = readFileSync(new URL('../lib/week.ts', import.meta.url), 'utf8')
+  assert.ok(!/T00:00:00'/.test(week), 'the one date module parses local midnight')
+
+  for (const file of ['schedule', 'admin', 'gamify', 'block', 'nudge', 'nudgeWeek', 'advance']) {
+    const src = readFileSync(new URL(`../lib/${file}.ts`, import.meta.url), 'utf8')
+    assert.ok(!/function (weekStart|weekStartOf|daysBetween|shiftDays)\b/.test(src), `${file} has a calendar of its own`)
+    assert.ok(!/export \{[^}]*\b(weekStart|daysBetween|weekdayOf)\b[^}]*\} from/.test(src), `${file} re-exports the calendar under a second name`)
+  }
+
+  // Same for the components that draw a week.
+  for (const file of ['TodayCard', 'UpcomingList', 'WhichDaySheet']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(!/T00:00:00'/.test(src), `${file} does its own local date arithmetic`)
   }
 })
 

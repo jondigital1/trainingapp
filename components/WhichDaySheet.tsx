@@ -1,9 +1,10 @@
 'use client'
 
 import Sheet from './Sheet'
+import { daysBetween, weekdayOf } from '@/lib/week'
 import { dayById } from '@/lib/onboarding'
 import { fmtDate } from '@/lib/format'
-import { dayIdFor, datesAhead, daysBetween, trainedOn, upcomingDays, WEEKDAY_NAMES, weekdayOf } from '@/lib/schedule'
+import { dayIdFor, datesAhead, trainedOn, upcomingDays, WEEKDAY_NAMES } from '@/lib/schedule'
 import type { Profile } from '@/lib/onboarding'
 import type { Workout } from '@/lib/types'
 

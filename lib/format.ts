@@ -60,6 +60,14 @@ export function isEmptySet(set: SetEntry, type: SetType): boolean {
   }
 }
 
+// Did this session actually happen. An opened workout with nothing written in
+// it is a workout you did not do, and the streak, the grid, the week strip and
+// the graduation rule all have to agree about that. They each spelled it out
+// for themselves, which is four chances to disagree.
+export function happened(workout: { exercises: Exercise[] }): boolean {
+  return workout.exercises.some((e) => e.sets.some((s) => !isEmptySet(s, e.type)))
+}
+
 export function today(): string {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
