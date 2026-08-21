@@ -21,6 +21,18 @@ export function customFor(name: string): CustomExercise | undefined {
   return registry.get(name.trim().toLowerCase())
 }
 
+// One definition of when two movement names are the same one, used by every
+// side of the duplicate guard.
+//
+// It was two: the check for a name already spoken for ignored case, and the
+// exemption for the movement you were renaming did not. So correcting a
+// capital letter collided with itself, which made it the one rename the app
+// refused to save. Two comparisons of the same thing is how the two of them
+// come to disagree.
+export function sameName(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase()
+}
+
 export function customGroups(name: string): string[] {
   return customFor(name)?.groups ?? []
 }

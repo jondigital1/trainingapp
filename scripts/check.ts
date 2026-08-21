@@ -54,7 +54,7 @@ import { assignDay, datesAhead, dayIdFor, hasSchedule, scheduledDays, scheduleOf
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
 import { parseDevice } from '../lib/device'
-import { customFor, registerCustoms, resetCustoms } from '../lib/custom'
+import { customFor, registerCustoms, resetCustoms, sameName } from '../lib/custom'
 import { fmtDelta, fmtWeight, toDisplay, toPounds } from '../lib/units'
 import {
   beatsLast,
@@ -5214,6 +5214,78 @@ check('every id is a uuid, on plain http as well as https', () => {
   // Back to the real one afterwards, so nothing downstream is left on the
   // fallback.
   run('restored')
+})
+
+check('fixing a capital letter is a rename the app allows', () => {
+  // Reported live: renaming "hip adduction" to "Hip Adduction" was refused
+  // with "already a movement". It was colliding with itself. The check for a
+  // name already spoken for ignored case, the exemption for the movement being
+  // renamed did not, so the one rename the app refused was the one that only
+  // changed a capital letter.
+  assert.ok(sameName('hip adduction', 'Hip Adduction'), 'case decides whether two names are the same')
+  assert.ok(sameName('  Hip Adduction ', 'hip adduction'), 'a stray space decides it')
+  assert.ok(sameName('Hip Adduction', 'Hip Adduction'))
+  assert.ok(!sameName('Hip Adduction', 'Hip Abduction'), 'two different movements read as one')
+  assert.ok(!sameName('Hip Adduction', ''), 'everything collides with nothing')
+
+  // The two sides that used to disagree now call the same function, which is
+  // the part that stops this coming back.
+  for (const file of ['NewExercise', 'ProfileSheet']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(src.includes('sameName('), `${file} compares names its own way again`)
+    assert.ok(!/\.toLowerCase\(\) === .*\.toLowerCase\(\)/.test(src), `${file} has grown a second comparison`)
+  }
+
+  // And the guard still does its job: a name genuinely belonging to something
+  // else is still refused, whichever way it is capitalised.
+  const mine = [{ name: 'Hip Adduction' }, { name: 'Jefferson Curl' }]
+  const isTaken = (name: string) => mine.some((m) => sameName(m.name, name))
+  const wouldBlock = (typed: string, editing: string | null) =>
+    !!typed && !sameName(typed, editing ?? '') && isTaken(typed)
+  assert.equal(wouldBlock('Hip Adduction', 'hip adduction'), false, 'fixing your own capitals is refused')
+  assert.equal(wouldBlock('Hip Adduction', 'Jefferson Curl'), true, 'a real duplicate slipped through')
+  assert.equal(wouldBlock('Hip Abduction', 'hip adduction'), false, 'a genuine rename is refused')
+  assert.equal(wouldBlock('JEFFERSON CURL', null), true, 'a duplicate in caps slipped through')
+})
+
+check('a sheet with work in it does not vanish on a stray click', () => {
+  // Reported live, twice, from a desktop browser: a click on the dark area
+  // behind the builder closed it and took the half built workout with it. The
+  // backdrop is a big target and a pointer is imprecise in a way a thumb is
+  // not, so on desktop this is easy to hit and expensive when you do.
+  const sheet = readFileSync(new URL('../components/Sheet.tsx', import.meta.url), 'utf8')
+
+  // The backdrop no longer calls onClose directly. It goes through the same
+  // gate as the header button and the escape key, so all three routes out
+  // behave the same rather than one of them being quietly destructive.
+  assert.ok(!/bg-black\/60" onClick=\{onClose\}/.test(sheet), 'the backdrop still closes outright')
+  assert.ok(/bg-black\/60" onClick=\{leave\}/.test(sheet), 'the backdrop does not go through the gate')
+
+  const leave = sheet.slice(sheet.indexOf('function leave()'), sheet.indexOf('useEffect(() => {\n    if (inline)'))
+  assert.ok(/!dirty \|\| confirming/.test(leave), 'work in the sheet is not what decides')
+  assert.ok(/setConfirming\(true\)/.test(leave), 'the first tap does not arm anything')
+
+  // Nothing to lose still leaves on one tap. A sheet that asks one question
+  // must not grow a confirmation it has no reason for.
+  assert.ok(/if \(!dirty \|\| confirming\) return onClose\(\)/.test(leave), 'an empty sheet now takes two taps')
+
+  // Escape is a route out too, and it used to be the one that skipped the
+  // guard while the other two had it.
+  const key = sheet.slice(sheet.indexOf("if (e.key !== 'Escape')"))
+  assert.ok(/dirty && !confirming/.test(key.slice(0, 200)), 'escape throws the work away without asking')
+
+  // The armed state says what the second tap does, rather than leaving Done
+  // to mean discard.
+  assert.ok(/confirming \? 'Discard it\?' : 'Done'/.test(sheet), 'the button does not say what it is about to do')
+  assert.ok(/confirming \? 'text-alert'/.test(sheet), 'the armed state looks like the safe one')
+
+  // Tapping back into the sheet disarms it, so a mis-tap on the backdrop is
+  // not a trap you have to close the sheet to get out of.
+  assert.ok(/stopPropagation\(\)\n\s*setConfirming\(false\)/.test(sheet), 'the armed state cannot be cancelled')
+
+  // And the one screen this was reported on says when it has work in it.
+  const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  assert.ok(/dirty=\{!!name\.trim\(\) \|\| picked\.length > 0\}/.test(builder), 'the builder does not guard its draft')
 })
 
 void (async () => {

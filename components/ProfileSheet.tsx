@@ -9,6 +9,7 @@ import {
   unitOf,
   type Profile,
 } from '@/lib/onboarding'
+import { sameName } from '@/lib/custom'
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
@@ -544,13 +545,8 @@ function MyMovements({
   // Already in the library, or already yours. The pickers get this for free
   // from the search that failed to find it; this screen has no search, so it
   // asks outright.
-  const taken = (name: string) => {
-    const key = name.trim().toLowerCase()
-    return (
-      customs.some((c) => c.name.toLowerCase() === key) ||
-      LIBRARY.some((e) => e.name.toLowerCase() === key)
-    )
-  }
+  const taken = (name: string) =>
+    customs.some((c) => sameName(c.name, name)) || LIBRARY.some((e) => sameName(e.name, name))
 
   const create = making ? (
     <NewExercise

@@ -95,6 +95,9 @@ export default function CustomBuilder({
   return (
     <Sheet
       title={editing ? 'Edit workout' : seed ? `Your own ${seed.name}` : 'Build a workout'}
+      // A name typed or a movement picked is work that closing throws away,
+      // and this is the screen somebody lost twice to a stray click.
+      dirty={!!name.trim() || picked.length > 0}
       onClose={onClose}
     >
       <input

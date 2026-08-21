@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { MUSCLE_GROUPS } from '@/lib/exercises'
+import { sameName } from '@/lib/custom'
 import { TextInput } from './Form'
 import { fmtTime, uid } from '@/lib/format'
 import { TIER_LABELS, restForTier, type RestTier } from '@/lib/rest'
@@ -66,7 +67,15 @@ export default function NewExercise({
   // not, because there is no search box above it.
   const typing = !!editing || !name.trim()
   const finalName = (typing ? named : name).trim()
-  const taken = !!finalName && finalName !== editing?.name && !!isTaken?.(finalName)
+  // Names are compared the way the rest of the app compares them, ignoring
+  // case and stray spaces, on both sides of this.
+  //
+  // The exemption for the movement you are already editing used to be an exact
+  // string match while the duplicate check ignored case, so a rename that only
+  // fixed the capitals collided with itself: "Hip Adduction" did not match
+  // "hip adduction" as yours, then matched it as taken. Correcting a capital
+  // letter was the one rename that could not be saved.
+  const taken = !!finalName && !sameName(finalName, editing?.name ?? '') && !!isTaken?.(finalName)
 
   return (
     <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
@@ -78,7 +87,8 @@ export default function NewExercise({
           </div>
           {taken ? (
             <p className="mt-1.5 text-xs text-alert">
-              {finalName} is already a movement. Search for it rather than making a second one.
+              {finalName} is already a movement.{' '}
+              {editing ? 'Pick a different name.' : 'Search for it rather than making a second one.'}
             </p>
           ) : null}
         </>
