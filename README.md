@@ -2802,13 +2802,20 @@ chips that browse the library, which put two identical lists of muscles on one
 screen doing entirely different jobs: one filters what you are looking at, the
 other decides what goes in. Found by rendering it.
 
-Where you are training is a pill directly under the workout name now, above
-both ways of filling the session, because it shapes whichever one you pick. It
-was a line of grey small print at the bottom of the screen, which is a strange
-place for the control that decides what the whole screen shows: at bodyweight
-only, chest goes from 26 movements to 8. It is also placed once rather than
-once per mode, since two copies of a control over one piece of state is how the
-two of them come to look different.
+Where you are training is a pill now, on both screens that build a session:
+directly under the workout name in the builder, and above the plan days on the
+start sheet. It was a line of grey small print in one and a different line of
+grey small print in the other, which is a strange treatment for the control
+with the most reach on either screen. At bodyweight only, chest goes from 26
+movements to 8.
+
+One component rather than two that look alike, and placed once per screen
+rather than once per mode. Two copies of a control over one piece of state is
+how the two of them come to look different, which is exactly what had already
+happened across the two screens.
+
+It offers the situation rather than the setting while you are at your usual
+gym: the prompt reads "somewhere else?" until you are, and "change" after.
 
 ## Ninety minutes stopped meaning two and a half hours
 

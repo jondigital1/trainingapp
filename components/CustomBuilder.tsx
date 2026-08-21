@@ -12,7 +12,8 @@ import { useMemo, useState } from 'react'
 const GROUP_CAP = 3
 import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
-import { ACCESS, SESSION_MINUTES, accessLabel } from '@/lib/questions'
+import { SESSION_MINUTES, accessLabel } from '@/lib/questions'
+import KitPill from './KitPill'
 import {
   AWAY_FULL_BODY,
   awaySession,
@@ -195,7 +196,16 @@ export default function CustomBuilder({
 
       {/* Where you are, directly under the name and above both ways of filling
           the session, because it shapes whichever one you pick. */}
-      <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
+      <div className="mt-3">
+        <KitPill
+          kit={kit}
+          home={profile.access}
+          open={kitOpen}
+          note="For this workout only. Your gym stays your gym."
+          onToggle={setKitOpen}
+          onPick={setKit}
+        />
+      </div>
 
       {/* A mode rather than a panel. The first version opened underneath the
           muscle group chips that browse the library, which put two identical
@@ -494,49 +504,3 @@ function listed(groups: string[]): string {
 // every day, so asking outright would put a decision in front of everybody
 // that matters to somebody a few times a year. It says where it thinks you are
 // and opens only when that is wrong.
-function KitLine({
-  kit,
-  open,
-  onToggle,
-  onPick,
-}: {
-  kit: Profile['access']
-  open: boolean
-  onToggle: (open: boolean) => void
-  onPick: (kit: Profile['access']) => void
-}) {
-  return (
-    <>
-      {/* A pill rather than a line of small print.
-          
-          It was the quietest thing on the screen and it decides what the whole
-          screen shows: at bodyweight only, chest goes from 26 movements to 8.
-          A control with that much reach cannot be the last thing you notice. */}
-      <button
-        onClick={() => onToggle(!open)}
-        aria-expanded={open}
-        className={`mt-3 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold ${
-          open ? 'bg-midnight text-frost' : 'bg-tint-cool text-accent-ink ring-1 ring-accent-ink/30'
-        }`}
-      >
-        <span aria-hidden>&#9679;</span>
-        {accessLabel(kit)}
-        <span className="text-xs font-extrabold opacity-60">{open ? 'close' : 'change'}</span>
-      </button>
-      {open ? (
-        <div className="mt-2">
-          <Options
-            value={kit ?? 'full'}
-            onPick={(v) => {
-              onPick(v)
-              onToggle(false)
-            }}
-            options={ACCESS.options}
-            columns={ACCESS.columns}
-          />
-          <p className="mt-1.5 text-xs text-muted">For this workout only. Your gym stays your gym.</p>
-        </div>
-      ) : null}
-    </>
-  )
-}

@@ -4969,8 +4969,14 @@ check('a question asked at signup is not asked again on the profile', () => {
   // second three option vocabulary that could not say "my own gym".
   for (const file of ['StartSheet', 'CustomBuilder']) {
     const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
-    assert.ok(src.includes('ACCESS.options'), `${file} cannot ask what the room has`)
-    assert.ok(src.includes('accessLabel('), `${file} names the kit its own way`)
+    assert.ok(src.includes('<KitPill'), `${file} cannot ask what the room has`)
+  }
+  // One definition of the control, so the two screens cannot drift apart. It
+  // was written out twice, in two treatments, asking one question.
+  const pill = readFileSync(new URL('../components/KitPill.tsx', import.meta.url), 'utf8')
+  assert.ok(pill.includes('ACCESS.options'), 'the pill offers its own list of gyms')
+  assert.ok(pill.includes('accessLabel('), 'the pill names the kit its own way')
+  {
   }
 })
 
@@ -5595,7 +5601,7 @@ check('where you are training today is one question, asked once', () => {
 
   // One kit control on the sheet, and one in the builder, since that is the
   // other place a session gets made. Never two on one screen.
-  assert.equal((start.match(/ACCESS\.options/g) || []).length, 1, 'the kit is asked twice on one sheet')
+  assert.equal((start.match(/<KitPill/g) || []).length, 1, 'the kit is asked twice on one sheet')
 
   // Build me one for today was a section here, next to a button called Create
   // custom workout, with the word build doing two jobs a few inches apart.
@@ -5610,18 +5616,23 @@ check('where you are training today is one question, asked once', () => {
   // One definition of the kit control, placed on both sides of this screen and
   // never on screen twice. Two copies of a control over one piece of state is
   // how the two of them come to look different.
-  assert.equal((builder.match(/ACCESS\.options/g) || []).length, 1, 'the kit control is written twice')
   // One placement, outside the mode switch, so both ways of filling a session
   // see it. It was rendered once per side, which was two copies of a control
   // over one piece of state.
-  assert.equal((builder.match(/<KitLine /g) || []).length, 1, 'the kit control is placed more than once')
-  // Above both of them, since it shapes whichever one you pick, and a pill
-  // rather than a line of small print: it decides what the whole screen shows,
-  // taking chest from 26 movements to 8, and it was the quietest thing on it.
+  assert.equal((builder.match(/<KitPill/g) || []).length, 1, 'the kit control is placed more than once')
+  // Above both of them, since it shapes whichever one you pick.
   const body = builder.slice(builder.indexOf('placeholder="Workout name"'))
-  assert.ok(body.indexOf('<KitLine ') < body.indexOf('Or tell me what to train'), 'the kit sits below the ways of filling the session')
-  assert.ok(body.indexOf('<KitLine ') < body.indexOf('Or search every movement'), 'the kit sits below the search')
-  assert.ok(/rounded-full px-3\.5 py-2 text-sm font-bold/.test(builder), 'the kit control is small print again')
+  assert.ok(body.indexOf('<KitPill') < body.indexOf('Or tell me what to train'), 'the kit sits below the ways of filling the session')
+  assert.ok(body.indexOf('<KitPill') < body.indexOf('Or search every movement'), 'the kit sits below the search')
+  // A pill rather than a line of small print. It decides what the whole screen
+  // shows, taking chest from 26 movements to 8, and it was the quietest thing
+  // on either screen.
+  const shared = readFileSync(new URL('../components/KitPill.tsx', import.meta.url), 'utf8')
+  assert.ok(/rounded-full px-3\.5 py-2 text-sm font-bold/.test(shared), 'the kit control is small print again')
+  // And it offers the situation rather than the setting when you are at your
+  // usual gym, since somebody in a hotel is looking for "somewhere else?".
+  assert.ok(/somewhere else\?/.test(shared), 'the prompt stopped naming the situation')
+  assert.ok(/home: Profile\['access'\]/.test(shared), 'the pill cannot tell your gym from anywhere else')
 
   // What it gives you lands in the list rather than straight into a live
   // session, which is the reason it is worth moving rather than deleting: it

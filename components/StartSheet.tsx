@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SPLITS, dayItems, dayNames } from '@/lib/templates'
 import { awayDayFor, dayById, type Plan, type Profile } from '@/lib/onboarding'
-import { ACCESS, accessLabel } from '@/lib/questions'
-import { Options } from './Form'
+import KitPill from './KitPill'
 import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import Sheet from './Sheet'
 import type { CustomWorkout, CustomWorkoutItem, Goal } from '@/lib/types'
@@ -95,34 +94,16 @@ export default function StartSheet({
           is what somebody at their own gym wants when the day does not suit
           them. A general feature behind a specific pretext, and a duplicate
           list, both gone. */}
-      <button
-        onClick={() => setKitOpen((v) => !v)}
-        aria-expanded={kitOpen}
-        className="mb-2 flex w-full items-center justify-between gap-3 px-1 py-1 text-left"
-      >
-        <span className="text-xs text-muted">
-          Built for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
-        </span>
-        <span className="shrink-0 text-xs text-faint">
-          {kitOpen ? 'close' : kit === (profile.access ?? 'full') ? 'somewhere else?' : 'change'}
-        </span>
-      </button>
-      {kitOpen ? (
-        <div className="mb-4">
-          <Options
-            value={kit ?? 'full'}
-            onPick={(v) => {
-              setKit(v)
-              setKitOpen(false)
-            }}
-            options={ACCESS.options}
-            columns={ACCESS.columns}
-          />
-          <p className="mt-1.5 text-xs leading-relaxed text-muted">
-            For today only. Your gym stays your gym, and tomorrow is normal.
-          </p>
-        </div>
-      ) : null}
+      <div className="mb-4">
+        <KitPill
+          kit={kit}
+          home={profile.access}
+          open={kitOpen}
+          note="For today only. Your gym stays your gym, and tomorrow is normal."
+          onToggle={setKitOpen}
+          onPick={setKit}
+        />
+      </div>
 
       {planDays.length ? (
         <div className="mb-5">
