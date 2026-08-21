@@ -83,7 +83,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'summer4-upper',
-        name: 'A Bit of Everything',
+        name: 'Press and Row',
         exercises: [
           'Incline Barbell Bench Press',
           'Single Arm Cable Row',
@@ -187,7 +187,7 @@ export const SPLITS: TemplateSplit[] = [
       // and the upper pump day is what made room for the second of them.
       {
         id: 'five-pump',
-        name: 'Chasing the Pump',
+        name: 'Machine Led Upper',
         exercises: [
           'Incline Barbell Bench Press',
           'Seated Cable Row',
@@ -256,7 +256,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'bro-legs',
-        name: 'Front and Back',
+        name: 'Squat and Hinge',
         exercises: [
           'Back Squat',
           'Romanian Deadlift',
@@ -321,7 +321,7 @@ export const SPLITS: TemplateSplit[] = [
     days: [
       {
         id: 'ul-upper-a',
-        name: 'The Heavy End',
+        name: 'Bench and Row',
         exercises: [
           'Barbell Bench Press',
           'Barbell Row',
@@ -346,7 +346,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-upper-b',
-        name: 'Angles and Cables',
+        name: 'Incline and Pull Up',
         exercises: [
           'Incline Dumbbell Press',
           'Weighted Pull Up',
@@ -403,7 +403,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'fb-c',
-        name: 'Everything, Seated',
+        name: 'Machine Led Full Body',
         exercises: [
           'Leg Press',
           'Incline Dumbbell Press',

@@ -2875,6 +2875,42 @@ Which needed the multi select control to learn what a cap is: it silently
 accepted a disabled flag and rendered it as nothing, so the limit worked and
 was invisible. Now it dims and stops taking taps.
 
+## A session is named after what you are about to do
+
+Upper A and Upper B named which of two sessions this was and not one thing
+about either. Full Body A, B and C were three sessions with no way to tell them
+apart. Quad Dominant Legs is spreadsheet language nobody says out loud.
+
+The first attempt at fixing that reached for mood: The Heavy End, Angles and
+Cables, Chasing the Pump. Better than a letter and still wrong, because they
+described how a session might feel rather than what is in it, which is the one
+thing a name on a card has to do.
+
+Named off what each day opens with instead, which is what Incline Push and
+Squat Led Legs were already doing:
+
+    Upper A               Bench and Row
+    Upper B               Incline and Pull Up
+    Upper Mix             Press and Row
+    Upper Pump            Machine Led Upper
+    Full Body A           The Big Three
+    Full Body B           Hinge and Press
+    Full Body C           Machine Led Full Body
+    Quad Dominant Legs    Squat Day
+    Glute Dominant Legs   Hinge Day
+    Quads and Hamstrings  Squat and Hinge
+
+A check reads each name against the session under it and fails when no word in
+the name turns up in the movements, is the muscle they train, or is a pattern
+lifters say out loud. It rejects The Heavy End over a bench press and a barbell
+row, which is the exact complaint that prompted the second pass.
+
+It is the loosest check in the file, on purpose. Three checks broke today
+because they named particular words and a rename that kept the rule looked like
+a regression, so this one asks only that the name and the session have
+something to do with each other. The Big Three is exempt and is the only name
+here that is a phrase rather than a description.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

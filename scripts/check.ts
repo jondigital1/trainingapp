@@ -3932,6 +3932,38 @@ check('two sessions with the same name are the same session', () => {
     assert.ok(!/ [A-C0-9]$/.test(name), `${name} is a position in a list, not a name`)
   }
 
+  // A name says what you are about to do, which mostly means it names a
+  // movement in the session or the muscle it is about.
+  //
+  // Deliberately loose, and it is the loosest thing in this file. Three checks
+  // today were pinned to particular words and broke on a rename that kept the
+  // rule, so this one asks only that some word in the name turns up in the
+  // session or is a pattern lifters use. The Big Three earns its exemption by
+  // being the one name here that is a phrase rather than a description.
+  // Movement patterns and regions of the body, both of which are things a
+  // lifter says out loud. Arms is not a muscle group in this library, it is
+  // biceps and triceps, and it is still exactly what that session is.
+  const PATTERNS = ['hinge', 'push', 'pull', 'press', 'row', 'squat', 'curl', 'carry', 'incline', 'machine']
+  const REGIONS = ['arms', 'legs', 'upper', 'lower', 'body', 'full', 'vertical']
+  const EXEMPT = ['The Big Three']
+  for (const day of SPLITS.flatMap((split) => split.days)) {
+    if (EXEMPT.includes(day.name)) continue
+    const words = day.name.toLowerCase().split(/[\s,]+/).filter((w) => !['and', 'the', 'led', 'day', 'of', 'a'].includes(w))
+    const said = dayItems(day).map((i) => i.name.toLowerCase()).join(' ')
+    const groups = new Set(dayItems(day).map((i) => groupOf(i.name)?.toLowerCase() ?? ''))
+    assert.ok(
+      words.some((w) => said.includes(w) || groups.has(w) || PATTERNS.includes(w) || REGIONS.includes(w)),
+      `"${day.name}" says nothing about ${dayItems(day).slice(0, 3).map((i) => i.name).join(', ')}`,
+    )
+  }
+
+  // And two sessions in one split may not share a name, or picking between
+  // them is guesswork.
+  for (const split of SPLITS) {
+    const titles = split.days.map((d) => d.name)
+    assert.equal(new Set(titles).size, titles.length, `${split.name} names two sessions the same`)
+  }
+
   // Push Pull Legs keeps the plain names, being the split those words name.
   assert.equal(dayById('ppl-push')!.name, 'Push')
   assert.equal(dayById('ppl-pull')!.name, 'Pull')
