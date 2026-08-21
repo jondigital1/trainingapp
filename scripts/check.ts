@@ -5387,9 +5387,20 @@ check('a library movement can train more than one thing, rarely and on purpose',
   // A bench press works the triceps. Nobody programmes it to train them.
   for (const name of [
     'Barbell Bench Press', 'Pull Up', 'Chin Up', 'Dip', 'Barbell Row',
-    'Overhead Press', 'Lat Pulldown', 'Romanian Deadlift', 'Hip Thrust', 'Leg Press',
+    'Overhead Press', 'Lat Pulldown', 'Hip Thrust', 'Leg Press', 'Leg Extension',
   ]) {
     assert.equal(groupsOf(name).length, 1, `${name} started crediting the muscles that merely assist it`)
+  }
+
+  // A hip hinge trains the glutes as much as the hamstrings, which is why this
+  // one is in. It has to be the whole family: filing the barbell version as two
+  // groups and the dumbbell version as one would make your weekly count depend
+  // on which handle you picked up.
+  for (const name of [
+    'Romanian Deadlift', 'Dumbbell Romanian Deadlift', 'Single Leg Romanian Deadlift',
+    'Snatch Grip Romanian Deadlift', 'B-Stance Romanian Deadlift',
+  ]) {
+    assert.deepEqual(groupsOf(name), ['Hamstrings', 'Glutes'], `${name} is out of step with the rest of the family`)
   }
 
   // Structure: the primary comes first, every group named is a real one, and

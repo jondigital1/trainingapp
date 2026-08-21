@@ -2668,7 +2668,7 @@ reads one thing, so what to offer as a substitute, where a movement sits in the
 running order and which slot a plan can fill with it are all untouched. Only the
 questions that should take several answers changed.
 
-Seven movements of 320, and the restraint is the design rather than laziness.
+Twelve movements of 320, and the restraint is the design rather than laziness.
 A bench press works the triceps and a pull up works the biceps, and neither
 names them. Crediting every muscle that participates would fill the weekly bars
 with work nobody did directly and make the ten set target mean nothing. The bar
@@ -2684,6 +2684,14 @@ Core, and a movement you made yourself turns up under the muscles it says it
 trains as well as under My exercises. And a flagged joint, which used to scope
 only over the group a movement was filed under, so a sore hip reached a sumo
 deadlift through the hamstrings or not at all.
+
+The Romanian deadlift family names the glutes, which is the clearest case
+after the adductors: a hip hinge trains them as much as the hamstrings. All
+five variants together, because filing the barbell version as two groups and
+the dumbbell version as one would make the weekly count depend on which handle
+somebody picked up. It shows immediately on the app's own Glute Dominant Legs
+day, which used to report nine sets of hamstrings and three of glutes on a day
+named after the glutes.
 
 Measured rather than assumed: a leg day of ordinary movements counts exactly as
 it did before, and a generated four day plan is unchanged.
