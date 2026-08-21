@@ -65,13 +65,19 @@ export default function StartSheet({
   // it as the loud button, since it is the whole reason they opened this.
   // Somebody on a plan gets it quietly, because the plan days under it are
   // still what they are most likely to want.
+  //
+  // Quietly, not faintly. The quiet version was a dashed outline, and a dashed
+  // border reads as a placeholder or a disabled control everywhere else in
+  // software, which made the weakest looking thing on the sheet a real action.
+  // It is a solid card now, at the same weight as the plan days rather than
+  // under them, with the accent in the text instead of behind it.
   const build = (
     <button
       onClick={onBuild}
       className={
         own
           ? 'mb-5 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent'
-          : 'mb-5 w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted'
+          : 'mb-5 w-full rounded-2xl bg-card py-3.5 font-display text-[15px] font-bold text-accent-ink ring-1 ring-edge'
       }
     >
       Create custom workout

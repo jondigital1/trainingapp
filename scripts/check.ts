@@ -5056,7 +5056,16 @@ check('the builder is the first thing on the start sheet', () => {
   const build = src.slice(src.indexOf('const build = ('), src.indexOf('return (\n    <Sheet'))
   assert.ok(/own\s*\n?\s*\?/.test(build), 'the same treatment is given to both kinds of user')
   assert.ok(build.includes('bg-accent'), 'somebody who writes their own gets no primary button')
-  assert.ok(build.includes('border-dashed'), 'somebody on a plan gets the loud button over their plan')
+  // Once, in the loud branch only. Pinned to the accent rather than to
+  // whatever the quiet branch happens to look like: the quiet one has already
+  // changed once, from a dashed outline that read as a disabled control, and
+  // the rule that survived the change is that the accent belongs to the person
+  // who came here to build.
+  assert.equal((build.match(/bg-accent/g) || []).length, 1,
+    'somebody on a plan gets the loud button over their plan')
+  // And it is still a real control rather than a placeholder. A dashed border
+  // reads as disabled or empty everywhere else in software.
+  assert.ok(!build.includes('border-dashed'), 'the quiet treatment reads as a disabled control')
 })
 
 check('a movement of your own can train more than one thing', () => {
