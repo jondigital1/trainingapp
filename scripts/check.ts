@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { daysBetween, shiftDays, weekStart, weekdayOf } from '../lib/week'
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, lookupType, similarTo } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, isExistingName, lookupType, matchesQuery, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
@@ -5286,6 +5286,67 @@ check('a sheet with work in it does not vanish on a stray click', () => {
   // And the one screen this was reported on says when it has work in it.
   const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
   assert.ok(/dirty=\{!!name\.trim\(\) \|\| picked\.length > 0\}/.test(builder), 'the builder does not guard its draft')
+})
+
+check('searching the way people talk finds the movement', () => {
+  // The library spells everything singular and the search was a plain
+  // substring match, so every plural came back empty. Squats, nothing. Curls,
+  // nothing. Rows, nothing. The app told people a movement did not exist the
+  // moment they typed the way they speak, which is also how a movement that is
+  // already there gets reported as missing and then created a second time.
+  const hits = (q: string) => LIBRARY.filter((e) => matchesQuery(e.name, q))
+  for (const q of [
+    'squats', 'curls', 'rows', 'dips', 'lunges', 'crunches', 'presses',
+    'raises', 'planks', 'twists', 'pull ups', 'mountain climbers',
+    'hip abductions', 'cable flies',
+  ]) {
+    assert.ok(hits(q).length > 0, `"${q}" finds nothing, so the app says it does not exist`)
+  }
+
+  // The singular still works, and so does a fragment, which is what most
+  // searching actually is.
+  assert.ok(hits('squat').length > 0)
+  assert.ok(hits('bench').length > 0)
+  // An empty query is everything rather than nothing, which is what the
+  // browse-by-group screens rely on.
+  assert.equal(hits('').length, LIBRARY.length)
+  // And nonsense still finds nothing. A search that matches everything is the
+  // same failure as one that matches nothing.
+  assert.equal(hits('zzzqqq').length, 0)
+  assert.equal(hits('bench press pull up').length, 0, 'the words are being matched separately')
+
+  // Offering to create what already exists is how a duplicate is born, and
+  // typing the plural was the way in: "squats" matched no name exactly, so
+  // the screen offered to create one, and it would have sat next to Squat
+  // forever splitting every count that reads either.
+  const named = (q: string) => LIBRARY.some((e) => isExistingName(e.name, q))
+  assert.ok(named('dips'), 'typing the plural offers to create a second one')
+  assert.ok(named('crunches'))
+  assert.ok(named('planks'))
+  assert.ok(named('lateral raises'))
+  assert.ok(named('cable flies'))
+  assert.ok(named('Dip'))
+  assert.ok(named('  back squat  '), 'a stray space offers to create a second one')
+  // But a fragment is not a name. Typing "curl" has to still offer to create
+  // a movement called Curl, since the library has no movement by that name,
+  // only Barbell Curl and the rest.
+  assert.ok(!named('curl'), 'a fragment of a name is being read as the name')
+  assert.ok(!named('squats'), 'a plural fragment is being read as a name')
+  assert.ok(!named('hip adduction'), 'a movement the library does not have reads as one it does')
+
+  // Movements reported missing by somebody actually using the app. Pinned by
+  // name and group, because a plural search finding a near neighbour is not
+  // the same as the movement being there: dropping Mountain Climber still left
+  // "mountain climbers" matching the cross body version, so the search test
+  // above passed while the movement was gone.
+  for (const [name, group] of [
+    ['Mountain Climber', 'Core'],
+    ['Cross Body Mountain Climber', 'Core'],
+  ]) {
+    const found = LIBRARY.find((e) => e.name === name)
+    assert.ok(found, `${name} has gone from the library`)
+    assert.equal(found!.group, group, `${name} moved out of ${group}`)
+  }
 })
 
 void (async () => {

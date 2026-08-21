@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MINE, MUSCLE_GROUPS } from '@/lib/exercises'
+import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
@@ -56,14 +56,14 @@ export default function CustomBuilder({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     return all.filter((e) => {
-      if (q) return e.name.toLowerCase().includes(q)
+      if (q) return matchesQuery(e.name, q)
       if (group) return e.group === group
       return false
     })
   }, [all, query, group])
 
   // Already in the library, or already yours, so there is nothing to create.
-  const exact = all.some((e) => e.name.toLowerCase() === query.trim().toLowerCase())
+  const exact = all.some((e) => isExistingName(e.name, query))
 
   function toggle(item: CustomWorkoutItem) {
     setPicked((prev) =>

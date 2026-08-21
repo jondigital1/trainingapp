@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { LIBRARY, MINE, MUSCLE_GROUPS, similarTo } from '@/lib/exercises'
+import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery, similarTo } from '@/lib/exercises'
 import { uid } from '@/lib/format'
 import Sheet from './Sheet'
 import NewExercise from './NewExercise'
@@ -73,11 +73,11 @@ export default function ExercisePicker({
     return all.filter((e) => {
       if (group && e.group !== group) return false
       if (!q) return true
-      return e.name.toLowerCase().includes(q)
+      return matchesQuery(e.name, q)
     })
   }, [all, query, group, replacing, suggestions])
 
-  const exact = all.some((e) => e.name.toLowerCase() === query.trim().toLowerCase())
+  const exact = all.some((e) => isExistingName(e.name, query))
 
   function pick(name: string, type: SetType) {
     if (added.includes(name) && onUnpick) {

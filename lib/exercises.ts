@@ -306,6 +306,8 @@ const RAW: Record<string, string[]> = {
     'Knee Plank|T',
     'Plank to Push Up|R',
     'Shoulder Tap Plank|R',
+    'Mountain Climber|R',
+    'Cross Body Mountain Climber|R',
     'Knee Side Plank|T',
     'Star Side Plank|T',
     'Side Plank Dip|R',
@@ -373,6 +375,49 @@ export function lookupType(name: string): SetType | null {
 // one answer: what to offer as a substitute, where it sits in the running
 // order, whether it rests like small work. A movement of your own can train
 // several, and the first one you picked is the one that answers these.
+// The spellings somebody might have meant by what they typed.
+//
+// The library spells everything singular, and the search was a plain substring
+// match, so every plural came back empty: squats, curls, rows, dips, lunges,
+// crunches, presses, mountain climbers. Nothing. The app told people a
+// movement did not exist the moment they typed the way they talk, and at least
+// one of them believed it and reported the gap.
+//
+// Three cheap rules rather than a stemmer, which would be a dependency and a
+// lot of behaviour nobody asked for. Over-trimming is safe here because both
+// users of this are forgiving: the search matches on a substring, so "raises"
+// trimmed to "rais" still finds Lateral Raise.
+function forms(query: string): string[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  const out = [q]
+  // "flies" to "fly", before the plainer rules take the y off.
+  if (q.length > 3 && q.endsWith('ies')) out.push(`${q.slice(0, -3)}y`)
+  // "crunches" to "crunch", "presses" to "press".
+  if (q.length > 2 && q.endsWith('es')) out.push(q.slice(0, -2))
+  // "squats" to "squat", "pull ups" to "pull up", "raises" to "raise".
+  if (q.length > 1 && q.endsWith('s')) out.push(q.slice(0, -1))
+  return out
+}
+
+export function matchesQuery(name: string, query: string): boolean {
+  if (!query.trim()) return true
+  const n = name.toLowerCase()
+  return forms(query).some((f) => n.includes(f))
+}
+
+// Whether what somebody typed is already the whole name of a movement, which
+// is what decides whether a screen offers to create it.
+//
+// Plural tolerant for the same reason the search is, and for a sharper one:
+// typing "squats", being told nothing matched and creating a movement called
+// squats leaves it sitting next to Squat forever, splitting every count that
+// reads either of them.
+export function isExistingName(name: string, query: string): boolean {
+  const n = name.trim().toLowerCase()
+  return forms(query).some((f) => f === n)
+}
+
 export function groupOf(name: string): string | null {
   const own = customGroups(name)
   if (own.length) return own[0]
