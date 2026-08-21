@@ -184,6 +184,8 @@ const RAW: Record<string, string[]> = {
     'Belt Squat|W',
     'Leg Press|W',
     'Single Leg Press|W',
+    'Wide Stance Leg Press|W',
+    'Sumo Squat|W',
     'Leg Extension|W',
     'Single Leg Extension|W',
     'Bulgarian Split Squat|W',
@@ -247,6 +249,29 @@ const RAW: Record<string, string[]> = {
     'Banded Lateral Walk|R',
     'Deficit Reverse Lunge|W',
     'Kneeling Squat|W',
+  ],
+  // Nothing in this library had the adductors as its primary target. What
+  // trained them was scattered by its secondary effect: the Copenhagen Plank
+  // filed under Core, the Cossack Squat under Quads, the Sumo Deadlift under
+  // Hamstrings. So somebody looking for groin work found none, and the group
+  // did not exist to file their own under either.
+  //
+  // Those three stay where they are. A movement is filed under the one thing
+  // it mostly trains, and moving the Copenhagen Plank out of Core would change
+  // what the every-day-gets-core rule can reach for. This group is the
+  // movements that are adductor work first.
+  //
+  // Sumo Squat and Wide Stance Leg Press are in Quads for the same reason,
+  // pointing the other way: they are adductor emphasis on a quad movement, and
+  // filing them here would credit the adductors for sets the quads did.
+  Adductors: [
+    'Hip Adduction|W',
+    'Seated Hip Adduction|W',
+    'Standing Hip Adduction|W',
+    'Cable Hip Adduction|W',
+    'Side Lying Hip Adduction|R',
+    'Adductor Squeeze|T',
+    'Lateral Lunge|W',
   ],
   Calves: [
     'Standing Calf Raise|W',

@@ -99,10 +99,16 @@ function checkAsync(name: string, fn: () => Promise<void>) {
   })
 }
 
-check('library has 14 groups and 200 plus movements', () => {
-  assert.equal(MUSCLE_GROUPS.length, 14)
+check('library has 15 groups and 200 plus movements', () => {
+  assert.equal(MUSCLE_GROUPS.length, 15)
   assert.ok(LIBRARY.length > 200, `only ${LIBRARY.length}`)
   assert.equal(new Set(LIBRARY.map((e) => e.name)).size, LIBRARY.length)
+  // No group may be an empty heading. The chip rows and the stats bars both
+  // read this list, so a group with nothing in it is a filter that returns
+  // nothing and a bar that can never move.
+  for (const group of MUSCLE_GROUPS) {
+    assert.ok(LIBRARY.some((e) => e.group === group), `${group} is a heading with nothing under it`)
+  }
 })
 
 check('six splits, twenty six days, every movement is in the library', () => {
@@ -5332,7 +5338,11 @@ check('searching the way people talk finds the movement', () => {
   // only Barbell Curl and the rest.
   assert.ok(!named('curl'), 'a fragment of a name is being read as the name')
   assert.ok(!named('squats'), 'a plural fragment is being read as a name')
-  assert.ok(!named('hip adduction'), 'a movement the library does not have reads as one it does')
+  assert.ok(!named('jefferson curl'), 'a movement the library does not have reads as one it does')
+  // And the one that was reported missing is a name now, so typing it offers
+  // the movement rather than offering to invent it a second time.
+  assert.ok(named('hip adduction'))
+  assert.ok(named('hip adductions'), 'the plural still offers to create a duplicate')
 
   // Movements reported missing by somebody actually using the app. Pinned by
   // name and group, because a plural search finding a near neighbour is not
@@ -5342,6 +5352,10 @@ check('searching the way people talk finds the movement', () => {
   for (const [name, group] of [
     ['Mountain Climber', 'Core'],
     ['Cross Body Mountain Climber', 'Core'],
+    ['Hip Adduction', 'Adductors'],
+    ['Lateral Lunge', 'Adductors'],
+    ['Sumo Squat', 'Quads'],
+    ['Wide Stance Leg Press', 'Quads'],
   ]) {
     const found = LIBRARY.find((e) => e.name === name)
     assert.ok(found, `${name} has gone from the library`)

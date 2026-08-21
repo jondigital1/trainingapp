@@ -2613,6 +2613,51 @@ it yet. No muscle group name contains a comma, and a check fails if one ever
 does. Migration 0016 is a comment on the column recording what it now holds;
 nothing breaks if it is never run.
 
+## Adductors, a group that was missing entirely
+
+Not one movement in the library had the adductors as its primary target. What
+trained them was scattered by its secondary effect: the Copenhagen Plank filed
+under Core, the Cossack Squat under Quads, the Sumo Deadlift under Hamstrings.
+So somebody looking for groin work found none, and the group did not exist to
+file their own under either. Reported by somebody looking for hip adduction.
+
+Seven movements now, between Glutes and Calves, which is where they sit on a
+body. Those three stay where they are: a movement is filed under the one thing
+it mostly trains, and moving the Copenhagen Plank out of Core would change what
+the rule guaranteeing core work every day can reach for.
+
+Sumo Squat and Wide Stance Leg Press went into Quads for the same reason
+pointing the other way. They are adductor emphasis on a quad movement, and
+filing them under Adductors would credit the adductors for sets the quads did.
+Both were absent entirely, which is its own small gap.
+
+It cost less than expected. Template days name their exercises outright, and
+the bring-up list and the away session carry their own lists, so a new group
+does not appear in anybody's generated plan. It shows on the stats bars only
+once trained. The one thing that did need wiring was the sore hip: its pattern
+has always named Adduction and had nothing to match, because none of the three
+groups it scoped over contained any.
+
+The real limit showed here. A library movement is filed under exactly one
+group, while a movement you type in can now name several. The Copenhagen Plank
+is honestly both, and there is no way to say so.
+
+## Searching the way people talk
+
+Every plural came back empty. Squats, nothing. Curls, rows, dips, lunges,
+crunches, presses, raises: nothing. The library spells everything singular and
+the search was a plain substring match, so the app told people a movement did
+not exist the moment they typed the way they speak.
+
+Three rules rather than a stemmer, which would be a dependency and a pile of
+behaviour nobody asked for. Over-trimming is safe because the match is on a
+substring: "raises" cut to "rais" still finds Lateral Raise.
+
+The same trimming applies to the check deciding whether to offer creating a
+movement, and that one matters more. Typing "dips", being told nothing matched
+and creating a movement called dips leaves it next to Dip forever, splitting
+every count that reads either of them.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

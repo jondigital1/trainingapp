@@ -418,7 +418,11 @@ const RED_FLAG_GROUPS: Record<string, string[]> = {
   Knee: ['Quads', 'Hamstrings', 'Glutes', 'Calves'],
   'Low back': ['Back', 'Hamstrings', 'Glutes', 'Quads', 'Traps', 'Core', 'Carries'],
   Shoulder: ['Chest', 'Shoulders', 'Back', 'Triceps', 'Traps'],
-  Hip: ['Quads', 'Hamstrings', 'Glutes'],
+  // Adductors joined this list when the group was added. The pattern above has
+  // always named Adduction and had nothing to match, since no group held any:
+  // a flagged hip was scoping over three groups that contained no adduction
+  // work at all.
+  Hip: ['Quads', 'Hamstrings', 'Glutes', 'Adductors'],
   Elbow: ['Biceps', 'Triceps', 'Chest', 'Back', 'Shoulders', 'Forearms'],
   Wrist: ['Biceps', 'Triceps', 'Forearms', 'Chest', 'Back', 'Carries'],
   Neck: ['Traps', 'Shoulders', 'Back'],
