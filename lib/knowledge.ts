@@ -31,7 +31,7 @@ const APP: KnowledgeEntry[] = [
     q: 'How do I make a superset in the app?',
     group: 'Using the app',
     aliases: ['create superset', 'link exercises', 'pair exercises', 'multiple supersets'],
-    a: 'Three ways. In the exercise picker, switch the Superset toggle on and everything you pick joins one group until you switch it off. In a session, tap Link between any two blocks to join them. In the workout builder, the same toggle exists, and saved workouts keep their groups. A workout can hold as many supersets as you like: they letter themselves A, B, C and onward, and each group rests as one, with the clock starting after its last movement.',
+    a: 'Tap the seam between two movements. It sits between every pair, in the workout builder and in a live session, and it says Superset when they are apart and Unlink when they are together. Joining two seams in a row makes a trio, three makes a four, and there is no limit: tapping a seam inside a group splits it there, so a four becomes a pair and a pair, or a single and a trio. Superset all at the top of the list does the whole session at once. The picker also has a Superset toggle for grouping movements as you add them. Groups letter themselves A, B, C and onward, each rests as one with the clock starting after its last movement, and saved workouts keep their groups.',
   },
   {
     id: 'app-dropset-how',

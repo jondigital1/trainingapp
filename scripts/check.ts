@@ -6084,6 +6084,19 @@ check('supersets are set between movements, not for the whole session', () => {
   // And two controls an inch apart are not both called Superset.
   const block = readFileSync(new URL('../components/ExerciseBlock.tsx', import.meta.url), 'utf8')
   assert.ok(!/>\s*Superset\s*</.test(block), 'the card action and the seam are both called Superset')
+
+  // Lifty tells people how to do this, so the words it uses have to be the
+  // words on the buttons. The old answer described a toggle in the builder and
+  // a control called Link, and both outlived the change that removed them.
+  const answer = KNOWLEDGE.find((e) => e.id === 'app-superset-how')
+  assert.ok(answer, 'nothing explains how to make a superset')
+  assert.ok(/seam/i.test(answer!.a), 'the answer does not mention the control that makes a superset')
+  assert.ok(!/tap Link/i.test(answer!.a), 'the answer still sends people to a control called Link')
+  for (const word of ['Superset', 'Unlink']) {
+    assert.ok(answer!.a.includes(word), `the answer never says ${word}`)
+    assert.ok(builder.includes(`'${word}'`) || builder.includes(`>${word}<`),
+      `the answer says ${word} but no builder control is labelled that`)
+  }
 })
 
 void (async () => {
