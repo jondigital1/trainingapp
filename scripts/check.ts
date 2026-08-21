@@ -4505,6 +4505,26 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('saving says it saved', () => {
+  // The profile is a tab, so saving cannot close anything, and every option on
+  // it already saves on the tap. That left the button writing the typed fields
+  // and changing nothing on screen, which is indistinguishable from a button
+  // that does nothing. It was reported as broken while working perfectly,
+  // which is its own kind of broken.
+  const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const button = profile.slice(profile.indexOf('function SaveButton'))
+  const body = button.slice(0, button.indexOf('\n}'))
+  assert.ok(body.includes("'Saved'"), 'the save button never says it saved')
+  assert.ok(body.includes('clearTimeout'), 'the saved label leaks a timer')
+
+  // And the tab really has nowhere to go, which is why the label has to do the
+  // work: the sheet version closes itself, the tab version cannot.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  const tab = app.slice(app.indexOf("tab === 'profile'"))
+  const props = tab.slice(0, tab.indexOf('/>'))
+  assert.ok(props.includes('onSave={(next) => void saveProfile(next)}'), 'the profile tab save changed shape')
+})
+
 check('a questionnaire answer is edited in one place', () => {
   // Units, sex, what you want out of it and what you want brought up are
   // things you set rather than facts about you, and they live in Settings.

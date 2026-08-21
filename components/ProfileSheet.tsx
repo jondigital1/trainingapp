@@ -474,13 +474,39 @@ function SoreFields({
   )
 }
 
+/**
+ * Save, and say so.
+ *
+ * This page is a tab, so saving cannot close anything, and every option on it
+ * already saves on the tap. That left the button with nothing visible to do:
+ * it wrote the typed fields and the screen stayed exactly as it was, which is
+ * indistinguishable from a button that does nothing. It was reported as
+ * broken, and it was not broken, which is its own kind of broken.
+ *
+ * The same button on the one question sheets closes them, so the word is gone
+ * before it can be read there. No harm: something visible happened.
+ */
 function SaveButton({ onClick }: { onClick: () => void }) {
+  const [saved, setSaved] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
+
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        onClick()
+        setSaved(true)
+        if (timer.current) clearTimeout(timer.current)
+        timer.current = setTimeout(() => setSaved(false), 1600)
+      }}
       className="mt-6 w-full rounded-xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
     >
-      Save
+      {saved ? 'Saved' : 'Save'}
     </button>
   )
 }
