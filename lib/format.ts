@@ -120,10 +120,33 @@ export function topSet(exercise: Exercise): SetEntry | null {
   return best
 }
 
+// Ids for workouts, exercises and sets. Every one of these columns is a
+// postgres uuid, so this has to produce a uuid or the row is rejected outright.
+//
+// The fallback used to be a base 36 string, which is not one. It never fired on
+// liftybot.com, because randomUUID exists on any https page, but it is a secure
+// context API: open the app over plain http, which is what testing from a phone
+// against a dev machine by IP looks like, and every save fails at the database
+// with nothing on screen explaining why.
+//
+// So the fallback builds a version 4 uuid itself. getRandomValues is not
+// restricted to a secure context and is the one that actually catches this
+// case; Math.random is the last resort, weaker but still a valid uuid, which is
+// the property that matters here.
 export function uid(): string {
-  return typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36)
+  const c: Crypto | undefined = typeof crypto !== 'undefined' ? crypto : undefined
+  if (c?.randomUUID) return c.randomUUID()
+
+  const bytes = new Uint8Array(16)
+  if (c?.getRandomValues) c.getRandomValues(bytes)
+  else for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256)
+  // Version 4, and the variant bits, which is what makes it a uuid rather than
+  // sixteen random bytes wearing the punctuation.
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
 // Accepts "90", "1:30" or "1:02:00" and returns seconds.

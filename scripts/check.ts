@@ -8,7 +8,7 @@ import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
 import { easedNote, easedToday, forToday, greetedOn, recordHello } from '../lib/hello'
-import { fmtDate, fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet } from '../lib/format'
+import { fmtDate, fmtPrevious, fmtSet, fmtSets, fmtTime, parseClock, topSet, uid } from '../lib/format'
 import { importArtifactData, parseSetString, parseSetStrings } from '../lib/importer'
 import { toCsv } from '../lib/csv'
 import { buildPdf } from '../lib/pdf'
@@ -5169,6 +5169,51 @@ check('the group field takes more than one answer', () => {
   // And the count it feeds is said on the screen rather than discovered later
   // on the stats tab.
   assert.ok(/weekly total/.test(src), 'nothing says what picking several does')
+})
+
+check('every id is a uuid, on plain http as well as https', () => {
+  // Workouts, exercises and sets are all keyed on a postgres uuid, so an id
+  // that is not one is a row the database refuses. The fallback here used to
+  // be a base 36 string, which is not a uuid.
+  //
+  // It never fired on the live site, because randomUUID exists on any https
+  // page. It is a secure context API though, so opening the app over plain
+  // http, which is what testing from a phone against a dev machine by IP looks
+  // like, meant every save failed at the database with nothing on screen
+  // saying why.
+  const V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+  const run = (label: string) => {
+    const seen = new Set<string>()
+    for (let i = 0; i < 500; i++) {
+      const id = uid()
+      assert.match(id, V4, `${label} produced ${id}, which the database would reject`)
+      seen.add(id)
+    }
+    assert.equal(seen.size, 500, `${label} repeats itself, and ids collide on the primary key`)
+  }
+
+  run('randomUUID')
+
+  const real = globalThis.crypto
+  const swap = (value: unknown) =>
+    Object.defineProperty(globalThis, 'crypto', { value, configurable: true, writable: true })
+  try {
+    // What an http page actually has. getRandomValues is not restricted to a
+    // secure context, so this is the path that catches the real case.
+    swap({ getRandomValues: (a: Uint8Array) => real.getRandomValues(a) })
+    run('getRandomValues')
+
+    // And with no crypto at all, which is the last resort. Weaker randomness,
+    // still a valid uuid, which is the property this check is about.
+    swap(undefined)
+    run('Math.random')
+  } finally {
+    swap(real)
+  }
+
+  // Back to the real one afterwards, so nothing downstream is left on the
+  // fallback.
+  run('restored')
 })
 
 void (async () => {
