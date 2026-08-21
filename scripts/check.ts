@@ -4526,6 +4526,29 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('the week strip does not print names it cannot fit', () => {
+  // Nine pixel text in a forty four pixel box: Shoulders came out as SHOULD
+  // and Vertical Pull as VERTICA PULL. A clipped word is not information, and
+  // the name of today's session is the headline directly above the row.
+  const card = readFileSync(new URL('../components/TodayCard.tsx', import.meta.url), 'utf8')
+  const strip = card.slice(card.indexOf('grid-cols-7'))
+  // Rendered as a child, not read inside the aria-label, which is the one
+  // place the name still belongs.
+  assert.ok(!/>\{its/.test(strip), 'the strip prints session names in the cells again')
+  assert.ok(!/line-clamp/.test(strip), 'the strip is clipping text again')
+
+  // The name still reaches anybody who cannot see the colours.
+  assert.ok(/aria-label=/.test(strip) && /its\.name/.test(strip), 'the strip stopped naming the day for a screen reader')
+
+  // Four states that have to be told apart: done, today, planned, rest. Done
+  // carries a tick as well as the fill, so it does not rest on telling two
+  // colours apart.
+  for (const state of ['bg-accent', 'bg-midnight', 'bg-tint-cool', 'ring-edge']) {
+    assert.ok(strip.includes(state), `the strip lost its ${state} state`)
+  }
+  assert.ok(strip.includes('&#10003;'), 'done is colour only')
+})
+
 check('the admin side is not about you', () => {
   // Your height and what you weigh sat above a table of everybody else's sign
   // up dates, which is your stats in the one place they are not the subject.

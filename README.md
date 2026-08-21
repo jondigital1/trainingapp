@@ -2471,6 +2471,37 @@ stats do not show at all on the admin side, where your height above a table of
 everybody else's sign up dates is your stats in the one place they are not the
 subject.
 
+## The week strip, which was unreadable
+
+Seven boxes across a phone leaves each one about forty four pixels wide, and it
+was printing the session's name into that at nine pixels. Shoulders came out as
+SHOULD. Vertical Pull came out as VERTICA PULL, broken mid word. The colour was
+blamed first, and the colour was a symptom: the row was asking text to do
+something impossible, so it looked broken whatever it was painted.
+
+A clipped word is not information. The name of today's session is already the
+headline directly above the row, and every cell opens the day when tapped, so
+the names were never the strip's job. Its job is the one in its own comment:
+where are you in the week you are in.
+
+So it says that, in four states nobody has to read:
+
+    done      lime, with a tick
+    today     midnight when there is something to do, a teal ring when there is not
+    planned   a cool tint with a hairline
+    rest      an outline and nothing else
+
+The week fills with lime as you train it, which is the brand colour doing the
+one job it has everywhere else in the app rather than being applied as
+decoration. Done carries a tick as well as a fill, so it does not rest on
+telling two colours apart, and the session name still reaches a screen reader
+through the label even though nothing prints it.
+
+Planned and rest were nearly the same shade at first, two tints a hair apart,
+which made a training day look like a rest day. Found by rendering it rather
+than by reading it. A check now fails if a name goes back in a cell, if the
+clipping returns, or if any of the four states is lost.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

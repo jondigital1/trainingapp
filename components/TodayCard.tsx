@@ -108,19 +108,37 @@ export default function TodayCard({
               >
                 {d.label}
               </span>
-              {/* Trained is the only filled state, because lime means done.
-                  Planned is an outline, rest is a hairline, and today is the
-                  one with a thicker ring around whatever it already was. */}
-              <span
-                className={`mt-1 flex h-9 items-center justify-center rounded-[10px] px-0.5 text-[9px] font-extrabold uppercase leading-tight ${
-                  d.done
-                    ? 'bg-accent text-on-accent'
-                    : d.dayId
-                      ? 'text-accent-ink ring-[1.5px] ring-accent-ink/45'
-                      : 'ring-1 ring-edge'
-                } ${d.today ? 'ring-2 ring-accent-ink' : ''}`}
-              >
-                <span className="line-clamp-2 overflow-hidden">{its ? its.name : ''}</span>
+              {/* No names in here.
+              
+                  It used to print the session's name at nine pixels in a box
+                  forty four wide, which is not a size any of them fit in:
+                  Shoulders came out as SHOULD and Vertical Pull as VERTICA
+                  PULL. Clipped words are not information, and the name of
+                  today's session is already the headline directly above this
+                  row.
+                  
+                  So the row says the thing it is actually for: which days hold
+                  work, which are behind you, and which one is today. Lime for
+                  done, and the week fills with it as you go. Midnight for
+                  today when there is something to do, because that is the one
+                  cell worth looking at. The tick carries done on its own, so
+                  the state does not rest on telling two colours apart. */}
+              <span className="mt-1 flex h-9 w-full items-center justify-center">
+                <span
+                  className={`grid h-7 w-full place-items-center rounded-[9px] ${
+                    d.done
+                      ? 'bg-accent'
+                      : d.today && d.dayId
+                        ? 'bg-midnight'
+                        : d.today
+                          ? 'bg-card ring-[1.5px] ring-accent-ink'
+                          : d.dayId
+                            ? 'bg-tint-cool ring-1 ring-accent-ink/30'
+                            : 'ring-1 ring-edge'
+                  }`}
+                >
+                  {d.done ? <span className="text-[11px] font-extrabold text-on-accent">&#10003;</span> : null}
+                </span>
               </span>
             </button>
           )
