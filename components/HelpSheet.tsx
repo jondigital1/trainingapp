@@ -12,22 +12,53 @@ import CoachChip from './CoachChip'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
-function Entry({ entry, open, onToggle }: { entry: KnowledgeEntry; open: boolean; onToggle: () => void }) {
+/**
+ * A list of questions, on a card.
+ *
+ * These sat as bare rows on the page background with hairlines between them,
+ * while every other list in the app is on a card. It read as unfinished rather
+ * than as a decision, and it was the same fault the upcoming days had: rows
+ * are right, rows floating on the background are not.
+ *
+ * One of these rather than three, because the same list is drawn for a search,
+ * for the four asked most and for a topic, and three copies is how they come
+ * to disagree.
+ */
+function Answers({
+  entries,
+  open,
+  onOpen,
+  className = 'mt-2',
+}: {
+  entries: KnowledgeEntry[]
+  open: string | null
+  onOpen: (id: string | null) => void
+  className?: string
+}) {
+  if (!entries.length) return null
   return (
-    <div className="border-b border-edge last:border-0">
-      <button
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 py-3 text-left"
-      >
-        <span className="text-sm font-bold">{entry.q}</span>
-        <span aria-hidden className="shrink-0 text-xs text-faint">
-          {open ? '−' : '+'}
-        </span>
-      </button>
-      {/* The answer arrives as Lifty saying it, since Lifty is who was asked. */}
-      {open ? <CoachChip bubble className="pb-3">{entry.a}</CoachChip> : null}
-    </div>
+    <ul className={`${className} overflow-hidden rounded-2xl bg-card ring-1 ring-edge`}>
+      {entries.map((entry) => (
+        <li key={entry.id} className="border-b border-edge last:border-b-0">
+          <button
+            onClick={() => onOpen(open === entry.id ? null : entry.id)}
+            aria-expanded={open === entry.id}
+            className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left"
+          >
+            <span className="text-sm font-bold">{entry.q}</span>
+            <span aria-hidden className="shrink-0 text-xs text-faint">
+              {open === entry.id ? '−' : '+'}
+            </span>
+          </button>
+          {/* The answer arrives as Lifty saying it, since Lifty is who was asked. */}
+          {open === entry.id ? (
+            <div className="px-3.5 pb-3">
+              <CoachChip bubble>{entry.a}</CoachChip>
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -99,16 +130,7 @@ export default function HelpSheet({
 
       {searching ? (
         results.length ? (
-          <div className="mt-2 flex flex-col">
-            {results.map((entry) => (
-              <Entry
-                key={entry.id}
-                entry={entry}
-                open={open === entry.id}
-                onToggle={() => setOpen(open === entry.id ? null : entry.id)}
-              />
-            ))}
-          </div>
+          <Answers entries={results} open={open} onOpen={setOpen} />
         ) : (
           <CoachChip bubble className="mt-4">
             Lifty does not know that one. It only knows what is written into the app and never
@@ -120,16 +142,7 @@ export default function HelpSheet({
           {/* Four, not forty five. A list long enough to scroll is a wall of
               text, which is the thing the search box exists to avoid. */}
           <p className="mt-5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Asked most</p>
-          <div className="mt-1 flex flex-col">
-            {common.map((entry) => (
-              <Entry
-                key={entry.id}
-                entry={entry}
-                open={open === entry.id}
-                onToggle={() => setOpen(open === entry.id ? null : entry.id)}
-              />
-            ))}
-          </div>
+          <Answers entries={common} open={open} onOpen={setOpen} className="mt-1.5" />
         </>
       )}
 
@@ -157,16 +170,7 @@ export default function HelpSheet({
           </div>
 
           {group ? (
-            <div className="mt-1 flex flex-col">
-              {browse.map((entry) => (
-                <Entry
-                  key={entry.id}
-                  entry={entry}
-                  open={open === entry.id}
-                  onToggle={() => setOpen(open === entry.id ? null : entry.id)}
-                />
-              ))}
-            </div>
+            <Answers entries={browse} open={open} onOpen={setOpen} />
           ) : null}
         </div>
       ) : null}

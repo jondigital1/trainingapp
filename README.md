@@ -2533,6 +2533,19 @@ problem, a neutral blue grey sitting directly beneath three lime bars, the one
 thing on that screen that did not belong to the app. Teal on the way there,
 lime at the target. Same rule, both colours the app's own.
 
+## The answers get the card too
+
+Ask Lifty drew its questions as bare rows on the page background with hairlines
+between them. Every other list in the app is on a card, so this one read as
+unfinished rather than as a decision, which is exactly the fault the upcoming
+days had a day earlier. The fix already existed; it just had not been carried
+over.
+
+It is drawn once now rather than three times. The same list appears for a
+search, for the four asked most and for a topic, and three copies of a list is
+how three copies come to disagree. One component, three call sites, and the
+answer opens inside the card it was asked from.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

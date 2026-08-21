@@ -4984,6 +4984,35 @@ check('a movement you made can be changed, and only from here on', () => {
   assert.ok(!body.includes('db.saveWorkout'), 'editing a movement writes to the log')
 })
 
+check('the answers sit on a card, drawn once', () => {
+  // Ask Lifty drew its questions as bare rows on the page background with
+  // hairlines between them, while every other list in the app is on a card.
+  // It read as unfinished rather than as a decision, which is the same fault
+  // the upcoming days had.
+  const src = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+  const answers = src.slice(src.indexOf('function Answers'), src.indexOf('export default function HelpSheet'))
+  assert.ok(answers, 'the questions are no longer drawn by one component')
+  assert.ok(/rounded-2xl[^`'"]*bg-card/.test(answers), 'the questions float on the page background')
+  assert.ok(answers.includes('ring-edge'), 'the card has no edge to it')
+  assert.ok(answers.includes('overflow-hidden'), 'the rows square off the corners of their own card')
+
+  // Rows within the card, not cards per row. Separators between them and none
+  // under the last, which is what makes a list rather than a stack.
+  assert.ok(/border-b border-edge last:border-b-0/.test(answers), 'the rows do not read as one list')
+
+  // One definition. The same list is drawn for a search, for the four asked
+  // most and for a topic, and three copies is how they come to disagree.
+  const body = src.slice(src.indexOf('export default function HelpSheet'))
+  assert.ok((src.match(/<Answers /g) || []).length >= 3, 'not every question list goes through the one component')
+  assert.ok(!/entry\.[qa]\b/.test(body), 'a question is drawn somewhere other than the one component')
+  assert.equal((src.match(/bg-card/g) || []).length, 1, 'there is more than one card treatment here')
+
+  // The answer is Lifty saying it, and it opens inside the card rather than
+  // pushing out of it.
+  assert.ok(answers.includes('CoachChip'), 'the answer is not in Lifty\'s voice')
+  assert.ok(/aria-expanded=\{open === entry\.id\}/.test(answers), 'a screen reader cannot tell an open row from a shut one')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)
