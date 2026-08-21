@@ -604,7 +604,7 @@ function MyMovements({
                   answers that decide which muscle it credits and how long it
                   rests, and they are invisible everywhere else. */}
               <span className="mt-0.5 block text-xs text-faint">
-                {c.group ?? 'No group'} &middot; <span className="num">{c.sets ?? 3}</span> sets &middot; rests{' '}
+                {c.groups?.length ? c.groups.join(', ') : 'No group'} &middot; <span className="num">{c.sets ?? 3}</span> sets &middot; rests{' '}
                 <span className="num">{fmtTime(restForTier(c.tier ?? 'compound', goal))}</span>
               </span>
             </span>

@@ -1201,7 +1201,7 @@ outside the knee pattern, because they are what a knee swaps to.
 
 1. Create a Supabase project.
 2. Run the files in `supabase/migrations/` in the SQL editor, in order, 0001 to
-   0014. Clear the editor before each paste: a partial paste fails in confusing
+   0016. Clear the editor before each paste: a partial paste fails in confusing
    places. They create the ten tables, the indexes, one row level security
    policy per table so every row is readable only by the user that owns it, the
    atomic save function, the superset and drop set columns, the bodyweight
@@ -2583,6 +2583,35 @@ Week one also stopped saying "first week back on these movements". That is only
 true after a layoff, and the person who reported this trains every week. A
 check now fails on any week note that assumes a break, and on any week stating
 its instruction in jargon.
+
+## A movement can train more than one thing
+
+The custom movement screen took one muscle group, which is right for anything
+the library already knows and wrong for a good share of what people type in. A
+clean and press is not a shoulder exercise with an asterisk. Filed as one, it
+credited the shoulders in the weekly count and quietly dropped the back and the
+quads that did the work, every week.
+
+Several now. Every group named gets the sets: three sets of a clean and press
+is three of shoulders, three of back and three of quads. The screen says so
+under the chips rather than leaving it to be discovered on the stats tab, and
+a movement with nothing picked cannot be saved, because that is a row counting
+toward nothing.
+
+The first one picked is the primary, and answers the questions that only take
+one answer: what to offer as a substitute for a sore joint, where it sits in
+the running order. So `groupOf` still returns one thing and a new `groupsOf`
+returns all of them, with a library movement coming back as a list of one
+rather than a special case anything downstream has to know about.
+
+No schema change. The list goes into the text column that has always held the
+group, comma separated, and a row written before this is a list of one. An
+array column would have meant a migration that has to land before the deploy
+that needs it, and there is no order of those two that is safe: deploy first
+and every save fails on an unknown column, migrate first and nothing is reading
+it yet. No muscle group name contains a comma, and a check fails if one ever
+does. Migration 0016 is a comment on the column recording what it now holds;
+nothing breaks if it is never run.
 
 ## Not built yet
 

@@ -1,4 +1,4 @@
-import { groupOf, MUSCLE_GROUPS } from './exercises'
+import { groupsOf, MUSCLE_GROUPS } from './exercises'
 import { shiftDays, weekStart } from './week'
 import { happened, isEmptySet } from './format'
 import type { Exercise, Goal, SetEntry, SetType, Workout } from './types'
@@ -139,10 +139,15 @@ export function weeklyCoverage(workouts: Workout[], today: string): GroupVolume[
   for (const w of workouts) {
     if (w.date < start || w.date > today) continue
     for (const ex of w.exercises) {
-      const group = groupOf(ex.name)
-      if (!group) continue
+      // Every group the movement trains, not just the one it is filed under.
+      // A library movement names one. A movement of your own can name several,
+      // and a clean and press that credited only shoulders was undercounting
+      // the back and the quads that did the work.
+      const groups = groupsOf(ex.name)
+      if (!groups.length) continue
       const done = ex.sets.filter((s) => !isEmptySet(s, ex.type)).length
-      if (done) counts.set(group, (counts.get(group) ?? 0) + done)
+      if (!done) continue
+      for (const group of groups) counts.set(group, (counts.get(group) ?? 0) + done)
     }
   }
   return MUSCLE_GROUPS.map((group) => ({ group, sets: counts.get(group) ?? 0 })).filter(

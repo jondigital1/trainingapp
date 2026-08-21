@@ -53,7 +53,7 @@ export default function NewExercise({
   onDelete?: (exercise: CustomExercise) => void
 }) {
   const [type, setType] = useState<SetType>(editing?.type ?? 'W')
-  const [group, setGroup] = useState<string>(editing?.group ?? MUSCLE_GROUPS[0])
+  const [groups, setGroups] = useState<string[]>(editing?.groups?.length ? editing.groups : [MUSCLE_GROUPS[0]])
   const [tier, setTier] = useState<RestTier>(editing?.tier ?? 'compound')
   const [sets, setSets] = useState(editing?.sets ?? 3)
   // Only editable when editing. While creating, the name is whatever you typed
@@ -95,8 +95,21 @@ export default function NewExercise({
         onPick={(v) => setType(v as SetType)}
       />
 
+      {/* More than one, because plenty of movements do not have a single
+          home. A clean and press is not a shoulder exercise with an asterisk,
+          and filing it as one undercounted the back and the quads that did
+          the work every week. */}
       <Label>What does it train</Label>
-      <Chips options={MUSCLE_GROUPS.map((g) => ({ v: g, label: g }))} value={group} onPick={setGroup} />
+      <Chips
+        options={MUSCLE_GROUPS.map((g) => ({ v: g, label: g }))}
+        value={groups}
+        onPick={(g) => setGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))}
+      />
+      <p className="mt-1 text-xs text-muted">
+        {groups.length
+          ? `Every set counts toward ${listed(groups)} in the weekly total.`
+          : 'Pick at least one, or it counts toward nothing.'}
+      </p>
 
       <Label>How hard is it</Label>
       <Chips
@@ -117,9 +130,9 @@ export default function NewExercise({
       />
 
       <button
-        disabled={!finalName || taken}
+        disabled={!finalName || taken || !groups.length}
         onClick={() =>
-          onCreate({ id: editing?.id ?? uid(), name: finalName, type, group, tier, sets })
+          onCreate({ id: editing?.id ?? uid(), name: finalName, type, groups, tier, sets })
         }
         className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent disabled:opacity-40"
       >
@@ -157,18 +170,23 @@ function Chips({
   onPick,
 }: {
   options: { v: string; label: string }[]
-  value: string
+  // One answer or several. The three single answer questions on this screen
+  // pass a string and get radio behaviour; the muscle groups pass a list and
+  // get toggles. One component, because four rows of chips that look
+  // identical and behave differently is how a screen stops being learnable.
+  value: string | string[]
   onPick: (v: string) => void
 }) {
+  const on = (v: string) => (Array.isArray(value) ? value.includes(v) : value === v)
   return (
     <div className="mt-1.5 flex flex-wrap gap-1.5">
       {options.map((o) => (
         <button
           key={o.v}
           onClick={() => onPick(o.v)}
-          aria-pressed={value === o.v}
+          aria-pressed={on(o.v)}
           className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-            value === o.v ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'bg-card text-muted ring-1 ring-edge'
+            on(o.v) ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'bg-card text-muted ring-1 ring-edge'
           }`}
         >
           {o.label}
@@ -176,4 +194,11 @@ function Chips({
       ))}
     </div>
   )
+}
+
+// "Chest and Triceps", "Back, Biceps and Forearms". Said out loud so the
+// count is visible before it is a bar on the stats screen.
+function listed(groups: string[]): string {
+  if (groups.length === 1) return groups[0]
+  return `${groups.slice(0, -1).join(', ')} and ${groups[groups.length - 1]}`
 }

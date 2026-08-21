@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { daysBetween, shiftDays, weekStart, weekdayOf } from '../lib/week'
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, lookupType, similarTo } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, lookupType, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
@@ -1465,8 +1465,8 @@ check('a movement you typed in behaves like one from the library', () => {
   assert.equal(restTier('Jefferson Curl', 'W'), 'isolation', 'guessed from the word curl')
 
   registerCustoms([
-    { id: '1', name: 'Jefferson Curl', type: 'W', group: 'Back', tier: 'small', sets: 3 },
-    { id: '2', name: 'Reverse Nordic', type: 'R', group: 'Quads', tier: 'heavy', sets: 2 },
+    { id: '1', name: 'Jefferson Curl', type: 'W', groups: ['Back'], tier: 'small', sets: 3 },
+    { id: '2', name: 'Reverse Nordic', type: 'R', groups: ['Quads'], tier: 'heavy', sets: 2 },
   ])
   assert.equal(groupOf('Jefferson Curl'), 'Back', 'so it counts toward the weekly target')
   assert.equal(restTier('Jefferson Curl', 'W'), 'small', 'and you decide how hard it is')
@@ -1503,7 +1503,7 @@ check('a substitute is the same muscle first, then the closest swap', () => {
   // Nothing to offer for a movement the app has never heard of.
   assert.deepEqual(similarTo('Jefferson Curl'), [])
   // A custom movement joins the list once it says what it trains.
-  registerCustoms([{ id: '1', name: 'Jefferson Curl', type: 'W', group: 'Back', tier: 'small', sets: 3 }])
+  registerCustoms([{ id: '1', name: 'Jefferson Curl', type: 'W', groups: ['Back'], tier: 'small', sets: 3 }])
   const back = similarTo('Barbell Row', [{ name: 'Jefferson Curl', type: 'W', group: 'Back' }])
   assert.ok(back.some((e) => e.name === 'Jefferson Curl'), 'your own movements are substitutes too')
   resetCustoms()
@@ -4956,9 +4956,15 @@ check('a movement you made can be changed, and only from here on', () => {
   // stopped you retyping the name to answer again.
   const create = readFileSync(new URL('../components/NewExercise.tsx', import.meta.url), 'utf8')
   assert.ok(create.includes('editing?: CustomExercise | null'), 'the four questions cannot be reopened')
-  assert.ok(/editing\?\.group \?\?/.test(create), 'editing does not start from the answers you gave')
-  assert.ok(/editing\?\.tier \?\?/.test(create), 'editing does not start from the answers you gave')
-  assert.ok(/editing\?\.sets \?\?/.test(create), 'editing does not start from the answers you gave')
+  // Pinned to which answers are seeded rather than to the expression that
+  // seeds them. This named the exact expression once and broke on a change
+  // that kept the rule, which is a check reporting on itself.
+  for (const answer of ['groups', 'tier', 'sets', 'type']) {
+    assert.ok(
+      new RegExp(`useState[^\\n]*editing\\?\\.${answer}\\b`).test(create),
+      `editing does not start from the ${answer} you gave`,
+    )
+  }
 
   // A rename has to move the row rather than leave the old spelling next to
   // the new one, which means going by id. The upsert goes by (user_id, name)
@@ -5065,6 +5071,104 @@ check('the block card says one thing, in one vocabulary', () => {
     /border-t border-edge pt-3[\s\S]{0,240}uppercase tracking/.test(card),
     'the score target has nothing saying what it is a score of',
   )
+})
+
+check('a movement of your own can train more than one thing', () => {
+  resetCustoms()
+  // The field took one answer, which is fine for a library movement and wrong
+  // for half of what people type in: a clean and press is not a shoulder
+  // exercise with an asterisk, and filing it as one credited the shoulders
+  // and quietly dropped the back and the quads that did the work.
+  registerCustoms([
+    { id: '1', name: 'Clean and Press', type: 'W', groups: ['Shoulders', 'Back', 'Quads'], tier: 'heavy', sets: 3 },
+    { id: '2', name: 'Jefferson Curl', type: 'W', groups: ['Back'], tier: 'small', sets: 3 },
+  ])
+
+  // Everything it trains, for the count.
+  assert.deepEqual(groupsOf('Clean and Press'), ['Shoulders', 'Back', 'Quads'])
+  // The first one, for the questions that only take one answer.
+  assert.equal(groupOf('Clean and Press'), 'Shoulders', 'the primary answers the single answer questions')
+  // A library movement is a list of one rather than a special case, so
+  // nothing downstream has to know which kind it is holding.
+  assert.deepEqual(groupsOf('Back Squat'), ['Quads'])
+  assert.deepEqual(groupsOf('Nothing Called This'), [])
+  assert.deepEqual(groupsOf('  clean and press '), ['Shoulders', 'Back', 'Quads'], 'matched by hand typed name')
+
+  // And the sets land on every group named. Three sets of a clean and press
+  // is three sets of shoulders, three of back and three of quads.
+  const week: Workout[] = [
+    {
+      id: 'w', date: '2026-08-18', title: 'Session',
+      exercises: [
+        { id: 'e', name: 'Clean and Press', type: 'W', sets: [
+          { id: 's1', w: 60, r: 5 }, { id: 's2', w: 60, r: 5 }, { id: 's3', w: 60, r: 5 },
+        ] },
+      ],
+    },
+  ]
+  const cover = weeklyCoverage(week, '2026-08-18')
+  for (const g of ['Shoulders', 'Back', 'Quads']) {
+    assert.equal(cover.find((c) => c.group === g)!.sets, 3, `${g} was not credited`)
+  }
+  assert.equal(cover.find((c) => c.group === 'Chest')!.sets, 0, 'a group it does not train was credited')
+
+  // An empty set is still not a set, whichever groups it would have credited.
+  const empty: Workout[] = [
+    { id: 'w', date: '2026-08-18', title: 'Session',
+      exercises: [{ id: 'e', name: 'Clean and Press', type: 'W', sets: [{ id: 's1' }] }] },
+  ]
+  assert.equal(weeklyCoverage(empty, '2026-08-18').find((c) => c.group === 'Back')!.sets, 0)
+
+  resetCustoms()
+  assert.deepEqual(groupsOf('Clean and Press'), [], 'and one test cannot leak into the next')
+})
+
+check('the groups survive the one column that holds them', () => {
+  // Stored comma separated in the text column that has always held the group,
+  // rather than in a new array column. An array column needs a migration, and
+  // a migration has to land before the deploy that needs it: deploy first and
+  // every save fails on an unknown column, migrate first and nothing reads it.
+  // No group name contains a comma, so the list reads back unambiguously.
+  for (const g of MUSCLE_GROUPS) {
+    assert.ok(!g.includes(','), `${g} has a comma in it, which the stored list cannot survive`)
+  }
+
+  const db = readFileSync(new URL('../lib/db.ts', import.meta.url), 'utf8')
+  // Read and written through one pair of functions rather than inline at each
+  // of the three call sites, since three copies of a format is how the three
+  // of them come to disagree.
+  assert.ok(/function groupsFrom\(/.test(db), 'nothing parses the stored list')
+  assert.ok(/function groupsTo\(/.test(db), 'nothing writes the stored list')
+  assert.equal((db.match(/muscle_group: groupsTo\(/g) || []).length, 2, 'a save writes the list by hand somewhere')
+  assert.ok(/groups: groupsFrom\(r\.muscle_group\)/.test(db), 'loading does not parse the list')
+  assert.ok(!/muscle_group: ex\.group/.test(db), 'the old single group is still being written')
+
+  // A row written before any of this is a list of one, not a blank.
+  const from = db.slice(db.indexOf('function groupsFrom('), db.indexOf('function groupsTo('))
+  assert.ok(from.includes("split(',')"), 'the stored list is not split')
+  assert.ok(from.includes('trim()'), 'a stored list with spaces round the commas comes back with them')
+  assert.ok(from.includes('filter(Boolean)'), 'an empty stored value becomes a group called nothing')
+})
+
+check('the group field takes more than one answer', () => {
+  const src = readFileSync(new URL('../components/NewExercise.tsx', import.meta.url), 'utf8')
+  // Toggling rather than replacing is the whole difference between this and
+  // the three single answer rows above it on the same screen.
+  assert.ok(
+    /includes\(g\) \? v\.filter\(\(x\) => x !== g\) : \[\.\.\.v, g\]/.test(src),
+    'picking a second group replaces the first',
+  )
+  // One chip component for all four rows, since four rows that look identical
+  // and behave differently is how a screen stops being learnable.
+  assert.equal((src.match(/function Chips\(/g) || []).length, 1, 'there are two kinds of chip row now')
+  assert.ok(/value: string \| string\[\]/.test(src), 'the chips cannot take a list')
+  assert.ok(/aria-pressed=\{on\(o\.v\)\}/.test(src), 'a screen reader cannot tell which chips are on')
+
+  // None selected is not a movement, it is a row that counts toward nothing.
+  assert.ok(/disabled=\{[^}]*!groups\.length/.test(src), 'a movement can be saved training nothing')
+  // And the count it feeds is said on the screen rather than discovered later
+  // on the stats tab.
+  assert.ok(/weekly total/.test(src), 'nothing says what picking several does')
 })
 
 void (async () => {

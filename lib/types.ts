@@ -64,10 +64,16 @@ export interface CustomExercise {
   id: string
   name: string
   type: SetType
-  // Which muscle group it trains, so it counts toward the weekly target and
+  // Which muscle groups it trains, so it counts toward the weekly target and
   // can be swapped for something else when a joint is sore. Optional, because
   // custom exercises saved before the app asked have no answer.
-  group?: string | null
+  //
+  // Several, because a movement somebody typed in is as likely as not to be
+  // one the library never had a single home for: a clean and press is not a
+  // shoulder exercise with an asterisk. Every group named gets the sets in
+  // the weekly count. The first is the primary, and answers the questions
+  // that only take one answer, like what to offer as a substitute.
+  groups?: string[] | null
   // How much it takes out of you, which sets the rest timer. The name based
   // classifier has never heard of this movement, so it is worth asking rather
   // than guessing.

@@ -304,7 +304,9 @@ export default function AdminDashboard({ today, me }: { today: string; me: strin
               >
                 <span className="min-w-0">
                   <span className="text-sm font-bold">{gap.name}</span>
-                  {gap.group ? <span className="ml-2 text-xs text-muted">{gap.group}</span> : null}
+                  {gap.group ? (
+                    <span className="ml-2 text-xs text-muted">{gap.group.split(',').join(', ')}</span>
+                  ) : null}
                 </span>
                 <span className="num shrink-0 text-xs font-bold text-accent-ink">
                   {gap.users === 1 ? '1 user' : `${gap.users} users`}

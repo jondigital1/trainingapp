@@ -87,7 +87,7 @@ export async function loadAll(sb: SupabaseClient, userId: string): Promise<Train
       id: r.id as string,
       name: r.name as string,
       type: r.type as SetType,
-      group: (r.muscle_group as string) ?? null,
+      groups: groupsFrom(r.muscle_group),
       tier: (r.rest_tier as CustomExercise['tier']) ?? null,
       sets: toNum(r.default_sets),
     })) as CustomExercise[],
@@ -151,6 +151,28 @@ export async function deleteWorkout(sb: SupabaseClient, id: string) {
   if (res.error) throw res.error
 }
 
+// The muscle groups a custom exercise trains, in and out of the one text
+// column that has always held them.
+//
+// One column rather than an array column, because an array column means a
+// migration that has to land before the deploy that needs it, and there is no
+// order of those two that is safe: deploy first and every save fails on an
+// unknown column, migrate first and nothing is reading it yet. No group name
+// contains a comma, so a comma separated list reads back unambiguously, and a
+// row written before this change is simply a list of one.
+function groupsFrom(value: unknown): string[] {
+  if (typeof value !== 'string') return []
+  return value
+    .split(',')
+    .map((g) => g.trim())
+    .filter(Boolean)
+}
+
+function groupsTo(groups: string[] | null | undefined): string | null {
+  const list = (groups ?? []).map((g) => g.trim()).filter(Boolean)
+  return list.length ? list.join(',') : null
+}
+
 export async function saveCustomExercise(sb: SupabaseClient, userId: string, ex: CustomExercise) {
   const res = await sb
     .from('custom_exercises')
@@ -160,7 +182,7 @@ export async function saveCustomExercise(sb: SupabaseClient, userId: string, ex:
         user_id: userId,
         name: ex.name,
         type: ex.type,
-        muscle_group: ex.group ?? null,
+        muscle_group: groupsTo(ex.groups),
         rest_tier: ex.tier ?? null,
         default_sets: ex.sets ?? null,
       },
@@ -179,7 +201,7 @@ export async function updateCustomExercise(sb: SupabaseClient, ex: CustomExercis
     .update({
       name: ex.name,
       type: ex.type,
-      muscle_group: ex.group ?? null,
+      muscle_group: groupsTo(ex.groups),
       rest_tier: ex.tier ?? null,
       default_sets: ex.sets ?? null,
     })

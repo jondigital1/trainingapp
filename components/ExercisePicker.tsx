@@ -61,7 +61,7 @@ export default function ExercisePicker({
       replacing
         ? similarTo(
             replacing,
-            customs.map((c) => ({ name: c.name, type: c.type, group: c.group ?? '' })),
+            customs.map((c) => ({ name: c.name, type: c.type, group: c.groups?.[0] ?? '' })),
           )
         : [],
     [replacing, customs],

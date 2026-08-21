@@ -1,4 +1,4 @@
-import { customGroup } from './custom'
+import { customGroups } from './custom'
 import { restTier, type RestTier } from './rest'
 import type { SetType } from './types'
 
@@ -369,10 +369,24 @@ export function lookupType(name: string): SetType | null {
   return BY_NAME.get(name.trim().toLowerCase())?.type ?? null
 }
 
+// The one group a movement is filed under, for the questions that only take
+// one answer: what to offer as a substitute, where it sits in the running
+// order, whether it rests like small work. A movement of your own can train
+// several, and the first one you picked is the one that answers these.
 export function groupOf(name: string): string | null {
-  const own = customGroup(name)
-  if (own) return own
+  const own = customGroups(name)
+  if (own.length) return own[0]
   return BY_NAME.get(name.trim().toLowerCase())?.group ?? null
+}
+
+// Everything it trains, which is what the weekly count needs. A library
+// movement trains the one thing it is filed under; a movement somebody typed
+// in says so itself, and every group it names gets the sets.
+export function groupsOf(name: string): string[] {
+  const own = customGroups(name)
+  if (own.length) return own
+  const filed = BY_NAME.get(name.trim().toLowerCase())?.group
+  return filed ? [filed] : []
 }
 
 export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'other'

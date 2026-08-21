@@ -21,8 +21,8 @@ export function customFor(name: string): CustomExercise | undefined {
   return registry.get(name.trim().toLowerCase())
 }
 
-export function customGroup(name: string): string | null {
-  return customFor(name)?.group ?? null
+export function customGroups(name: string): string[] {
+  return customFor(name)?.groups ?? []
 }
 
 export function customTier(name: string): RestTier | null {
