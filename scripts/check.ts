@@ -5611,7 +5611,17 @@ check('where you are training today is one question, asked once', () => {
   // never on screen twice. Two copies of a control over one piece of state is
   // how the two of them come to look different.
   assert.equal((builder.match(/ACCESS\.options/g) || []).length, 1, 'the kit control is written twice')
-  assert.equal((builder.match(/<KitLine /g) || []).length, 2, 'one side of the builder cannot say where you are')
+  // One placement, outside the mode switch, so both ways of filling a session
+  // see it. It was rendered once per side, which was two copies of a control
+  // over one piece of state.
+  assert.equal((builder.match(/<KitLine /g) || []).length, 1, 'the kit control is placed more than once')
+  // Above both of them, since it shapes whichever one you pick, and a pill
+  // rather than a line of small print: it decides what the whole screen shows,
+  // taking chest from 26 movements to 8, and it was the quietest thing on it.
+  const body = builder.slice(builder.indexOf('placeholder="Workout name"'))
+  assert.ok(body.indexOf('<KitLine ') < body.indexOf('Or tell me what to train'), 'the kit sits below the ways of filling the session')
+  assert.ok(body.indexOf('<KitLine ') < body.indexOf('Or search every movement'), 'the kit sits below the search')
+  assert.ok(/rounded-full px-3\.5 py-2 text-sm font-bold/.test(builder), 'the kit control is small print again')
 
   // What it gives you lands in the list rather than straight into a live
   // session, which is the reason it is worth moving rather than deleting: it

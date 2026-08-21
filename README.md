@@ -2802,6 +2802,14 @@ chips that browse the library, which put two identical lists of muscles on one
 screen doing entirely different jobs: one filters what you are looking at, the
 other decides what goes in. Found by rendering it.
 
+Where you are training is a pill directly under the workout name now, above
+both ways of filling the session, because it shapes whichever one you pick. It
+was a line of grey small print at the bottom of the screen, which is a strange
+place for the control that decides what the whole screen shows: at bodyweight
+only, chest goes from 26 movements to 8. It is also placed once rather than
+once per mode, since two copies of a control over one piece of state is how the
+two of them come to look different.
+
 ## Ninety minutes stopped meaning two and a half hours
 
 Putting the estimate on that button exposed a cliff. Every answer from thirty to

@@ -193,6 +193,10 @@ export default function CustomBuilder({
         className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
+      {/* Where you are, directly under the name and above both ways of filling
+          the session, because it shapes whichever one you pick. */}
+      <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
+
       {/* A mode rather than a panel. The first version opened underneath the
           muscle group chips that browse the library, which put two identical
           lists of muscles on one screen doing entirely different jobs: one
@@ -238,7 +242,6 @@ export default function CustomBuilder({
             />
           </div>
 
-          <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
 
           <button
             onClick={fill}
@@ -318,8 +321,6 @@ export default function CustomBuilder({
         placeholder="Or search every movement"
         className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
-
-      <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
 
       <button
         onClick={() => setSuperset(superset ? null : uid())}
@@ -506,18 +507,24 @@ function KitLine({
 }) {
   return (
     <>
+      {/* A pill rather than a line of small print.
+          
+          It was the quietest thing on the screen and it decides what the whole
+          screen shows: at bodyweight only, chest goes from 26 movements to 8.
+          A control with that much reach cannot be the last thing you notice. */}
       <button
         onClick={() => onToggle(!open)}
         aria-expanded={open}
-        className="mt-2 flex w-full items-center justify-between gap-3 px-1 py-1.5 text-left"
+        className={`mt-3 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold ${
+          open ? 'bg-midnight text-frost' : 'bg-tint-cool text-accent-ink ring-1 ring-accent-ink/30'
+        }`}
       >
-        <span className="text-xs text-muted">
-          Building for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
-        </span>
-        <span className="shrink-0 text-xs text-faint">{open ? 'close' : 'change'}</span>
+        <span aria-hidden>&#9679;</span>
+        {accessLabel(kit)}
+        <span className="text-xs font-extrabold opacity-60">{open ? 'close' : 'change'}</span>
       </button>
       {open ? (
-        <div className="mt-1">
+        <div className="mt-2">
           <Options
             value={kit ?? 'full'}
             onPick={(v) => {
