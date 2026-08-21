@@ -403,9 +403,14 @@ check('a six day week repeats the upper days and splits the legs', () => {
   // session on Tuesday and Friday. Push and pull still repeat, because they are
   // worth repeating; the legs day became two different ones.
   assert.equal(new Set(six.dayIds).size, 4)
+  // Two different leg sessions, pinned to them being different rather than to
+  // the words in them: this named /quad/ and /hamstring|glute/ and broke when
+  // Quad Dominant Legs became Squat Day, which is the same rule better said.
   const names = six.dayIds.map((id) => dayById(id)?.name ?? '')
-  assert.ok(names.some((n) => /quad/i.test(n)))
-  assert.ok(names.some((n) => /hamstring|glute/i.test(n)))
+  const legs = six.dayIds.filter((id) => id !== 'ppl-push' && id !== 'ppl-pull')
+  assert.equal(new Set(legs).size, 2, 'the same leg session twice in a six day week')
+  assert.equal(new Set(legs.map((id) => dayById(id)?.name)).size, 2, 'two leg days sharing one name')
+  assert.ok(names.every((n) => n.length > 0), 'a day in the plan has no name')
   // Repeats are why anything rendering these keys does it by index, not by id.
   const counts = new Map<string, number>()
   for (const id of six.dayIds) counts.set(id, (counts.get(id) ?? 0) + 1)
@@ -2191,28 +2196,35 @@ check('one leg day or two is a choice, and both weeks are real weeks', () => {
 })
 
 check('five days and up gets two leg days, and they are different days', () => {
-  const QUADS = /quad/i
-  const POSTERIOR = /hamstring|glute/i
+  // Which day is which, read off what it opens with rather than off its name.
+  //
+  // This matched /quad/ and /hamstring|glute/ against the day's title, which
+  // made renaming Quad Dominant Legs to Squat Day look like the plan had lost
+  // its quad day. The name is a label; the first movement is the session.
+  const LOWER = ['Quads', 'Hamstrings', 'Glutes', 'Calves', 'Adductors']
+  // A leg day is a day that is mostly legs, not a day that happens to open
+  // with one. The full body sessions start on a squat or a leg press and are
+  // nobody's leg day.
+  const isLegDay = (id: string) => {
+    const items = dayItems(dayById(id)!)
+    return items.filter((i) => LOWER.includes(groupOf(i.name) ?? '')).length > items.length / 2
+  }
+  const leads = (id: string) => (isLegDay(id) ? groupOf(dayItems(dayById(id)!)[0].name) : null)
 
   for (const program of ['Foundation', 'Build', 'Performance'] as const) {
     for (const days of [5, 6]) {
       const profile: Profile = { days, minutes: 60, ...SEED[program] }
       const plan = planFor(profile, 'muscle')
-      const names = plan.dayIds.map((id) => dayById(id)?.name ?? '')
-      assert.ok(
-        names.some((n) => QUADS.test(n)),
-        `${program} at ${days} days has no quad day: ${names.join(', ')}`,
-      )
-      assert.ok(
-        names.some((n) => POSTERIOR.test(n)),
-        `${program} at ${days} days has no posterior day: ${names.join(', ')}`,
-      )
+      const shown = plan.dayIds.map((id) => `${dayById(id)?.name} (${leads(id)})`).join(', ')
+      const quad = plan.dayIds.filter((id) => leads(id) === 'Quads')
+      const post = plan.dayIds.filter((id) => leads(id) === 'Hamstrings' || leads(id) === 'Glutes')
+      assert.ok(quad.length, `${program} at ${days} days has no quad led day: ${shown}`)
+      assert.ok(post.length, `${program} at ${days} days has no hinge led day: ${shown}`)
       // Upper days may repeat, and at six days a week they should. The leg
       // days may not: doing the same leg session twice was the complaint.
-      const quad = names.filter((n) => QUADS.test(n)).length
-      const post = names.filter((n) => POSTERIOR.test(n)).length
-      assert.equal(quad, 1, `${program} at ${days} days runs the quad day ${quad} times`)
-      assert.equal(post, 1, `${program} at ${days} days runs the posterior day ${post} times`)
+      assert.equal(quad.length, 1, `${program} at ${days} days runs the quad day ${quad.length} times`)
+      assert.equal(post.length, 1, `${program} at ${days} days runs the hinge day ${post.length} times`)
+      assert.equal(new Set([...quad, ...post]).size, 2, 'the two leg days are the same session')
     }
   }
 
@@ -2226,10 +2238,12 @@ check('five days and up gets two leg days, and they are different days', () => {
   // Four days is a split decision rather than a rule. Foundation and Build run
   // upper lower there, which is two lower days and so two different ones.
   for (const program of ['Foundation', 'Build'] as const) {
-    const names = planFor({ days: 4, minutes: 60, ...SEED[program] }, 'muscle')
-      .dayIds.map((id) => dayById(id)?.name ?? '')
-    assert.ok(names.some((n) => QUADS.test(n)), `${program} at 4 days has no quad day`)
-    assert.ok(names.some((n) => POSTERIOR.test(n)), `${program} at 4 days has no posterior day`)
+    const ids = planFor({ days: 4, minutes: 60, ...SEED[program] }, 'muscle').dayIds
+    assert.ok(ids.some((id) => leads(id) === 'Quads'), `${program} at 4 days has no quad led day`)
+    assert.ok(
+      ids.some((id) => leads(id) === 'Hamstrings' || leads(id) === 'Glutes'),
+      `${program} at 4 days has no hinge led day`,
+    )
   }
 
   // Performance at four keeps push, pull, legs and an upper mix: one leg day
@@ -3904,14 +3918,19 @@ check('two sessions with the same name are the same session', () => {
     }
   }
 
-  // The vocabulary somebody actually uses for a leg day, rather than Legs
-  // four times over.
+  // The vocabulary somebody actually uses, rather than Legs four times over
+  // or a letter that names nothing. Upper A and Upper B told you which of two
+  // sessions this was and not one thing about either.
   const names = days.map((d) => d.name)
-  assert.ok(names.includes('Quad Dominant Legs'))
-  assert.ok(names.includes('Glute Dominant Legs'))
-  assert.ok(names.includes('Squat Led Legs'))
-  assert.ok(names.includes('Incline Push'))
-  assert.ok(names.includes('Vertical Pull'))
+  for (const name of ['Squat Day', 'Hinge Day', 'Squat Led Legs', 'Incline Push', 'Vertical Pull']) {
+    assert.ok(names.includes(name), `${name} has gone`)
+  }
+  // No session is named after its position in a list. A bare letter or digit
+  // on the end only: The Big Three is a name that happens to end in a number,
+  // and the first version of this check failed it.
+  for (const name of names) {
+    assert.ok(!/ [A-C0-9]$/.test(name), `${name} is a position in a list, not a name`)
+  }
 
   // Push Pull Legs keeps the plain names, being the split those words name.
   assert.equal(dayById('ppl-push')!.name, 'Push')
@@ -4163,7 +4182,7 @@ check('six days a week can be Push Pull Legs', () => {
 
   // Laid across a week it reads the way somebody running PPL expects.
   const spread = suggestSchedule(six).map((id) => (id ? dayById(id)!.name : 'Rest'))
-  assert.deepEqual(spread, ['Rest', 'Push', 'Pull', 'Quad Dominant Legs', 'Push', 'Pull', 'Glute Dominant Legs'])
+  assert.deepEqual(spread, ['Rest', 'Push', 'Pull', 'Squat Day', 'Push', 'Pull', 'Hinge Day'])
 
   // A plan naming the same session twice must not offer it twice to pick.
   const card = readFileSync(new URL('../components/ScheduleCard.tsx', import.meta.url), 'utf8')

@@ -83,7 +83,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'summer4-upper',
-        name: 'Upper Mix',
+        name: 'A Bit of Everything',
         exercises: [
           'Incline Barbell Bench Press',
           'Single Arm Cable Row',
@@ -160,7 +160,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'five-quads',
-        name: 'Quad Dominant Legs',
+        name: 'Squat Day',
         exercises: [
           'Back Squat',
           'Leg Press',
@@ -172,7 +172,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'five-posterior',
-        name: 'Glute Dominant Legs',
+        name: 'Hinge Day',
         exercises: [
           'Romanian Deadlift',
           'Hip Thrust',
@@ -187,7 +187,7 @@ export const SPLITS: TemplateSplit[] = [
       // and the upper pump day is what made room for the second of them.
       {
         id: 'five-pump',
-        name: 'Upper Pump',
+        name: 'Chasing the Pump',
         exercises: [
           'Incline Barbell Bench Press',
           'Seated Cable Row',
@@ -256,7 +256,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'bro-legs',
-        name: 'Quads and Hamstrings',
+        name: 'Front and Back',
         exercises: [
           'Back Squat',
           'Romanian Deadlift',
@@ -321,7 +321,7 @@ export const SPLITS: TemplateSplit[] = [
     days: [
       {
         id: 'ul-upper-a',
-        name: 'Upper A',
+        name: 'The Heavy End',
         exercises: [
           'Barbell Bench Press',
           'Barbell Row',
@@ -334,7 +334,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-a',
-        name: 'Quad Dominant Legs',
+        name: 'Squat Day',
         exercises: [
           'Back Squat',
           'Leg Press',
@@ -346,7 +346,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-upper-b',
-        name: 'Upper B',
+        name: 'Angles and Cables',
         exercises: [
           'Incline Dumbbell Press',
           'Weighted Pull Up',
@@ -359,7 +359,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'ul-lower-b',
-        name: 'Glute Dominant Legs',
+        name: 'Hinge Day',
         exercises: [
           'Romanian Deadlift',
           'Hip Thrust',
@@ -378,7 +378,7 @@ export const SPLITS: TemplateSplit[] = [
     days: [
       {
         id: 'fb-a',
-        name: 'Full Body A',
+        name: 'The Big Three',
         exercises: [
           'Back Squat',
           'Barbell Bench Press',
@@ -391,7 +391,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'fb-b',
-        name: 'Full Body B',
+        name: 'Hinge and Press',
         exercises: [
           'Romanian Deadlift',
           'Overhead Press',
@@ -403,7 +403,7 @@ export const SPLITS: TemplateSplit[] = [
       },
       {
         id: 'fb-c',
-        name: 'Full Body C',
+        name: 'Everything, Seated',
         exercises: [
           'Leg Press',
           'Incline Dumbbell Press',
