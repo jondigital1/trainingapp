@@ -315,8 +315,8 @@ export default function SettingsSheet({
           />
           {profile.block ? (
             <Note>
-              Currently week {blockWeek(profile, today())?.index ?? 1} of 6,{' '}
-              {blockWeek(profile, today())?.name.toLowerCase()}.
+              Currently week {blockWeek(profile, today())?.index ?? 1} of 6.{' '}
+              {blockWeek(profile, today())?.cue ?? ''}.
             </Note>
           ) : null}
         </Field>

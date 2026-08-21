@@ -13,7 +13,11 @@ import type { Workout } from './types'
 export interface BlockWeek {
   index: number
   name: string
-  rir: string
+  // What to actually do this week, said as an instruction you could follow
+  // standing at the rack. This was "3 in reserve", which is the right idea in
+  // the wrong language: reps in reserve is a term you either already know or
+  // are never told, and the card never told anybody.
+  cue: string
   // The session score to aim at, on the same 1 to 10 dial the app asks for
   // when a workout ends.
   score: [number, number]
@@ -26,47 +30,46 @@ export const BLOCK: BlockWeek[] = [
   {
     index: 1,
     name: 'Groove',
-    rir: '3 in reserve',
+    cue: 'Stop the last set with 3 reps left',
     score: [4, 6],
-    note: 'First week back on these movements. Find the loads, leave three in the tank, resist the urge to test yourself.',
+    note: 'Easy on purpose. This week finds the loads the next five build on, so there is nothing to prove in it.',
   },
   {
     index: 2,
     name: 'Build',
-    rir: '2 in reserve',
+    cue: 'Stop the last set with 2 reps left',
     score: [5, 7],
-    note: 'Same movements, a little more. Two left on the last set of each one.',
+    note: 'Same movements, slightly heavier or a rep more than last week.',
   },
   {
     index: 3,
     name: 'Build',
-    rir: '2 in reserve',
+    cue: 'Stop the last set with 2 reps left',
     score: [6, 8],
-    note: 'Add a rep or a plate where last week felt easy. Still two in reserve.',
+    note: 'Add a rep, or the next weight up, wherever last week felt easy.',
   },
   {
     index: 4,
     name: 'Push',
-    rir: '1 in reserve',
+    cue: 'Stop the last set with 1 rep left',
     score: [7, 9],
-    note: 'One left on the last set. This is the week the block was building toward.',
+    note: 'The week the block has been building toward. Everything before the last set stays comfortable.',
   },
   {
     index: 5,
     name: 'Peak',
-    rir: 'last set to the end',
+    cue: 'Take the last set to failure',
     score: [8, 10],
-    note: 'Last set of each movement goes until it stops moving. Everything before it stays honest.',
+    note: 'The last set of each movement goes until the weight stops moving. The sets before it stay honest.',
   },
   {
     index: 6,
     name: 'Deload',
-    rir: 'half the work',
+    cue: 'Half the sets, nothing near failure',
     score: [2, 4],
-    note: 'Half the sets, same loads, nothing near failure. This is the week the last five weeks turn into progress.',
+    note: 'Same weights, half as many sets. This is the week the last five turn into progress.',
   },
 ]
-
 
 // How many weeks since the block began. Negative means the start is in the
 // future, which is treated as week one rather than as an error.

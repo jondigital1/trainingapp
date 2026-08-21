@@ -19,12 +19,12 @@ export default function BlockCard({
 
   return (
     <div className="mb-4 rounded-2xl bg-card p-4 ring-1 ring-edge">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="num text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-accent-ink">
-          Block {number} · Week {week.index} of {BLOCK_WEEKS}
-        </h2>
-        <span className="text-xs font-bold text-faint">{week.name}</span>
-      </div>
+      {/* The week's name used to float alone in the top right, which told
+          nobody what it was the name of. It belongs next to the week it
+          names. */}
+      <h2 className="num text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-accent-ink">
+        Block {number} · Week {week.index} of {BLOCK_WEEKS} · {week.name}
+      </h2>
 
       {/* Six segments, one per week. Behind you is filled, this week is
           outlined so it reads as where you are rather than where you got to,
@@ -44,32 +44,42 @@ export default function BlockCard({
         ))}
       </div>
 
-      <p className="mt-3 text-sm font-bold text-accent-ink">{week.rir}</p>
+      {/* One instruction, in one vocabulary. This said "3 in reserve" here,
+          "leave three in the tank" underneath and "aim 4 to 6 out of 10" at
+          the bottom: three scales for one idea, none of them defined on the
+          card. The instruction is the headline now and the number below is
+          labelled with the question the app actually asks at the end of a
+          session. */}
+      <p className="mt-3 text-[15px] font-bold leading-snug">{week.cue}</p>
 
-      <p className="mt-3 text-sm leading-relaxed text-muted">{week.note}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{week.note}</p>
 
-      <div className="mt-3 flex items-center justify-between border-t border-edge pt-3 text-sm">
-        <span className="text-muted">
-          Aim{' '}
-          <span className="num text-bright">
-            {lo} to {hi}
-          </span>{' '}
-          out of 10
-        </span>
-        {read.average == null ? (
-          <span className="text-xs text-muted">nothing scored yet</span>
-        ) : (
-          <span className="num">
-            <span className={read.verdict === 'on' ? 'text-bright' : 'text-accent-ink'}>{read.average}</span>
-            <span className="ml-2 text-xs text-muted">
-              {read.verdict === 'on'
-                ? 'on target'
-                : read.verdict === 'under'
-                  ? 'easier than the week asks'
-                  : 'harder than the week asks'}
-            </span>
+      <div className="mt-3 border-t border-edge pt-3">
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+          How it should feel
+        </p>
+        <div className="mt-1 flex items-baseline justify-between gap-2 text-sm">
+          <span className="text-muted">
+            <span className="num font-bold text-accent-ink">
+              {lo} to {hi}
+            </span>{' '}
+            out of 10
           </span>
-        )}
+          {read.average == null ? (
+            <span className="text-xs text-muted">nothing scored yet</span>
+          ) : (
+            <span className="num">
+              <span className={read.verdict === 'on' ? 'text-bright' : 'text-accent-ink'}>{read.average}</span>
+              <span className="ml-2 text-xs text-muted">
+                {read.verdict === 'on'
+                  ? 'on target'
+                  : read.verdict === 'under'
+                    ? 'easier than the week asks'
+                    : 'harder than the week asks'}
+              </span>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -5014,6 +5014,59 @@ check('the answers sit on a card, drawn once', () => {
   assert.ok(/aria-expanded=\{open === entry\.id\}/.test(answers), 'a screen reader cannot tell an open row from a shut one')
 })
 
+check('the builder is the first thing on the start sheet', () => {
+  // It sat under the plan for anybody following one, which put the thing you
+  // came here to make below four things you did not, at the bottom of a sheet
+  // that scrolls past templates as well.
+  const src = readFileSync(new URL('../components/StartSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(src.indexOf('{build}') < src.indexOf("'Your plan'"), 'the builder is still below the plan')
+
+  // One position rather than two. It used to be rendered twice, once above
+  // and once below, with a flag choosing which copy was real, and two copies
+  // of a button is how the two of them come to disagree.
+  assert.equal((src.match(/\{build\}/g) || []).length, 1, 'the builder is rendered in more than one place')
+
+  // Quiet for somebody on a plan, loud for somebody who writes their own,
+  // because the plan days under it are still the likelier thing to want.
+  const build = src.slice(src.indexOf('const build = ('), src.indexOf('return (\n    <Sheet'))
+  assert.ok(/own\s*\n?\s*\?/.test(build), 'the same treatment is given to both kinds of user')
+  assert.ok(build.includes('bg-accent'), 'somebody who writes their own gets no primary button')
+  assert.ok(build.includes('border-dashed'), 'somebody on a plan gets the loud button over their plan')
+})
+
+check('the block card says one thing, in one vocabulary', () => {
+  // It said "3 in reserve" as the headline, "leave three in the tank" in the
+  // note under it and "aim 4 to 6 out of 10" at the bottom: three scales for
+  // one instruction, none of them explained on the card. Reported by somebody
+  // who lifts every day and could not tell what it was asking of him.
+  const JARGON = /in reserve|in the tank|\bRIR\b|\bRPE\b/i
+  for (const w of BLOCK) {
+    assert.ok(w.cue, `week ${w.index} has no instruction`)
+    assert.ok(!JARGON.test(w.cue), `week ${w.index} states its instruction in jargon`)
+    assert.ok(!JARGON.test(w.note), `week ${w.index} explains itself in jargon`)
+    // And nothing assumes a layoff. "First week back on these movements" is
+    // wrong for anybody training every week, which is most people using this.
+    assert.ok(!/week back|back on these|returning/i.test(w.note), `week ${w.index} assumes a break that may not have happened`)
+  }
+
+  const card = readFileSync(new URL('../components/BlockCard.tsx', import.meta.url), 'utf8')
+  assert.ok(card.includes('{week.cue}'), 'the card does not say what to do this week')
+
+  // The week's name floated alone in the top right, naming nothing. It sits
+  // with the week number it belongs to, once.
+  assert.equal((card.match(/\{week\.name\}/g) || []).length, 1, 'the week name is drawn more than once')
+  const heading = card.slice(card.indexOf('<h2'), card.indexOf('</h2>'))
+  assert.ok(heading.includes('{week.index}'), 'the heading stopped saying which week it is')
+  assert.ok(heading.includes('{week.name}'), 'the week name is adrift from the week it names')
+
+  // And the number at the bottom carries a label saying what it measures,
+  // rather than a bare "Aim 4 to 6" over a scale nothing names.
+  assert.ok(
+    /border-t border-edge pt-3[\s\S]{0,240}uppercase tracking/.test(card),
+    'the score target has nothing saying what it is a score of',
+  )
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

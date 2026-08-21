@@ -2550,6 +2550,40 @@ search, for the four asked most and for a topic, and three copies of a list is
 how three copies come to disagree. One component, three call sites, and the
 answer opens inside the card it was asked from.
 
+## Create custom workout comes first
+
+The builder sat under the plan for anybody following one, which put the thing
+you opened the sheet to make below four things you did not, near the bottom of
+a sheet that scrolls on past the templates as well. It is first now, for
+everybody, and called what it does rather than described.
+
+It kept two treatments and lost one position. Somebody who writes their own
+workouts gets it as the primary button, since it is the whole reason they are
+here. Somebody on a plan gets it quietly above their days, because the plan is
+still the likelier thing they want. It used to be rendered twice with a flag
+choosing which copy was real, which is how two copies of a button come to
+disagree; it is rendered once.
+
+## The block card says one thing now
+
+It said "3 in reserve" as the headline, "leave three in the tank" in the note
+under it, and "aim 4 to 6 out of 10" at the bottom. Three scales for one
+instruction, none of them defined anywhere on the card, with the week's name
+floating in the top right naming nothing you could see. Reported by somebody
+who lifts every day and could not tell what was being asked of him, which is
+the right person to be told by.
+
+One instruction, in the words you would use standing at the rack: stop the last
+set with three reps left. The note under it says why the week is what it is,
+in two lines. The number at the bottom now carries a label, "How it should
+feel", which points at the question the app actually asks when a session ends,
+and the reading next to it is the answer coming back.
+
+Week one also stopped saying "first week back on these movements". That is only
+true after a layoff, and the person who reported this trains every week. A
+check now fails on any week note that assumes a break, and on any week stating
+its instruction in jargon.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

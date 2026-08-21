@@ -64,29 +64,30 @@ export default function StartSheet({
 
   const own = !!plan?.selfDirected
 
-  // Build one is the first thing and the loud thing for somebody who writes
-  // their own, and the quiet fallback under the plan for everybody else. Same
-  // button, two positions, because which one is the primary action genuinely
-  // depends on who is looking.
-  const build = own ? (
+  // First on the sheet for everybody. It sat under the plan for anybody
+  // following one, which put the one thing you came here to make below four
+  // things you did not, and it was the last thing on a sheet that scrolls.
+  //
+  // Two treatments, one position. Somebody who writes their own workouts gets
+  // it as the loud button, since it is the whole reason they opened this.
+  // Somebody on a plan gets it quietly, because the plan days under it are
+  // still what they are most likely to want.
+  const build = (
     <button
       onClick={onBuild}
-      className="mb-5 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent"
+      className={
+        own
+          ? 'mb-5 w-full rounded-2xl bg-accent py-3.5 font-display text-[15px] font-bold text-on-accent'
+          : 'mb-5 w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted'
+      }
     >
-      Build a workout
-    </button>
-  ) : (
-    <button
-      onClick={onBuild}
-      className="w-full rounded-full border-[1.5px] border-dashed border-edge py-3 text-[13.5px] font-extrabold text-muted"
-    >
-      Build one from scratch
+      Create custom workout
     </button>
   )
 
   return (
     <Sheet title="Start a workout" onClose={onClose}>
-      {own ? build : null}
+      {build}
       {planDays.length ? (
         <div className="mb-5">
           <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
@@ -110,8 +111,6 @@ export default function StartSheet({
           </div>
         </div>
       ) : null}
-
-      {own ? null : build}
 
       {/* Training somewhere that is not your gym. The plan days are rebuilt
           for what the room has, so a quad day in a hotel is still a quad day,
