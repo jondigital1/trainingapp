@@ -438,7 +438,7 @@ export default function App({
     // running clock over zero exercises with no explanation reads as a crash.
     if (items.length === 0) {
       setSheet(null)
-      setError('The plan could not fill this day: between flagged joints and the equipment on your profile, nothing qualified. Loosen one of those on your profile, or build the session by hand.')
+      setError('The plan could not fill this day: between the joints you flagged and the kit you said you have, nothing qualified. Loosen the joints under My body, or the gym by running the questionnaire again, or build the session by hand.')
       return
     }
     // The plan decides how many rows a movement gets, so a templated session
@@ -982,7 +982,7 @@ export default function App({
           <p className="mt-1 text-sm text-muted">
             You planned {profile.days ?? plan?.days} a week. Three days done properly beats{' '}
             {profile.days ?? plan?.days} missed. Want the shorter plan? Either answer sticks, and
-            days a week can always change on your profile.
+            days a week can always change by running the questionnaire again from settings.
           </p>
           <div className="mt-3 flex gap-2">
             <button
@@ -1244,7 +1244,6 @@ export default function App({
           customs={data.custom}
           goal={data.settings.goal}
           onOpenSettings={() => setSheet('settings')}
-          onRerunQuestionnaire={() => setRerun(true)}
           onLogWeight={(lb) => void logWeight(lb)}
           onCreateExercise={(exercise) => void createCustomExercise(exercise)}
           onEditExercise={(exercise) => void editCustomExercise(exercise)}

@@ -4737,6 +4737,40 @@ check('every link you handed out is listed, and revocable', () => {
   assert.ok(app.includes('onListShares') && app.includes('onRevokeShare'), 'the screen is not wired up')
 })
 
+check('nothing tells you to look on the profile for something that moved', () => {
+  // Every move this session could orphan a signpost. Blocks, goals, the units,
+  // days a week and which gym were all on the profile once and are not now, so
+  // any copy still sending somebody there is wrong in a way nobody would think
+  // to look for: the sentence still reads perfectly.
+  const files = ['lib/knowledge.ts', 'lib/onboarding.ts', 'components/App.tsx', 'components/Onboarding.tsx']
+  const moved = [
+    ['six week block', 'blocks'],
+    ['switched on from your profile', 'blocks'],
+    ['equipment on your profile', 'which gym'],
+    ['days a week can always change on your profile', 'days a week'],
+    ['switch to it whenever you are ready on your profile', 'goals'],
+  ] as const
+
+  for (const file of files) {
+    const src = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').toLowerCase()
+    for (const [phrase, what] of moved) {
+      if (phrase === 'six week block') continue
+      assert.ok(!src.includes(phrase), `${file} still sends people to the profile for ${what}`)
+    }
+  }
+
+  // The ones that still say profile are still true, and they are about the two
+  // things that stayed: what you weigh and which joints you flagged.
+  const knowledge = readFileSync(new URL('../lib/knowledge.ts', import.meta.url), 'utf8')
+  for (const line of knowledge.split('\n')) {
+    if (!/your profile/.test(line)) continue
+    assert.ok(
+      /joint|weigh|flag|body/i.test(line),
+      `an answer sends you to the profile for something that is not there: ${line.trim().slice(0, 80)}`,
+    )
+  }
+})
+
 check('Lifty points at tabs that are actually there', () => {
   // An answer that names a section of the profile is a signpost, and renaming
   // the pill without it leaves the signpost pointing at nothing. That is how
@@ -4782,8 +4816,22 @@ check('a question asked at signup is not asked again on the profile', () => {
   // The advice under Rest of the week is the whole point of the question, and
   // it travelled with it rather than being left behind.
   assert.ok(signup.includes('OTHER_NOTES[o]'), 'the questionnaire collects it and says nothing back')
-  // And there is a way back to where they are asked.
-  assert.ok(settings.includes('onRerunQuestionnaire'), 'the profile drops the answers with no way to change them')
+  // One way back to where they are asked, and it is in settings. The profile
+  // carried a second link to the same questionnaire, which is two doors to one
+  // room, and neither of them is what My week is about.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.equal(
+    (app.match(/onRerunQuestionnaire=/g) ?? []).length,
+    1,
+    'the questionnaire is reachable from more than one place, or from none',
+  )
+  const sheet = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(sheet.includes('Run the questionnaire again'), 'settings lost the way back')
+
+  // Training blocks is something you set, so it went with the rest of what you
+  // set. My week is which session lands on which day and nothing else.
+  assert.ok(sheet.includes('Six week blocks'), 'the blocks switch has no home')
+  assert.ok(!settings.includes('Six week blocks'), 'the blocks switch is back on the profile')
 
   // Which gym is the one exception, because it is also asked where a workout
   // is built: a hotel room is a fact about today, not about you.

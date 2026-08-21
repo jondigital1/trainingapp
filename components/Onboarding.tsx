@@ -503,7 +503,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   // shorter than the one somebody asked for needs a reason attached to it.
   if (plan.emptied > 0)
     notes.push(
-      `${plan.emptied === 1 ? 'One day' : `${plan.emptied} days`} of this week came back empty: between the joints you flagged and the equipment you have, nothing in ${plan.emptied === 1 ? 'it' : 'them'} was safe to give you. That leaves ${plan.dayIds.length} real ${plan.dayIds.length === 1 ? 'session' : 'sessions'}. Clearing a flag once you are seen, or widening the equipment on your profile, brings the rest back.`,
+      `${plan.emptied === 1 ? 'One day' : `${plan.emptied} days`} of this week came back empty: between the joints you flagged and the equipment you have, nothing in ${plan.emptied === 1 ? 'it' : 'them'} was safe to give you. That leaves ${plan.dayIds.length} real ${plan.dayIds.length === 1 ? 'session' : 'sessions'}. Clearing a flag once you are seen, or widening the gym by running this again, brings the rest back.`,
     )
   // Said first, because it changes what everything under it is for.
   if (plan.selfDirected)
@@ -515,7 +515,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
     notes.push('You have done this before, so this is two to three weeks of rebuilding, not a beginner course.')
   if (plan.block)
     notes.push(
-      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off from your profile if you would rather not.',
+      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off from settings if you would rather not.',
     )
   if (plan.goalNote) notes.push(plan.goalNote)
   if (profile.goalWeight != null)

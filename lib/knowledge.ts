@@ -175,7 +175,7 @@ const APP: KnowledgeEntry[] = [
     q: 'How do I swap an exercise I do not like?',
     group: 'Using the app',
     aliases: ['swap exercise', 'change an exercise', 'replace movement', 'dont like this exercise'],
-    a: 'Tap the exercise inside a session and choose the swap. You get movements that train the same thing with the equipment you have, so the shape of the session survives. If you swap the same one out every week, it is worth saying the equipment is unavailable on your profile so it stops being offered at all.',
+    a: 'Tap the exercise inside a session and choose the swap. You get movements that train the same thing with the equipment you have, so the shape of the session survives. If you swap the same one out every week, it is worth saying so where you said which gym you train in, by running the questionnaire again from settings, so it stops being offered at all.',
   },
   {
     id: 'app-add-exercise',
@@ -271,7 +271,7 @@ const NUMBERS: KnowledgeEntry[] = [
     q: 'What is a training block?',
     group: 'Your numbers',
     aliases: ['six week block', 'deload', 'mesocycle', 'effort cycle', 'block week', 'training block'],
-    a: 'Six weeks, optional, switched on from your profile. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Calendar tab says which week you are in and reads your session scores back against what the week asks for.',
+    a: 'Six weeks, optional, switched on from settings. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Calendar tab says which week you are in and reads your session scores back against what the week asks for.',
   },
   {
     id: 'num-sets-bar-empty',

@@ -2378,10 +2378,20 @@ those are things the plan works around. The advice under rest of the week
 travelled with it, because that advice is the whole reason the question is
 worth asking.
 
-What stays on My week is which session lands on which day, and whether blocks
-are on. The schedule is the one thing the questionnaire never asks, and blocks
-are not a question at all: the plan turns them on and the plan review says so
-in as many words, pointing here to turn them off.
+My week is which session lands on which day, and nothing else. The schedule is
+the one thing the questionnaire never asks. Training blocks went to settings
+with the rest of what you set, and the second link back to the questionnaire
+went entirely, because settings already had one and two doors to one room is
+what this whole sweep has been taking out.
+
+Moving things breaks the sentences that point at them, and the broken ones read
+perfectly: "days a week can always change on your profile" is a fine sentence
+about a screen that no longer asks it. Six of those were stale by the end,
+about blocks, goals, the gym and days a week, in Lifty's answers, the plan
+review and an error message. A check now fails on copy that sends somebody to
+the profile for something that is not there, and the ones still saying profile
+are about the two things that stayed: what you weigh and which joints you
+flagged.
 
 Removed on the way past: the how long have you got sheet. It used to open in
 the doorway of a session, was taken out of that doorway because two things

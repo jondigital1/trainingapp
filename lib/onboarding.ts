@@ -1057,11 +1057,11 @@ export function goalCoverage(p: Profile): string | null {
   }
   if (waiting.length === 1) {
     parts.push(
-      `${cap(GOAL_LABEL[waiting[0]])} means ${GOAL_SHORT[waiting[0]]}, so that one is waiting rather than gone. Switch to it whenever you are ready on your profile, and nothing you have logged changes.`,
+      `${cap(GOAL_LABEL[waiting[0]])} means ${GOAL_SHORT[waiting[0]]}, so that one is waiting rather than gone. Switch to it whenever you are ready in settings, and nothing you have logged changes.`,
     )
   } else if (waiting.length > 1) {
     parts.push(
-      `${cap(GOAL_LABEL[waiting[0]])} is next, and it means ${GOAL_SHORT[waiting[0]]}. Then ${list(waiting.slice(1).map((c) => GOAL_LABEL[c]))}. Moving one to the front is a tap on your profile whenever you are ready, and nothing you have logged changes.`,
+      `${cap(GOAL_LABEL[waiting[0]])} is next, and it means ${GOAL_SHORT[waiting[0]]}. Then ${list(waiting.slice(1).map((c) => GOAL_LABEL[c]))}. Moving one to the front is a tap in settings whenever you are ready, and nothing you have logged changes.`,
     )
   }
   return parts.join(' ')

@@ -17,9 +17,7 @@ import { fmtTime, today } from '@/lib/format'
 import HeightField from './HeightField'
 import NewExercise from './NewExercise'
 import { LIBRARY } from '@/lib/exercises'
-import { blockWeek } from '@/lib/block'
 import { restForTier } from '@/lib/rest'
-import { weekStart } from '@/lib/week'
 import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import AdminDashboard from './AdminDashboard'
@@ -83,7 +81,6 @@ export default function ProfileSheet({
   onEditExercise,
   onDeleteExercise,
   onOpenSettings,
-  onRerunQuestionnaire,
   admin,
   email,
   onClose,
@@ -111,9 +108,6 @@ export default function ProfileSheet({
   onEditExercise?: (exercise: CustomExercise) => void
   onDeleteExercise?: (exercise: CustomExercise) => void
   onOpenSettings?: () => void
-  // The way back to the questions that are asked once. Days a week, session
-  // length and which gym are answered there and nowhere else.
-  onRerunQuestionnaire?: () => void
   // Set when the person looking at this page can see everybody else's. The
   // admin screen lives here rather than at its own address, because this is
   // where you already are when you want it.
@@ -391,50 +385,6 @@ export default function ProfileSheet({
               onChange={(schedule) => set({ schedule })}
             />
 
-            {/* Days a week, leg days, how long you have got and where you
-                train were all asked at signup and then sat loose here as well,
-                which is the same answer in two places and one of them always
-                the stale one. They are asked once, in the questionnaire, and
-                this is the way back to it. */}
-            <button
-              onClick={onRerunQuestionnaire}
-              className="surface mt-4 flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left ring-1 ring-edge"
-            >
-              <span className="min-w-0">
-                <span className="block text-sm font-bold">Days a week, session length, your gym</span>
-                <span className="mt-0.5 block text-xs text-muted">
-                  Answered in the questionnaire. Run it again to change them.
-                </span>
-              </span>
-              <span className="shrink-0 text-xs text-muted">open</span>
-            </button>
-
-            <Field
-              label="Training blocks"
-              hint="Six weeks: five of climbing effort, then a deload. The deload is the week the other five turn into progress."
-            >
-              <Options
-                columns={2}
-                value={draft.block ? 'on' : 'off'}
-                onPick={(v) =>
-                  set(
-                    v === 'on'
-                      ? { block: true, blockStart: draft.blockStart ?? weekStart(today()) }
-                      : { block: false },
-                  )
-                }
-                options={[
-                  { v: 'off' as const, label: 'Off' },
-                  { v: 'on' as const, label: 'Six week blocks' },
-                ]}
-              />
-              {draft.block ? (
-                <Note>
-                  Currently week {blockWeek(draft, today())?.index ?? 1} of 6,{' '}
-                  {blockWeek(draft, today())?.name.toLowerCase()}.
-                </Note>
-              ) : null}
-            </Field>
           </>
         ) : null}
 
