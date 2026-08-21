@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { daysBetween, shiftDays, weekStart, weekdayOf } from '../lib/week'
 import assert from 'node:assert/strict'
-import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, isExistingName, lookupType, matchesQuery, similarTo } from '../lib/exercises'
+import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, isExistingName, lookupType, matchesQuery, patternOf, similarTo } from '../lib/exercises'
 import { SPLITS, dayItems, dayNames } from '../lib/templates'
 import { coach, roundLoad } from '../lib/coach'
 import { fmtPrescription, isLighter, prescribe, prescribedSets } from '../lib/prescribe'
@@ -5766,6 +5766,85 @@ check('a session built for you fits the time you have today', () => {
   const form = readFileSync(new URL('../components/Form.tsx', import.meta.url), 'utf8')
   assert.ok(/disabled\?: boolean/.test(form), 'the multi select cannot show a cap')
   assert.ok(/disabled=\{o\.disabled\}/.test(form), 'a capped option still takes taps')
+})
+
+check('a built session spends its time lifting', () => {
+  const profile = {
+    units: 'lb' as const, days: 4 as const, access: 'full' as const, legDays: 2 as const,
+    goalChoice: 'muscle' as const, goals: ['muscle' as const], focus: [],
+  }
+  const at = (minutes: 30 | 45 | 60 | 90, groups: string[]) =>
+    awaySession(groups, { ...profile, minutes }, 'full')
+
+  // Half an hour of chest and back used to be a barbell bench press and a
+  // barbell row: two movements, eight sets, seventeen per cent of the session
+  // actually spent lifting. The rest went on two and a half minute rests and a
+  // barbell warmup. It reached for the most demanding movements in the library
+  // precisely when there was least room for them.
+  const half = at(30, ['Chest', 'Back'])
+  assert.ok(half.length >= 4, `half an hour still returns ${half.length} movements`)
+  for (const item of half) {
+    assert.notEqual(restTier(item.name, item.type), 'heavy', `${item.name} is a heavy lift in a short session`)
+  }
+
+  // An hour has room for something heavy, and still pairs the rest.
+  const hour = at(60, ['Back'])
+  assert.ok(hour.length >= 5, `an hour returns only ${hour.length} movements`)
+  assert.ok(hour.some((i) => i.superset), 'nothing in the session is paired')
+  assert.ok(hour.some((i) => restTier(i.name, i.type) === 'heavy'), 'an hour has room to lift something heavy')
+
+  // Nothing heavy is ever paired. The rest between sets of a heavy lift is the
+  // point of it, and holding a rack while you walk to a cable is a habit
+  // nobody should learn from an app.
+  for (const minutes of [30, 45, 60, 90] as const) {
+    for (const groups of [['Back'], ['Chest', 'Back'], ['Quads', 'Hamstrings', 'Glutes']]) {
+      for (const item of at(minutes, groups)) {
+        if (restTier(item.name, item.type) === 'heavy') {
+          assert.ok(!item.superset, `${item.name} was supersetted, and it is a heavy lift`)
+        }
+      }
+    }
+  }
+
+  // A pair is exactly two, and both halves carry the same tag.
+  const tags = new Map<string, number>()
+  for (const item of at(60, ['Shoulders', 'Traps'])) {
+    if (item.superset) tags.set(item.superset, (tags.get(item.superset) ?? 0) + 1)
+  }
+  for (const [tag, n] of tags) assert.equal(n, 2, `${tag} has ${n} movements in it`)
+})
+
+check('a muscle gets trained several ways, not one way several times', () => {
+  // Asking for back in an hour returned Barbell Row, Deadlift, Meadows Row and
+  // Pendlay Row. Four rows, no pulldown, nothing chest supported, nothing
+  // straight armed. The list was sorted correctly and the day was still wrong.
+  assert.equal(patternOf('Barbell Upright Row'), patternOf('Cable Upright Row'))
+  assert.equal(patternOf('Assisted Pull Up'), patternOf('Band Assisted Pull Up'))
+  // Single word movements need the implement dropped, or a shrug is three
+  // patterns and a shoulder day offers all of them.
+  assert.equal(patternOf('Dumbbell Shrug'), 'shrug')
+  assert.equal(patternOf('Cable Shrug'), 'shrug')
+  assert.equal(patternOf('Machine Shrug'), 'shrug')
+  // But an implement word inside the movement's own name stays.
+  assert.equal(patternOf('Barbell Bench Press'), 'bench press')
+  assert.notEqual(patternOf('Lat Pulldown'), patternOf('Barbell Row'))
+
+  const profile = {
+    units: 'lb' as const, days: 4 as const, minutes: 60 as const, access: 'full' as const,
+    legDays: 2 as const, goalChoice: 'muscle' as const, goals: ['muscle' as const], focus: [],
+  }
+  for (const groups of [['Back'], ['Shoulders'], ['Chest'], ['Quads']]) {
+    const items = awaySession(groups, profile, 'full')
+    const patterns = items.map((i) => patternOf(i.name))
+    assert.equal(new Set(patterns).size, patterns.length, `${groups[0]}: ${patterns.join(', ')}`)
+  }
+
+  // And the plain version of a lift before its variants, or the sort is
+  // alphabetical and alphabetical gave a leg day of B-Stance Romanian
+  // Deadlift, B-Stance Hip Thrust, Belt Squat and Wide Stance Leg Press.
+  const legs = awaySession(['Quads', 'Hamstrings', 'Glutes'], { ...profile, minutes: 90 }, 'full')
+  assert.ok(legs.some((i) => i.name === 'Back Squat'), `no plain squat in ${legs.map((i) => i.name).join(', ')}`)
+  assert.ok(legs.some((i) => i.name === 'Hip Thrust'), 'the plain hip thrust lost to a variant')
 })
 
 void (async () => {

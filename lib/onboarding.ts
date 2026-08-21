@@ -1,4 +1,4 @@
-import { LIBRARY, demandOf, demandRank, equipmentOf, groupOf, lookupType, similarTo } from './exercises'
+import { LIBRARY, demandOf, demandRank, equipmentOf, groupOf, lookupType, patternOf, similarTo, type LibraryExercise } from './exercises'
 import { estimateSeconds } from './estimate'
 import { restTier, type RestTier } from './rest'
 import { dayItems, SPLITS, type TemplateDay } from './templates'
@@ -809,7 +809,64 @@ export function awayDayFor(day: TemplateDay, profile: Profile, kit: AwayKit): Pl
 // order every template day is written in.
 export const AWAY_FULL_BODY = ['Quads', 'Hamstrings', 'Glutes', 'Chest', 'Back', 'Shoulders', 'Core']
 
+// Which movements to reach for first, and it depends on the clock.
+//
+// It was always heaviest first, which is right for a session with room in it
+// and badly wrong for a short one. Asked for chest and back in half an hour it
+// returned a barbell bench press and a barbell row: two and a half minutes of
+// rest per set, three ramp sets before the first one, and seventeen per cent of
+// the session actually spent lifting. Eight sets in thirty minutes.
+//
+// Under three quarters of an hour it starts on supported work instead. Same
+// muscles, a fraction of the standing around.
 const AWAY_TIERS: RestTier[] = ['heavy', 'compound', 'isolation', 'cable', 'small']
+const SHORT_TIERS: RestTier[] = ['compound', 'isolation', 'cable', 'small', 'heavy']
+const SHORT_SESSION = 45 * 60
+
+// Nothing heavy gets paired. The rest between sets of a heavy lift is the
+// point of it, and holding a squat rack while you walk to a cable is the
+// behaviour nobody should learn from an app.
+//
+// Everything else pairs with whatever came next, which round robin makes a
+// different muscle group nine times out of ten: a chest movement with a back
+// one is the safest superset there is.
+function pairUp(items: PlannedItem[]): PlannedItem[] {
+  const out = items.map((i) => ({ ...i, superset: null as string | null }))
+  let tag = 0
+  for (let i = 0; i < out.length - 1; i += 1) {
+    if (out[i].superset) continue
+    if (restTier(out[i].name, out[i].type) === 'heavy') continue
+    if (restTier(out[i + 1].name, out[i + 1].type) === 'heavy') continue
+    if (out[i + 1].superset) continue
+    tag += 1
+    const id = `pair${tag}`
+    out[i].superset = id
+    out[i + 1].superset = id
+  }
+  return out
+}
+
+// The next movement for a muscle, preferring one that trains it differently
+// from what is already in the session.
+//
+// Straight down a demand sorted list, asking for back gave Barbell Row,
+// Deadlift, Meadows Row and Pendlay Row: four rows, no pulldown, nothing
+// chest supported, nothing straight armed. The list was sorted correctly and
+// the answer was still a bad back day.
+function freshest(pool: LibraryExercise[], used: Set<string>, taken: string[]): LibraryExercise | undefined {
+  const free = pool.filter((e) => !used.has(e.name))
+  // A different movement first, then failing that a different implement, then
+  // whatever is left. Equipment alone was not enough: an assisted pull up and
+  // a band assisted pull up are different kit and the same exercise, and the
+  // session offered both.
+  const patterns = new Set(taken.map(patternOf))
+  const kit = new Set(taken.map(equipmentOf))
+  return (
+    free.find((e) => !patterns.has(patternOf(e.name)) && !kit.has(equipmentOf(e.name))) ??
+    free.find((e) => !patterns.has(patternOf(e.name))) ??
+    free[0]
+  )
+}
 
 // A session built from muscle groups and a kit, for somebody whose plan does
 // not fit the room they are in.
@@ -828,11 +885,20 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
   const p = { ...profile, access: kit }
   const bans = banned(p)
 
+  const budget = (profile.minutes ?? 60) * 60
+  const order = budget < SHORT_SESSION ? SHORT_TIERS : AWAY_TIERS
+
   const pools = groups
     .map((group) =>
       LIBRARY.filter((e) => e.group === group && e.type !== 'C' && allowed(p, e.name, bans)).sort(
         (a, b) =>
-          AWAY_TIERS.indexOf(restTier(a.name, a.type)) - AWAY_TIERS.indexOf(restTier(b.name, b.type)) ||
+          order.indexOf(restTier(a.name, a.type)) - order.indexOf(restTier(b.name, b.type)) ||
+          // The plain version of a movement before its variants. Alphabetical
+          // inside a tier is arbitrary, and arbitrary gave a leg day of
+          // B-Stance Romanian Deadlift, B-Stance Hip Thrust, Belt Squat and
+          // Wide Stance Leg Press: four unusual answers to four ordinary
+          // questions. A shorter name is nearly always the standard lift.
+          a.name.split(' ').length - b.name.split(' ').length ||
           a.name.localeCompare(b.name),
       ),
     )
@@ -840,18 +906,12 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
 
   const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
 
-  // The clock is the clock here, which is not true of a template day.
-  //
-  // fits() returns true above ninety minutes because that is the no ceiling
-  // answer, and a template day runs out of movements long before the clock
-  // does, so trimming it against a budget would never fire. This does not run
-  // out: it round robins the whole library, so it filled to the cap of twelve
-  // every single time somebody answered ninety, and handed them two and a half
-  // hours. Chest and back came back as twelve movements. Found by putting the
-  // estimate on the button that starts it.
-  const budget = (profile.minutes ?? 60) * 60
   const used = new Set<string>()
+  // What each muscle has been given so far, so the next pick for it can train
+  // it a different way rather than being the next row down the list.
+  const taken = pools.map(() => [] as string[])
   const out: PlannedItem[] = []
+
   // Every group asked for gets its first movement before any group gets its
   // second, and that first pass ignores the clock. Somebody who says chest,
   // back, quads and shoulders and has half an hour should come away having
@@ -860,15 +920,19 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
   let round = 0
   while (out.length < CEILING) {
     let picked = false
-    for (const pool of pools) {
+    for (const [index, pool] of pools.entries()) {
       if (out.length >= CEILING) break
-      const next = pool.find((e) => !used.has(e.name))
+      const next = freshest(pool, used, taken[index])
       if (!next) continue
       const item = { name: next.name, type: next.type, superset: null }
-      if (round > 0 && estimateSeconds([...out, item], goal) > budget) {
-        return emphasise(out, focusOf(profile))
+      // Budgeted as it will actually be run. Pairing is what buys the extra
+      // work, so checking the unpaired cost would stop the session two
+      // movements short of what fits.
+      if (round > 0 && estimateSeconds(pairUp([...out, item]), goal) > budget) {
+        return emphasise(pairUp(out), focusOf(profile))
       }
       used.add(next.name)
+      taken[index].push(next.name)
       out.push(item)
       picked = true
     }
@@ -876,7 +940,7 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
     round += 1
   }
 
-  return emphasise(out, focusOf(profile))
+  return emphasise(pairUp(out), focusOf(profile))
 }
 
 export interface Plan {

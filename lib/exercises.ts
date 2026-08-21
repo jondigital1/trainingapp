@@ -465,6 +465,34 @@ export function isExistingName(name: string, query: string): boolean {
   return forms(query).some((f) => f === n)
 }
 
+// Roughly which movement this is, ignoring what it is loaded with.
+//
+// The last two words of a name, which across this library is the movement
+// itself: Barbell Upright Row, Cable Upright Row and Dumbbell Upright Row all
+// come back as "upright row", and the seven pull up variants all come back as
+// "pull up". Thirty six back movements collapse to twenty three patterns and
+// every grouping is right, which is enough for the one job it has: stopping a
+// session offering the same movement three ways and calling it variety.
+//
+// Not a taxonomy, and not trying to be. A barbell row and a cable row read as
+// different patterns here, which is wrong on paper and right in a gym.
+const IMPLEMENTS = new Set([
+  'barbell', 'dumbbell', 'cable', 'machine', 'smith', 'band', 'banded', 'assisted',
+  'weighted', 'plate', 'rope', 'trap', 'ez', 'kettlebell', 'landmine', 'hammer',
+  'strength', 'bodyweight', 'sled', 'sandbag', 'medicine', 'stability', 'yoke', 'bar',
+])
+
+export function patternOf(name: string): string {
+  const words = name.trim().toLowerCase().split(/\s+/)
+  if (words.length < 2) return words.join(' ')
+  // Two words unless the first of them is only what the thing is made of, in
+  // which case the movement is the last word on its own. Without this a shrug
+  // came back as three patterns, dumbbell shrug and cable shrug and machine
+  // shrug, and a shoulder day offered all three.
+  const [second, last] = words.slice(-2)
+  return IMPLEMENTS.has(second) ? last : `${second} ${last}`
+}
+
 export function groupOf(name: string): string | null {
   const own = customGroups(name)
   if (own.length) return own[0]
