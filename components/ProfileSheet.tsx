@@ -254,6 +254,27 @@ export default function ProfileSheet({
         ) : null
       }
     >
+      {/* Two views of the same page, and only one person ever sees the switch. */}
+      {admin ? (
+        <div className="flex gap-1 rounded-[13px] bg-track p-1">
+          {[
+            { on: false, label: 'You' },
+            { on: true, label: 'Admin' },
+          ].map((v) => (
+            <button
+              key={v.label}
+              onClick={() => setAsAdmin(v.on)}
+              aria-pressed={asAdmin === v.on}
+              className={`flex-1 rounded-[9px] py-2 text-sm font-bold ${
+                asAdmin === v.on ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'text-muted'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {/* Your stats, read rather than typed.
           
           This was a dark card naming the program and the split, which is the
@@ -266,7 +287,7 @@ export default function ProfileSheet({
           So the answers read as answers, and turn back into boxes only when
           you say so. */}
       {editing ? (
-        <div className="rounded-[20px] bg-card p-4 ring-1 ring-edge">
+        <div className="mt-4 rounded-[20px] bg-card p-4 ring-1 ring-edge">
           <Field label="Name" optional>
             <TextInput value={name} onChange={setName} placeholder="Name" />
           </Field>
@@ -288,7 +309,7 @@ export default function ProfileSheet({
           </button>
         </div>
       ) : (
-        <div className="rounded-[20px] bg-card p-4 ring-1 ring-edge">
+        <div className="mt-4 rounded-[20px] bg-card p-4 ring-1 ring-edge">
           <div className="flex items-start justify-between gap-3">
             <p className="min-w-0 truncate font-display text-lg font-semibold">
               {name.trim() || 'You'}
@@ -316,27 +337,6 @@ export default function ProfileSheet({
           )}
         </div>
       )}
-
-      {/* Two views of the same page, and only one person ever sees the switch. */}
-      {admin ? (
-        <div className="mt-4 flex gap-1 rounded-[13px] bg-track p-1">
-          {[
-            { on: false, label: 'You' },
-            { on: true, label: 'Admin' },
-          ].map((v) => (
-            <button
-              key={v.label}
-              onClick={() => setAsAdmin(v.on)}
-              aria-pressed={asAdmin === v.on}
-              className={`flex-1 rounded-[9px] py-2 text-sm font-bold ${
-                asAdmin === v.on ? 'bg-card text-bright ring-[1.5px] ring-accent-ink' : 'text-muted'
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
 
       {asAdmin ? (
         <div className="mt-4">
