@@ -20,7 +20,7 @@ import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/unit
 import { weekStart } from '@/lib/week'
 import { today as todayIso } from '@/lib/format'
 import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
-import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
+import { ACCESS, DAYS, LEG_DAYS, MINUTES, UNITS } from '@/lib/questions'
 import HeightField from './HeightField'
 import { GoalPicker } from './GoalPicker'
 import { BringUpField, SexField } from './FocusField'
@@ -338,7 +338,6 @@ export default function Onboarding({
                 ) : null}
               </Field>
 
-              <Ask q={CONDITION} value={profile.condition} onPick={(v) => set({ condition: v })} />
             </>
           ) : null}
 
@@ -482,10 +481,6 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
       'You write your own, so that is where this ends: the builder, with the whole movement library in it. The plan above still exists and is sitting in Start whenever you want a day handed to you.',
     )
   if (plan.restNote) notes.push(plan.restNote)
-  if (plan.cleared)
-    notes.push(
-      'You flagged something on the health questions, so this starts lighter, nothing goes to failure and the effort targets stay off. Worth a word with your doctor before you push hard.',
-    )
   if (plan.returning)
     notes.push('You have done this before, so this is two to three weeks of rebuilding, not a beginner course.')
   if (plan.block)
@@ -529,7 +524,7 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
         <Row label="Sets per muscle, per session" value={plan.perMuscle} />
         <Row label="Weekly target per muscle" value="10 plus" />
         <Row label="Exercises per session" value={String(plan.exercises)} />
-        <Row label="How hard" value={plan.cleared ? 'comfortable' : 'stop 2 to 3 short'} />
+        <Row label="How hard" value="stop 2 to 3 short" />
         <Row label="Leg days" value={plan.legDays === 2 ? 'two, quads and posterior' : 'one'} />
         <Row label="Training blocks" value={plan.block ? '6 weeks, on' : 'off'} />
       </div>

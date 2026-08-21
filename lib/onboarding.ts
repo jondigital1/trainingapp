@@ -33,7 +33,6 @@ export interface Profile {
   units?: Unit
   heightIn?: number
   goalWeight?: number
-  condition?: 'no' | 'yes' | 'skip'
   years?: 'never' | 'under6' | 'sixToTwo' | 'overTwo'
   before?: 'no' | 'thisYear' | 'longAgo'
   // The most honest experience question there is. Somebody who can name the
@@ -872,7 +871,6 @@ export interface Plan {
   reps: string
   sets: string
   block: boolean
-  cleared: boolean
   // Said once, on the plan screen, and never again. Seven days a week is the
   // person's call, not something to argue with every time they open the app.
   restNote: string | null
@@ -1098,9 +1096,6 @@ export function planFor(profile: Profile, goal: Goal): Plan {
   const back = returning(profile)
   const asked = profile.days ?? 3
   const days = Math.min(Math.max(asked, MIN_DAYS), MAX_DAYS)
-  // A flagged health answer is not a note, it is a lighter plan: fewer sets,
-  // no effort targets to chase and no wave, whatever the experience score says.
-  const cleared = profile.condition === 'yes'
   const choice = profile.goalChoice
   const legs = legDaysOf({ ...profile, days })
   const wanted =
@@ -1150,9 +1145,8 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     perMuscle: days <= 2 ? '4 to 5' : days <= 3 ? '3 to 4' : days <= 5 ? '2 to 3' : '2',
     exercises: typical,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
-    sets: cleared || prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
-    block: !cleared && prog === 'Performance',
-    cleared,
+    sets: prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
+    block: prog === 'Performance',
     restNote:
       days === 6
         ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done, and the seventh is a rest day on purpose.'

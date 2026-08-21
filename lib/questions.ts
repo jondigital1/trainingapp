@@ -67,16 +67,6 @@ export const ACCESS: Question<NonNullable<Profile['access']>> = {
   ],
 }
 
-export const CONDITION: Question<NonNullable<Profile['condition']>> = {
-  label: 'Any heart, lung, kidney or blood sugar condition, or told by a doctor to limit exercise?',
-  hint: 'One question we have to ask. It makes the plan lighter, it locks nothing.',
-  columns: 2,
-  options: [
-    { v: 'no', label: 'No' },
-    { v: 'yes', label: 'Yes' },
-    { v: 'skip', label: 'Rather not say' },
-  ],
-}
 
 export const UNITS: Question<Unit> = {
   label: 'Weights in',

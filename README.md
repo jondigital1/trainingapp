@@ -692,8 +692,8 @@ stay on the flush, since a write per keystroke is not the fix and nobody loses
 a name they are halfway through typing.
 
 Proved by driving it: a knee flagged and still there with the page open, three
-days laid out one after another without the sheet closing, days a week and the
-health question landing as they were tapped.
+days laid out one after another without the sheet closing, and days a week
+landing as it was tapped.
 
 The exercise note was checked too and was fine. It debounces six hundred
 milliseconds and looked like it would lose anything typed and closed faster
@@ -1620,10 +1620,7 @@ before is clamped into the range rather than pointing at a week that no longer
 exists. Somebody rebuilding after a layoff gets a
 note and a gentler first month, not a beginner course.
 
-Two health questions sit at the end of the body section, and a flagged answer
-is a lighter plan rather than a paragraph: fewer sets, no effort targets to
-chase and no block, whatever the experience score said. The goal you pick is
-never quietly rewritten either. Leaning out runs as muscle work and staying
+The goal you pick is never quietly rewritten. Leaning out runs as muscle work and staying
 capable runs as endurance work, and the plan screen says so in as many words.
 
 Tier 2 questions still arrive later, in context: how long you have got at the
@@ -2338,6 +2335,29 @@ back the goal you had before. Measured, not guessed: kg reverted to lb and two
 goals dropped to one. The profile now takes those fields fresh from the profile
 it was given rather than from its own draft, because it does not own them any
 more.
+
+## The health question, removed
+
+It asked about heart, lung, kidney and blood sugar conditions, and about being
+told by a doctor to limit exercise. A flagged answer was not a paragraph, it
+was a lighter plan: two to three sets instead of three to four, no six week
+block, and the effort target replaced with "comfortable".
+
+Removed at the owner's request, and removed properly. Deleting the question
+while leaving the behaviour would have left every plan partly decided by an
+answer nobody could give, see or change, which is worse than either keeping it
+or dropping it. The field is gone, the plan no longer reads it, and a check
+fails if any of it comes back.
+
+The lighter set count survives on its own terms where it was earned rather than
+declared: Foundation still gets two to three, and so does anybody over sixty.
+The separate red flag question is untouched, because it is a different question
+about a different thing. It asks about pain that wakes you at night, numbness,
+a joint giving way, and it only appears once you have said a joint is giving
+you trouble.
+
+Anyone who had answered yes moves to the standard plan. That is the honest
+consequence of the question going, and it is the point of it going.
 
 ## Not built yet
 

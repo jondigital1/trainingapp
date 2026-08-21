@@ -49,7 +49,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES, UNITS } from '../lib/questions'
+import { ACCESS, DAYS, LEG_DAYS, MINUTES, UNITS } from '../lib/questions'
 import { assignDay, datesAhead, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
@@ -305,13 +305,31 @@ check('somebody rebuilding is a note, not a beginner course', () => {
   assert.equal(plan.splitName, 'Full Body, building up')
 })
 
-check('a flagged health answer changes the plan, not just the wording', () => {
-  const flagged = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', condition: 'yes' }, 'muscle')
-  assert.equal(flagged.cleared, true)
-  assert.equal(flagged.block, false, 'no block either')
-  assert.equal(flagged.sets, '2 to 3')
-  const clear = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', condition: 'no' }, 'muscle')
-  assert.equal(clear.block, true)
+check('the health question is gone, and so is what it drove', () => {
+  // It used to ask about heart, lung, kidney and blood sugar conditions and
+  // quietly lighten the plan: fewer sets, no six week block, no effort target.
+  // Removing the question without the behaviour would have left every plan
+  // decided by an answer nobody could give or change, which is worse than
+  // either keeping it or dropping it outright.
+  for (const file of ['Onboarding', 'ProfileSheet']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(!/heart, lung, kidney/.test(src), `${file} still asks it`)
+    assert.ok(!/\bcondition\b/.test(src.replace(/\/\/.*$/gm, '')), `${file} still reads the answer`)
+  }
+  const questions = readFileSync(new URL('../lib/questions.ts', import.meta.url), 'utf8')
+  assert.ok(!questions.includes('CONDITION'), 'the question is still defined')
+
+  const core = readFileSync(new URL('../lib/onboarding.ts', import.meta.url), 'utf8')
+  assert.ok(!/\bcleared\b/.test(core), 'the plan still lightens itself for an answer nobody gives')
+
+  // Everyone lands on the same plan the cleared answer used to change.
+  const plan = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes' }, 'muscle')
+  assert.equal(plan.sets, '3 to 4')
+  assert.equal(plan.block, true)
+
+  // Foundation and over sixty still get the lighter set count on their own.
+  assert.equal(planFor({ years: 'never' }, 'muscle').sets, '2 to 3')
+  assert.equal(planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes', ageYears: 68 }, 'muscle').sets, '2 to 3')
 })
 
 check('a stated goal is never quietly rewritten', () => {
@@ -4420,7 +4438,7 @@ check('signup and settings ask the same questions the same way', () => {
   const settings = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
 
   for (const [name, src] of [['signup', signup], ['settings', settings]] as const) {
-    for (const q of [DAYS, LEG_DAYS, MINUTES, ACCESS, CONDITION, UNITS]) {
+    for (const q of [DAYS, LEG_DAYS, MINUTES, ACCESS, UNITS]) {
       // A Field with the question's own label means the screen is asking it
       // rather than deferring to the shared definition. A plan summary row
       // that happens to reuse the words is not.
@@ -4438,7 +4456,6 @@ check('signup and settings ask the same questions the same way', () => {
   assert.deepEqual(MINUTES.options.map((o) => o.v).sort((a, b) => a - b), [30, 45, 60, LONG_SESSION])
   assert.deepEqual(DAYS.options.map((o) => o.v), [3, 4, 5, 6])
   assert.deepEqual(ACCESS.options.map((o) => o.v), ['full', 'basic', 'home', 'body'])
-  assert.deepEqual(CONDITION.options.map((o) => o.v), ['no', 'yes', 'skip'])
   assert.deepEqual(LEG_DAYS.options.map((o) => o.v), [1, 2])
   assert.deepEqual(UNITS.options.map((o) => o.v), ['lb', 'kg'])
 
@@ -4446,7 +4463,7 @@ check('signup and settings ask the same questions the same way', () => {
   assert.ok(DAYS.hint, 'nobody is told to answer days realistically any more')
   assert.equal(DAYS.options[0].note, 'The sweet spot')
   assert.equal(MINUTES.options[3].note, 'Nothing gets trimmed')
-  assert.ok(MINUTES.hint && LEG_DAYS.hint && CONDITION.hint)
+  assert.ok(MINUTES.hint && LEG_DAYS.hint)
 })
 
 check('height is asked in the units you said you think in', () => {

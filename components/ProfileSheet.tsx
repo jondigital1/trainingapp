@@ -25,7 +25,7 @@ import { restForTier } from '@/lib/rest'
 import { weekStart } from '@/lib/week'
 import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
 import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
-import { ACCESS, CONDITION, DAYS, LEG_DAYS, MINUTES } from '@/lib/questions'
+import { ACCESS, DAYS, LEG_DAYS, MINUTES } from '@/lib/questions'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -404,7 +404,6 @@ export default function ProfileSheet({
 
             <SoreFields draft={draft} set={set} toggle={toggle} />
 
-            <Ask q={CONDITION} value={draft.condition} onPick={(v) => set({ condition: v })} />
           </>
         ) : null}
 
