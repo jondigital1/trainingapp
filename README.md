@@ -2502,6 +2502,37 @@ which made a training day look like a rest day. Found by rendering it rather
 than by reading it. A check now fails if a name goes back in a cell, if the
 clipping returns, or if any of the four states is lost.
 
+## What is coming, as a list
+
+Ten cards on a phone, every one the same shape and the same hundred pixels
+tall, is a wall rather than a list. It was the longest scroll in the app and
+the least worth scrolling: the same three things, ten times, with nothing to
+tell near from far.
+
+Rows now. The date leads because that is what you are scanning for, the name is
+in the colour everything tappable already uses and opening it is what the whole
+card silently did before, and Move and Skip sit where the eye ends. The
+fortnight went from about a thousand pixels to four hundred and forty nine, so
+it fits on one screen instead of four.
+
+Two things came out of rendering it rather than reading it. The date column was
+narrow enough that Mon 24 Aug wrapped, which gave every other row a different
+height, which is the one thing a list of rows exists to avoid. And a chevron
+sat between the name and Move belonging to neither; the name carries that job
+instead.
+
+The row's tap target is forty four pixels, which is the floor rather than a
+coincidence.
+
+## Teal on the way, lime when you get there
+
+The sets per muscle bars were grey below target and lime at it. The rule was
+right and worth keeping: lime means done here as everywhere, and a muscle
+reaching ten sets should look like something. The colour under the rule was the
+problem, a neutral blue grey sitting directly beneath three lime bars, the one
+thing on that screen that did not belong to the app. Teal on the way there,
+lime at the target. Same rule, both colours the app's own.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

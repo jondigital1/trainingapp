@@ -73,78 +73,84 @@ export default function UpcomingList({
       <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
         What is coming
       </h3>
-      <div className="mt-2 flex flex-col gap-2">
-        {upcoming.map((u, i) => {
+      {/* One card each was ten cards on a phone, every one the same shape
+          and the same hundred pixels tall, which is a wall rather than a list.
+          Rows say the same three things in a third of the height, and a
+          fortnight fits on one screen instead of four.
+
+          The date leads because that is what you are scanning for. The row
+          itself opens the day, which is what the whole card did before without
+          saying so; the chevron says so. */}
+      <ul className="mt-2 overflow-hidden rounded-2xl bg-card ring-1 ring-edge">
+        {upcoming.map((u) => {
           const its = dayById(u.dayId)
-          // "Thu 21 Aug" is the app's date everywhere else; the weekday is
-          // spelled out here because a card has the room and a day you are
-          // planning around deserves its name.
-          const when = `${WEEKDAY_NAMES[weekdayOf(u.date)]} ${fmtDate(u.date).slice(4)}`
+          const when = `${WEEKDAY_NAMES[weekdayOf(u.date)].slice(0, 3)} ${fmtDate(u.date).slice(4)}`
           return (
-            <div
+            <li
               key={u.date}
-              className={`w-full rounded-2xl bg-card p-4 ring-1 ${
-                u.today ? 'ring-[1.5px] ring-accent-ink' : 'ring-edge'
+              className={`flex items-stretch gap-1 border-b border-edge last:border-b-0 ${
+                u.today ? 'bg-tint-cool' : ''
               }`}
             >
-              <div className="flex items-baseline justify-between gap-3">
+              <button
+                onClick={() => onPeek(u.dayId)}
+                aria-label={`${its?.name ?? 'Session'} on ${fmtDate(u.date)}, see the exercises`}
+                className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3.5 text-left"
+              >
                 <span
-                  className={`text-[10.5px] font-extrabold uppercase tracking-[1.5px] ${
+                  className={`num w-[74px] shrink-0 text-[10.5px] font-extrabold uppercase ${
                     u.today ? 'text-accent-ink' : 'text-faint'
                   }`}
                 >
-                  {u.today ? `Today, ${when}` : when}
+                  {u.today ? 'Today' : when}
                 </span>
-                {/* Lime means done, here as everywhere. Nothing else needs a
-                    badge: a day that has not happened yet is just a day. */}
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-accent-ink">
+                  {its?.name ?? ''}
+                </span>
+                {/* Lime means done, here as everywhere. */}
                 {u.done ? (
-                  <span className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-on-accent">
-                    Done
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-extrabold text-on-accent">
+                    &#10003;
                   </span>
                 ) : null}
-              </div>
-              <p className="mt-1 truncate font-display text-[17px] font-semibold tracking-tight">
-                {its?.name ?? ''}
-              </p>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                {/* Said out loud, because the whole card being tappable is not
-                    an affordance anybody can see. */}
-                <button onClick={() => onPeek(u.dayId)} className="text-[12.5px] font-extrabold text-accent-ink">
-                  See the exercises &rarr;
-                </button>
-                {/* Pick the day rather than nudge the card one slot at a
-                    time: this session goes where you say, and the days in
-                    between are left alone. A day already trained stays where
-                    it happened, so it offers nothing. */}
-                {u.done ? null : (
-                  <span className="flex shrink-0 gap-2">
+              </button>
+
+              {/* Pick the day rather than nudge the row one slot at a time:
+                  this session goes where you say and the days in between are
+                  left alone. A day already trained stays where it happened, so
+                  it offers nothing. */}
+              {u.done ? (
+                <span className="w-[86px] shrink-0" />
+              ) : (
+                <span className="flex shrink-0 items-center gap-1 pr-2.5">
+                  <button
+                    onClick={() => onMove(u.date)}
+                    aria-label={`Move ${its?.name ?? 'this session'} from ${fmtDate(u.date)} to another day`}
+                    className="rounded-lg px-2 py-1 text-[11.5px] font-extrabold text-muted"
+                  >
+                    Move
+                  </button>
+                  {/* Two taps, because the row goes when you do it and a row
+                      that vanishes under a stray thumb is worse than one extra
+                      tap. Nothing is lost: the weekly pattern is untouched, so
+                      the same session is back next week. */}
+                  {onSkip ? (
                     <button
-                      onClick={() => onMove(u.date)}
-                      aria-label={`Move ${its?.name ?? 'this session'} from ${fmtDate(u.date)} to another day`}
-                      className="rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
+                      onClick={() => (confirm === u.date ? onSkip(u.date) : setConfirm(u.date))}
+                      aria-label={`Skip ${its?.name ?? 'this session'} on ${fmtDate(u.date)}`}
+                      className={`rounded-lg px-2 py-1 text-[11.5px] font-extrabold ${
+                        confirm === u.date ? 'text-alert' : 'text-muted'
+                      }`}
                     >
-                      Move
+                      {confirm === u.date ? 'Sure?' : 'Skip'}
                     </button>
-                    {/* Two taps, because the card goes when you do it and a
-                        card that vanishes under a stray thumb is worse than
-                        one extra tap. Nothing is lost: the weekly pattern is
-                        untouched, so the same session is back next week. */}
-                    {onSkip ? (
-                      <button
-                        onClick={() => (confirm === u.date ? onSkip(u.date) : setConfirm(u.date))}
-                        aria-label={`Skip ${its?.name ?? 'this session'} on ${fmtDate(u.date)}`}
-                        className="rounded-lg px-2.5 py-1 text-[12.5px] font-extrabold text-muted ring-1 ring-edge"
-                      >
-                        {confirm === u.date ? 'Tap again' : 'Skip'}
-                      </button>
-                    ) : null}
-                  </span>
-                )}
-              </div>
-            </div>
+                  ) : null}
+                </span>
+              )}
+            </li>
           )
         })}
-      </div>
+      </ul>
     </section>
   )
 }

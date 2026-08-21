@@ -4526,6 +4526,25 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('what is coming is a list, and the coverage bars belong to the app', () => {
+  // Ten cards on a phone, each the same shape and the same hundred pixels
+  // tall, is a wall rather than a list. Rows say the same three things in a
+  // third of the height and a fortnight fits on one screen.
+  const list = readFileSync(new URL('../components/UpcomingList.tsx', import.meta.url), 'utf8')
+  assert.ok(list.includes('<ul'), 'the upcoming days are not a list')
+  assert.ok(!/rounded-2xl bg-card p-4 ring-1/.test(list), 'the days are cards again')
+  // The row is what opens the day, so the name says so in the colour every
+  // other tappable thing uses.
+  assert.ok(/text-sm font-semibold text-accent-ink/.test(list), 'nothing in the row looks tappable')
+
+  // Lime once the target is met, teal on the way there. The rule was already
+  // right; the colour under it was a neutral grey, the one thing on that
+  // screen that did not belong to the app.
+  const stats = readFileSync(new URL('../components/StatsPanel.tsx', import.meta.url), 'utf8')
+  assert.ok(!stats.includes("'bg-faint'"), 'the coverage bars are grey again')
+  assert.ok(/COVERAGE_TARGET \? 'bg-accent' : 'bg-accent-ink/.test(stats), 'the coverage bars lost the met and not met rule')
+})
+
 check('the week strip does not print names it cannot fit', () => {
   // Nine pixel text in a forty four pixel box: Shoulders came out as SHOULD
   // and Vertical Pull as VERTICA PULL. A clipped word is not information, and
@@ -4665,7 +4684,11 @@ check('a session can be skipped, and only that date is', () => {
   // Two taps in the list, because the card goes when you do it.
   const list = readFileSync(new URL('../components/UpcomingList.tsx', import.meta.url), 'utf8')
   assert.ok(list.includes('onSkip'), 'there is no way to skip a session')
-  assert.ok(list.includes('Tap again'), 'skipping is one tap')
+  // Two taps, however the second one is worded. Pinned to the mechanism
+  // rather than the label, which is how the last one of these broke: it named
+  // the exact words and failed on a change that kept the rule.
+  assert.ok(/confirm === u\.date \? onSkip/.test(list), 'skipping is one tap')
+  assert.ok(/setConfirm\(u\.date\)/.test(list), 'the first tap does not arm anything')
 
   // And the app says what happened, since the card it happened to is gone.
   const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')

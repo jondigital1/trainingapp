@@ -114,7 +114,11 @@ export default function StatsPanel({
                 <span className="w-20 shrink-0 text-xs text-muted">{g.group}</span>
                 <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink ring-1 ring-edge">
                   <span
-                    className={`block h-full rounded-full ${g.sets >= COVERAGE_TARGET ? 'bg-accent' : 'bg-faint'}`}
+                    // Lime once the target is met, and teal on the way there.
+                    // The rule was already right; the colour under it was a
+                    // neutral grey, which is the one thing on this screen that
+                    // did not belong to the app.
+                    className={`block h-full rounded-full ${g.sets >= COVERAGE_TARGET ? 'bg-accent' : 'bg-accent-ink/55'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </span>
