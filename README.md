@@ -2820,6 +2820,33 @@ asked for before the clock gets a say, because somebody who names four muscles
 and has half an hour would rather train all four than have a tidy thirty minutes
 that never reached their shoulders.
 
+## Browsing takes three muscle groups at once
+
+The chips that filter the movement list in the builder were one at a time.
+Building an upper day meant Chest, scroll, pick, Back, scroll, pick, Shoulders,
+with the list jumping back to the top on every switch. They toggle now, up to
+three.
+
+Three because four is most of the library again, at which point the filter has
+stopped filtering. Chest, back and shoulders together is 89 movements, which is
+long but readable, and readable because each row already names the group it
+belongs to. That label was decorative when only one group could be on.
+
+At the cap the unpicked chips go quiet and stop responding, so the limit is
+something you can see rather than a tap that silently does nothing. The three
+you have picked stay tappable, or there would be no way back out.
+
+Two checks broke on this and both were mine reporting on their own wording
+rather than on a rule: one named the exact expression that read every group a
+movement trains, and one named the shape of the empty state message. The rules
+both held.
+
+A third was worse: it passed when it should not have. The assertion that the
+chips toggle rather than replace matched the tell-me-what-to-train side of the
+same screen, which toggles its muscles with identical code, so browsing could
+go back to one at a time and the check would nod it through. Found by
+negative testing, and scoped to the chips.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

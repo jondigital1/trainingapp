@@ -5465,10 +5465,13 @@ check('browsing a group finds what trains it, not only what is filed there', () 
   assert.ok(adductors.includes('Hip Adduction'), 'the movements filed here have gone')
   assert.ok(adductors.length >= 12, `only ${adductors.length} movements train the adductors`)
 
-  // Both screens that browse by group read the same way.
+  // Both screens that browse by group read every group a movement trains
+  // rather than only the one it is filed under. Pinned to that rather than to
+  // the expression around it, which named .includes(group) and broke when the
+  // builder learned to take three groups at once while the rule held.
   for (const file of ['ExercisePicker', 'CustomBuilder']) {
     const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
-    assert.ok(/\(e\.groups \?\? \[e\.group\]\)\.includes\(group\)/.test(src), `${file} still browses one group deep`)
+    assert.ok(/\(e\.groups \?\? \[e\.group\]\)/.test(src), `${file} still browses one group deep`)
   }
 
   // And a flagged joint reaches a movement through any group it trains, which
@@ -5611,7 +5614,7 @@ check('what the room has is a fact about the room, not about you', () => {
 
   // So the screen says which of the three nothings it is. It used to say
   // "pick a muscle group or search" to somebody who had just picked one.
-  assert.ok(/Nothing for \$\{group\.toLowerCase\(\)\}/.test(src), 'an emptied group says nothing useful')
+  assert.ok(/Nothing for \$\{listed\(browse\)\.toLowerCase\(\)\}/.test(src), 'an emptied group says nothing useful')
   assert.ok(/hiddenByKit/.test(src), 'searching for something the room cannot do reads as never heard of it')
   // And the offer to create is read off the unfiltered list, or a movement the
   // kit is hiding could be created a second time.
@@ -5660,6 +5663,49 @@ check('a session built for you respects the time you said you had', () => {
   const many = at(30, ['Quads', 'Hamstrings', 'Glutes', 'Chest', 'Back', 'Shoulders', 'Core'])
   assert.equal(many.count, 7, 'a group asked for was dropped to make the clock work')
   assert.ok(many.seconds > 30 * 60, 'the first pass stopped touching every group asked for')
+})
+
+check('browsing takes three muscle groups at once', () => {
+  // One at a time meant building an upper day was Chest, scroll, pick, Back,
+  // scroll, pick, Shoulders, with the list jumping back to the top on every
+  // switch. The rows already name which group each movement is in, which is
+  // what makes a mixed list readable.
+  const src = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  assert.ok(
+    /browse\.length\) return \(e\.groups \?\? \[e\.group\]\)\.some\(\(g\) => browse\.includes\(g\)\)/.test(src),
+    'browsing is back to one muscle group at a time',
+  )
+  // Scoped to the browse chips. The tell-me-what-to-train side toggles its
+  // muscles with exactly the same expression, so an unscoped match passed
+  // happily with browsing back to one at a time. Caught by negative testing.
+  const chips = src.slice(src.indexOf('{groups.map((g) => ('), src.indexOf('placeholder="Or search every movement"'))
+  assert.ok(
+    /setBrowse\(\(v\) => \(v\.includes\(g\) \? v\.filter\(\(x\) => x !== g\) : \[\.\.\.v, g\]\)\)/.test(chips),
+    'picking a second group replaces the first',
+  )
+
+  // Capped, because four is most of the library again and a filter that
+  // returns everything has stopped filtering.
+  assert.ok(/const BROWSE_CAP = 3/.test(src), 'the cap is gone')
+  assert.ok(/browse\.length >= BROWSE_CAP/.test(chips), 'the fourth tap silently does nothing rather than the chip going quiet')
+  // And one you have already picked stays tappable at the cap, or there is no
+  // way back out of three.
+  assert.ok(
+    /disabled=\{!browse\.includes\(g\) && browse\.length >= BROWSE_CAP\}/.test(chips),
+    'at the cap you cannot unpick what you already picked',
+  )
+
+  // Three of the biggest groups is a long list but a readable one. Four would
+  // be a third of everything.
+  const size = (groups: string[]) =>
+    LIBRARY.filter((e) => (e.groups ?? [e.group]).some((g) => groups.includes(g))).length
+  assert.ok(size(['Chest', 'Back', 'Shoulders']) < LIBRARY.length / 3, 'three groups is already most of the library')
+  assert.equal(size(['Chest']), 26)
+  assert.ok(size(['Chest', 'Back']) > size(['Chest']), 'a second group added nothing')
+
+  // A screen reader can tell which are on, since they are toggles now rather
+  // than one selection.
+  assert.ok(/aria-pressed=\{browse\.includes\(g\)\}/.test(src), 'the chips do not say which are on')
 })
 
 void (async () => {

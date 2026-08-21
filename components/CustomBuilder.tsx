@@ -1,6 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+
+// Three muscle groups at once when browsing. Four is most of the library.
+const BROWSE_CAP = 3
 import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
 import { ACCESS, accessLabel } from '@/lib/questions'
@@ -55,7 +58,11 @@ export default function CustomBuilder({
 }) {
   const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
   const [query, setQuery] = useState('')
-  const [group, setGroup] = useState<string | null>(null)
+  // Several at once, capped at three. One at a time meant building an upper
+  // day was Chest, scroll, pick, Back, scroll, pick, Shoulders, and the filter
+  // reset your place in the list every time. Three because four is most of the
+  // library again, at which point the filter has stopped filtering.
+  const [browse, setBrowse] = useState<string[]>([])
   // Today only, and stored nowhere. A hotel is not a move: the profile keeps
   // saying which gym is yours.
   const [kit, setKit] = useState<Profile['access']>(profile.access ?? 'full')
@@ -100,10 +107,10 @@ export default function CustomBuilder({
       // thing they made specifically because the library did not have it.
       if (e.group !== MINE && !fitsKit(e.name, kit)) return false
       if (q) return matchesQuery(e.name, q)
-      if (group) return (e.groups ?? [e.group]).includes(group)
+      if (browse.length) return (e.groups ?? [e.group]).some((g) => browse.includes(g))
       return false
     })
-  }, [all, query, group, kit])
+  }, [all, query, browse, kit])
 
   // Already in the library, or already yours, so there is nothing to create.
   // Read off the unfiltered list on purpose: a movement the kit is hiding is
@@ -249,11 +256,20 @@ export default function CustomBuilder({
           <button
             key={g}
             onClick={() => {
-              setGroup(group === g ? null : g)
+              setBrowse((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))
               setQuery('')
             }}
+            aria-pressed={browse.includes(g)}
+            // At the cap, the ones you have not picked go quiet and stop
+            // responding, so the limit is something you can see rather than a
+            // tap that silently does nothing.
+            disabled={!browse.includes(g) && browse.length >= BROWSE_CAP}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-              group === g ? 'bg-midnight text-frost' : 'surface text-muted ring-1 ring-edge'
+              browse.includes(g)
+                ? 'bg-midnight text-frost'
+                : browse.length >= BROWSE_CAP
+                  ? 'surface text-faint opacity-45 ring-1 ring-edge'
+                  : 'surface text-muted ring-1 ring-edge'
             }`}
           >
             {g}
@@ -363,8 +379,8 @@ export default function CustomBuilder({
           <p className="py-6 text-center text-sm leading-relaxed text-muted">
             {hiddenByKit
               ? `${query.trim()} needs more than ${accessLabel(kit).toLowerCase()}. Change what you have above to reach it.`
-              : group
-                ? `Nothing for ${group.toLowerCase()} with ${accessLabel(kit).toLowerCase()}. Try another muscle, or change what you have above.`
+              : browse.length
+                ? `Nothing for ${listed(browse).toLowerCase()} with ${accessLabel(kit).toLowerCase()}. Try another muscle, or change what you have above.`
                 : query.trim()
                   ? null
                   : 'Pick a muscle group or search'}
