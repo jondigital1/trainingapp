@@ -254,13 +254,18 @@ export default function ExerciseBlock({
             Swap
           </button>
         ) : null}
+        {/* The seam between two cards makes a superset out of neighbours, which
+            is nearly always the case. This is the other one: pairing with
+            something further down the session, which has to come up beside
+            this movement first. Named apart from the seam so that two controls
+            an inch apart are not both called Superset. */}
         {onSuperset ? (
           <button
             onClick={onSuperset}
-            aria-label={`Superset ${exercise.name} with another movement`}
+            aria-label={`Pair ${exercise.name} with a movement further down`}
             className="px-2.5 py-2 text-[13px] font-extrabold text-muted"
           >
-            Superset
+            Pair with
           </button>
         ) : null}
         {live && rest > 0 && restOnComplete ? (

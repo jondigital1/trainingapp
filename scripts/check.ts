@@ -72,7 +72,21 @@ import {
 } from '../lib/gamify'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
 import { TIER_LABELS, isCompound, isFullSet, restFor, restForTier, restTier, scaleRest } from '../lib/rest'
-import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
+import {
+  anyLinked,
+  groupRuns,
+  isSuperset,
+  linkAll,
+  linkAt,
+  linkedAt,
+  linkWith,
+  partnersFor,
+  splitAt,
+  supersetLetter,
+  supersetRest,
+  tidy,
+  unlinkAll,
+} from '../lib/superset'
 import { KNOWLEDGE, KNOWLEDGE_GROUPS, searchKnowledge } from '../lib/knowledge'
 import { askedKey, askedReport, askedState, unanswered } from '../lib/asked'
 import { seriesFor, trackedNames } from '../lib/progress'
@@ -944,7 +958,7 @@ check('the same tag either side of a gap is two supersets', () => {
 })
 
 check('a superset rests as long as its hungriest movement', () => {
-  const run = groupRuns([
+  const run = groupRuns<Exercise>([
     { id: '1', name: 'Back Squat', type: 'W', sets: [], superset: 'a' },
     { id: '2', name: 'Cable Curl', type: 'W', sets: [], superset: 'a' },
   ])[0]
@@ -5987,6 +6001,89 @@ check('the save bar does not sit on top of the workout', () => {
   const bar = src.slice(src.indexOf('sticky bottom-0'))
   const cls = bar.slice(0, bar.indexOf('>'))
   assert.ok(/bg-card/.test(cls), 'the save bar is transparent, so the list shows through it')
+})
+
+check('a superset is made and unmade one pair at a time', () => {
+  // The seam between two movements, joined and broken a pair at a time. What
+  // this replaces could only do whole groups: everything picked went into one
+  // superset while a switch was on, and unlinking dissolved a group entirely.
+  // A four could not drop one movement, it could only stop being a superset.
+  type Item = { name: string; superset?: string | null }
+  const five = (): Item[] => [1, 2, 3, 4, 5].map((n) => ({ name: `e${n}`, superset: null }))
+  const shape = (items: Item[]) =>
+    groupRuns(items).map((r) => r.exercises.length).join('+')
+
+  // Joining seams in a row is how a group grows past two.
+  const a = linkAt(linkAt(linkAt(five(), 0), 1), 2)
+  assert.equal(shape(a), '4+1', `four in a row did not make a four: ${shape(a)}`)
+
+  // And every way of breaking that four leaves both halves standing.
+  assert.equal(shape(splitAt(a, 1)), '2+2+1', 'splitting the middle did not leave two pairs')
+  assert.equal(shape(splitAt(a, 0)), '1+3+1', 'splitting the top did not leave a trio')
+  assert.equal(shape(splitAt(a, 2)), '3+1+1', 'splitting the bottom did not leave a trio')
+  // The halves are different groups, so they must not share a tag: sharing one
+  // across a break is how two supersets read as one again.
+  const halves = splitAt(a, 1)
+  assert.notEqual(halves[1].superset, halves[2].superset, 'the two halves kept the same tag')
+  // A half of one is not a superset, so it keeps no tag at all.
+  assert.equal(splitAt(a, 0)[0].superset ?? null, null, 'a movement on its own still carries a tag')
+
+  // Two pairs join into a four across the seam between them.
+  const four: Item[] = [1, 2, 3, 4].map((n) => ({ name: `e${n}`, superset: null }))
+  const b = linkAt(linkAt(four, 0), 2)
+  assert.equal(shape(b), '2+2', 'two separate pairs did not stay separate')
+  assert.equal(shape(linkAt(b, 1)), '4', 'joining two pairs did not make a four')
+
+  // Nothing at the ends, and joining what is already joined changes nothing.
+  assert.equal(linkedAt(a, -1), false, 'there is a seam above the first movement')
+  assert.equal(linkedAt(a, a.length - 1), false, 'there is a seam below the last movement')
+  assert.deepEqual(linkAt(a, 1), a, 'joining an already joined seam moved something')
+  assert.deepEqual(splitAt(a, 4), a, 'breaking a seam that is not there moved something')
+
+  // The whole session in one, and back, because eight taps is a fair thing to
+  // offer a shortcut for. A shortcut past the seams, not instead of them.
+  assert.equal(shape(linkAll(five())), '5', 'superset all did not superset all')
+  assert.equal(anyLinked(unlinkAll(linkAll(five()))), false, 'unlink all left something linked')
+  assert.equal(anyLinked(five()), false, 'a fresh list thinks it has supersets')
+
+  // A tag no neighbour shares is a leftover, not a superset. Moving one out of
+  // a pair, or deleting its partner, used to leave it wearing the letter.
+  const orphan: Item[] = [{ name: 'e1', superset: 'g' }, { name: 'e2' }, { name: 'e3', superset: 'g' }]
+  assert.deepEqual(tidy(orphan).map((i) => i.superset ?? null), [null, null, null],
+    'a tag survived losing every neighbour that shared it')
+  const pair = linkAt(five(), 0)
+  assert.equal(tidy(pair)[0].superset, pair[0].superset, 'tidy broke up a real pair')
+})
+
+check('supersets are set between movements, not for the whole session', () => {
+  const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  const editor = readFileSync(new URL('../components/WorkoutEditor.tsx', import.meta.url), 'utf8')
+
+  // The switch that put everything picked into one superset while it was on.
+  // It was the only superset control the builder had, so a session was
+  // supersetted end to end or not at all.
+  assert.ok(!/everything picked now runs together/.test(builder),
+    'the all or nothing superset switch is still there')
+  assert.ok(!/setSuperset\(/.test(builder), 'the builder still has a global superset mode')
+
+  // Both screens toggle the seam between two movements, both directions.
+  for (const [where, src] of [['builder', builder], ['session', editor]] as const) {
+    assert.ok(/linkedAt\(/.test(src), `the ${where} cannot tell whether two movements are joined`)
+    assert.ok(/linkAt\(/.test(src), `the ${where} cannot join two movements`)
+    assert.ok(/splitAt\(/.test(src), `the ${where} cannot split two movements`)
+    assert.ok(/Split \$\{/.test(src), `the ${where} seam does not say what splitting it does`)
+    assert.ok(/Superset \$\{/.test(src), `the ${where} seam does not say what joining it does`)
+  }
+
+  // Inside a group as well as between groups, which is the whole point: a four
+  // has to be able to drop one movement.
+  const inside = editor.slice(editor.indexOf('const letter = supersetLetter'))
+  assert.ok(/i < run\.exercises\.length - 1 \? seam\(/.test(inside),
+    'a superset of four has no seams inside it, so it can only be dissolved whole')
+
+  // And two controls an inch apart are not both called Superset.
+  const block = readFileSync(new URL('../components/ExerciseBlock.tsx', import.meta.url), 'utf8')
+  assert.ok(!/>\s*Superset\s*</.test(block), 'the card action and the seam are both called Superset')
 })
 
 void (async () => {

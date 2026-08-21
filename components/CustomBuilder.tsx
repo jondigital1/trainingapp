@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 // Three muscle groups, both when browsing the library and when asking for a
 // session to be built.
@@ -23,8 +23,18 @@ import {
 } from '@/lib/onboarding'
 import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import { Many, Options } from './Form'
-import { uid } from '@/lib/format'
-import { supersetLetter } from '@/lib/superset'
+import {
+  anyLinked,
+  groupRuns,
+  isSuperset,
+  linkAll,
+  linkAt,
+  linkedAt,
+  splitAt,
+  supersetLetter,
+  tidy,
+  unlinkAll,
+} from '@/lib/superset'
 import Sheet from './Sheet'
 import type { CustomExercise, CustomWorkout, CustomWorkoutItem, Goal } from '@/lib/types'
 
@@ -91,9 +101,6 @@ export default function CustomBuilder({
   // today was handed an hour and twenty five minutes of work.
   const [minutes, setMinutes] = useState<NonNullable<Profile['minutes']>>(profile.minutes ?? 60)
   const [picked, setPicked] = useState<CustomWorkoutItem[]>(editing?.items ?? seed?.items ?? [])
-  // While on, everything picked joins the same superset, exactly like the
-  // picker in a live session. Off and on again starts a new group.
-  const [superset, setSuperset] = useState<string | null>(null)
   // Named apart from the `editing` prop above, which is the workout being
   // changed. This is one movement inside it.
   const [fixing, setFixing] = useState<CustomExercise | null>(null)
@@ -158,8 +165,10 @@ export default function CustomBuilder({
   function toggle(item: CustomWorkoutItem) {
     setPicked((prev) =>
       prev.some((p) => p.name === item.name)
-        ? prev.filter((p) => p.name !== item.name)
-        : [...prev, { name: item.name, type: item.type, superset }],
+        ? // Tidied, because taking one half of a pair out leaves the other
+          // half wearing a group letter on its own.
+          tidy(prev.filter((p) => p.name !== item.name))
+        : [...prev, { name: item.name, type: item.type, superset: null }],
     )
   }
 
@@ -169,14 +178,25 @@ export default function CustomBuilder({
     const next = [...picked]
     const [item] = next.splice(index, 1)
     next.splice(to, 0, item)
-    setPicked(next)
+    // A superset is neighbours, so moving one out of the middle of a group is
+    // how you leave it: the tag goes with the position rather than surviving
+    // it.
+    setPicked(tidy(next))
   }
 
-  // Letters for display: first superset A, second B, in order of appearance.
-  const letters = new Map<string, string>()
-  for (const p of picked) {
-    if (p.superset && !letters.has(p.superset)) {
-      letters.set(p.superset, supersetLetter(letters.size))
+  // Letters for display, read off the runs rather than off the tags: a tag is
+  // only a superset where two neighbours share it, so a run of one wears no
+  // letter even if something upstream left a tag on it.
+  const letters = new Map<number, string>()
+  {
+    let at = 0
+    let shown = 0
+    for (const run of groupRuns(picked)) {
+      if (isSuperset(run)) {
+        const letter = supersetLetter(shown++)
+        for (let k = 0; k < run.exercises.length; k += 1) letters.set(at + k, letter)
+      }
+      at += run.exercises.length
     }
   }
 
@@ -339,34 +359,37 @@ export default function CustomBuilder({
         className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
-      <button
-        onClick={() => setSuperset(superset ? null : uid())}
-        className={`mt-3 flex w-full items-center justify-between rounded-xl px-4 py-3 text-left ring-1 ${
-          superset ? 'bg-tint-cool ring-[1.5px] ring-accent-ink' : 'surface ring-edge'
-        }`}
-      >
-        <span className="text-sm">Superset</span>
-        <span className={`text-xs ${superset ? 'text-accent-ink' : 'text-muted'}`}>
-          {superset ? 'everything picked now runs together' : 'off'}
-        </span>
-      </button>
-
       {picked.length ? (
         <div className="mt-3 flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-wide text-muted">
-            In this workout &middot; <span className="num">{picked.length}</span>
-          </p>
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs uppercase tracking-wide text-muted">
+              In this workout &middot; <span className="num">{picked.length}</span>
+            </p>
+            {/* The long way round is eight taps on a nine movement session, so
+                the whole session in one is worth offering. A shortcut past the
+                seams, not a replacement for them: this used to be the only
+                control there was, and a session was supersetted end to end or
+                not at all. */}
+            {picked.length > 1 ? (
+              <button
+                onClick={() => setPicked((prev) => (anyLinked(prev) ? unlinkAll(prev) : linkAll(prev)))}
+                className="text-[12px] font-extrabold text-muted"
+              >
+                {anyLinked(picked) ? 'Unlink all' : 'Superset all'}
+              </button>
+            ) : null}
+          </div>
           {/* A list rather than a cloud of chips, because the order here is the
               order they run in and a wrap cannot say that. */}
           {picked.map((p, i) => (
+            <Fragment key={p.name}>
             <div
-              key={p.name}
               className="flex items-center gap-1 rounded-xl bg-ink px-3 py-2 ring-1 ring-edge"
             >
               <span className="num w-4 shrink-0 text-xs text-muted">{i + 1}</span>
               <span className="min-w-0 flex-1 truncate text-sm">
-                {p.superset ? (
-                  <span className="num mr-1.5 text-xs text-accent-ink">{letters.get(p.superset)}</span>
+                {letters.has(i) ? (
+                  <span className="num mr-1.5 text-xs text-accent-ink">{letters.get(i)}</span>
                 ) : null}
                 {p.name}
               </span>
@@ -394,6 +417,42 @@ export default function CustomBuilder({
                 &times;
               </button>
             </div>
+            {/* The seam between two movements is the control. Tapping it joins
+                them, tapping it again breaks them apart, and a group of any
+                size is however many seams in a row you joined.
+
+                This replaces a switch that put everything picked into one
+                superset while it was on, which is the only shape a superset
+                could ever have: all of them, or none of them. Breaking one
+                movement out of a group of four was not expressible. */}
+            {i < picked.length - 1 ? (
+              <button
+                onClick={() =>
+                  setPicked((prev) => (linkedAt(prev, i) ? splitAt(prev, i) : linkAt(prev, i)))
+                }
+                aria-label={
+                  linkedAt(picked, i)
+                    ? `Split ${p.name} from ${picked[i + 1].name}`
+                    : `Superset ${p.name} with ${picked[i + 1].name}`
+                }
+                className="flex items-center gap-2 px-2 py-1"
+              >
+                <span
+                  className={`h-px flex-1 ${linkedAt(picked, i) ? 'bg-accent-ink/40' : 'bg-edge'}`}
+                />
+                <span
+                  className={`text-[10px] font-extrabold uppercase tracking-[1.2px] ${
+                    linkedAt(picked, i) ? 'text-accent-ink' : 'text-faint'
+                  }`}
+                >
+                  {linkedAt(picked, i) ? 'Unlink' : 'Superset'}
+                </span>
+                <span
+                  className={`h-px flex-1 ${linkedAt(picked, i) ? 'bg-accent-ink/40' : 'bg-edge'}`}
+                />
+              </button>
+            ) : null}
+            </Fragment>
           ))}
         </div>
       ) : null}

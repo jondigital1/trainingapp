@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { fmtDate, fmtTime, isEmptySet, workoutVolume } from '@/lib/format'
 import { durationOf, fmtDuration, intensityLabel, isRunning, wantsScore } from '@/lib/session'
 import RunningClock from './RunningClock'
@@ -8,7 +8,16 @@ import SupersetSheet from './SupersetSheet'
 import ExerciseBlock, { type LastSession } from './ExerciseBlock'
 import { shareWorkout } from '@/lib/share'
 import type { Bests } from '@/lib/gamify'
-import { groupRuns, isSuperset, linkWith, supersetLetter, supersetRest } from '@/lib/superset'
+import {
+  groupRuns,
+  isSuperset,
+  linkAt,
+  linkedAt,
+  linkWith,
+  splitAt,
+  supersetLetter,
+  supersetRest,
+} from '@/lib/superset'
 import { hardestFirst, isHardestFirst, moveRun } from '@/lib/order'
 import type { Exercise, Goal, Workout } from '@/lib/types'
 
@@ -194,8 +203,58 @@ export default function WorkoutEditor({
           ? workout.exercises.find((e) => e.sets.some((s) => isEmptySet(s, e.type)))?.id
           : undefined
 
+        // The seam between two movements, which is where a superset is made
+        // and unmade. One tap either way, on the join itself.
+        //
+        // Before this, linking meant opening a sheet and picking a partner,
+        // and unlinking meant dissolving a whole group: a superset of four
+        // could not drop one movement, it could only stop being a superset.
+        // Both directions now work a pair at a time, so a four becomes a pair
+        // and a pair, or a single and a trio, from the seam you tapped.
+        const seam = (index: number, tight = false) => {
+          const linked = linkedAt(workout.exercises, index)
+          const here = workout.exercises[index]
+          const next = workout.exercises[index + 1]
+          return (
+            <button
+              key={`seam-${here.id}`}
+              onClick={() =>
+                onChange({
+                  ...workout,
+                  exercises: linked
+                    ? splitAt(workout.exercises, index)
+                    : linkAt(workout.exercises, index),
+                })
+              }
+              aria-label={
+                linked
+                  ? `Split ${here.name} from ${next.name}`
+                  : `Superset ${here.name} with ${next.name}`
+              }
+              className={`flex items-center gap-2 px-2 ${tight ? 'py-0.5' : 'py-1'}`}
+            >
+              <span className={`h-px flex-1 ${linked ? 'bg-accent-ink/40' : 'bg-edge'}`} />
+              <span
+                className={`text-[10px] font-extrabold uppercase tracking-[1.2px] ${
+                  linked ? 'text-accent-ink' : 'text-faint'
+                }`}
+              >
+                {linked ? 'Unlink' : 'Superset'}
+              </span>
+              <span className={`h-px flex-1 ${linked ? 'bg-accent-ink/40' : 'bg-edge'}`} />
+            </button>
+          )
+        }
+
+        // Where each run starts in the session, so a seam knows which two
+        // movements it sits between.
+        let cursor = 0
+
         // Joining two neighbouring runs into one superset. Everything in both
         return runs.map((run, runIndex) => {
+        const start = cursor
+        cursor += run.exercises.length
+        const after = cursor < workout.exercises.length ? seam(cursor - 1) : null
         const block = (exercise: Exercise, label?: string, extra?: Partial<BlockExtras>) => (
           <ExerciseBlock
             key={exercise.id}
@@ -226,7 +285,12 @@ export default function WorkoutEditor({
         )
 
         if (!isSuperset(run)) {
-          return run.exercises.map((exercise) => block(exercise))
+          return (
+            <Fragment key={run.exercises[0].id}>
+              {run.exercises.map((exercise) => block(exercise))}
+              {after}
+            </Fragment>
+          )
         }
 
         // One clock for the group, set by the movement that asks for the most.
@@ -234,7 +298,8 @@ export default function WorkoutEditor({
         const letter = supersetLetter(run.index)
 
         return (
-          <div key={run.exercises[0].id} className="rounded-2xl bg-card p-2 ring-1 ring-accent-ink">
+          <Fragment key={run.exercises[0].id}>
+          <div className="rounded-2xl bg-card p-2 ring-1 ring-accent-ink">
             <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
               <span className="num text-[10.5px] font-extrabold uppercase tracking-[1.2px] text-accent-ink">
                 Superset {letter}
@@ -254,18 +319,25 @@ export default function WorkoutEditor({
                 }
                 className="text-[12px] font-extrabold text-muted"
               >
-                Unlink
+                Unlink all
               </button>
             </div>
             <div className="flex flex-col gap-1.5">
-              {run.exercises.map((exercise, i) =>
-                block(exercise, `${letter}${i + 1}`, {
-                  restSeconds: rest,
-                  restOnComplete: i === run.exercises.length - 1,
-                }),
-              )}
+              {run.exercises.map((exercise, i) => (
+                <Fragment key={exercise.id}>
+                  {block(exercise, `${letter}${i + 1}`, {
+                    restSeconds: rest,
+                    restOnComplete: i === run.exercises.length - 1,
+                  })}
+                  {/* Inside the group too, because taking one movement out of
+                      a four is the thing a whole group Unlink could not do. */}
+                  {i < run.exercises.length - 1 ? seam(start + i, true) : null}
+                </Fragment>
+              ))}
             </div>
           </div>
+          {after}
+          </Fragment>
         )
         })
       })()}
