@@ -4231,10 +4231,12 @@ check('a day you picked is saved when you pick it', () => {
   assert.ok(!test.includes("'week'"), 'focus week falls into the one question branch again')
   assert.ok(!test.includes("'all'"), 'the whole page falls into the one question branch')
   assert.ok(test.includes("'sore'"), 'the sore joints detour is gone')
-  assert.ok(
-    sheet.includes("focus === 'week' ? 'week'"),
-    'focus week no longer opens the week section',
-  )
+  // Pinned to where the page opens rather than to the expression that used to
+  // choose it. The My body pill went when the weight moved to Progress, so
+  // there is one default now and naming the old ternary was a check reporting
+  // on its own wording.
+  assert.ok(/useState<Section>\('week'\)/.test(sheet), 'the page no longer opens on your week')
+  assert.ok(!/id: 'body'/.test(sheet), 'the My body pill came back')
 })
 
 check('any session can be put on any day, from either direction', () => {
@@ -4855,7 +4857,7 @@ check('Lifty points at tabs that are actually there', () => {
   const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
   const block = sheet.slice(sheet.indexOf('const SECTIONS'), sheet.indexOf('] as const'))
   const labels = [...block.matchAll(/label: '([^']+)'/g)].map((m) => m[1])
-  assert.ok(labels.length >= 3, 'the profile lost its sections')
+  assert.ok(labels.length >= 2, 'the profile lost its sections')
 
   // Only the signpost phrasing, "on your profile, under X". Plain prose can
   // say "under Chest" about a muscle group without meaning a tab.
@@ -5471,6 +5473,44 @@ check('browsing a group finds what trains it, not only what is filed there', () 
     /\(e\.groups \?\? \[e\.group\]\)\.some\(\(g\) => groups\.includes\(g\)\)/.test(onboarding),
     'a sore joint only scopes over the group a movement is filed under',
   )
+})
+
+check('weight is answered where the rest of "how is it going" is answered', () => {
+  // Bodyweight sat on the profile, which is a page of facts you gave and
+  // settings you chose. Weight is neither: it is a measurement that moves, and
+  // it was the only thing on that page you would open the app to look at.
+  //
+  // It also has to be next to the lifts to be read properly. Strength climbing
+  // while weight holds is a different story from both climbing together, and
+  // you cannot tell those apart from two different tabs.
+  const progress = readFileSync(new URL('../components/RecordsTab.tsx', import.meta.url), 'utf8')
+  assert.ok(progress.includes('<BodyWeightCard'), 'weight is not on the tab that answers how it is going')
+  // On the view the tab opens on, not behind a third pill.
+  const week = progress.slice(progress.indexOf("view === 'week'"), progress.indexOf("view === 'record'"))
+  assert.ok(week.includes('<BodyWeightCard'), 'weight is buried behind a view nobody lands on')
+  assert.ok(week.includes('<StatsPanel'), 'the sets per muscle left the week view')
+
+  // And it is gone from the profile rather than living in both, which is the
+  // whole point of moving it.
+  const sheet = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(!sheet.includes('<BodyWeightCard'), 'weight is now logged in two places')
+  assert.ok(!/onLogWeight/.test(sheet), 'the profile still takes a weigh-in it cannot show')
+
+  // The profile still reads your current weight into the stats line, which is
+  // a different job: that is a fact about you, not a chart.
+  assert.ok(/summarise\(weights/.test(sheet), 'the stats line stopped following your weigh-ins')
+
+  // Two pills, not three. My body held the weight and the sore joints; the
+  // weight left and one short list does not earn a pill of its own.
+  const block = sheet.slice(sheet.indexOf('const SECTIONS'), sheet.indexOf('] as const'))
+  const labels = [...block.matchAll(/label: '([^']+)'/g)].map((m) => m[1])
+  assert.deepEqual(labels, ['My week', 'My movements'])
+
+  // The sore joints are on the page rather than behind a pill, and above them
+  // rather than lost at the bottom.
+  const pills = sheet.indexOf('{SECTIONS.map(')
+  const sore = sheet.indexOf('<SoreFields draft={draft} set={set} toggle={toggle} />\n\n      {/* One way in')
+  assert.ok(sore > 0 && sore < pills, 'the sore joints are not sitting under the stats card')
 })
 
 void (async () => {

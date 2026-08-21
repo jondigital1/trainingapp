@@ -80,7 +80,7 @@ const APP: KnowledgeEntry[] = [
     q: 'Why did the app swap an exercise in my plan?',
     group: 'Using the app',
     aliases: ['different exercise', 'substitution', 'why did it change my plan', 'not the exercise i expected'],
-    a: 'You flagged a joint, so sessions swap the movement and keep the pattern: a sore knee gets leg press instead of squats, not a day without legs. Flags live on your profile, under My body, and every swap is undoable by picking the original from the library.',
+    a: 'You flagged a joint, so sessions swap the movement and keep the pattern: a sore knee gets leg press instead of squats, not a day without legs. Flags live at the top of your profile, and every swap is undoable by picking the original from the library.',
   },
   {
     id: 'app-order',

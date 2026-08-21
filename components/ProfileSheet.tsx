@@ -10,7 +10,6 @@ import {
   type Profile,
 } from '@/lib/onboarding'
 import { sameName } from '@/lib/custom'
-import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { summarise } from '@/lib/body'
@@ -30,15 +29,21 @@ type Focus = 'sore' | 'week' | 'all'
 // your body, and the movements you made. Three subjects, each with enough in
 // it to be worth a tab of its own.
 const SECTIONS = [
-  // Body first, because it opens here and it is where your name is: the page
-  // starts with who you are and moves out to what you are doing.
+  // Who you are is the card above these, read rather than typed. What is
+  // behind a pill is what you set: the week you train and the movements you
+  // made yourself.
   //
   // There was a Me tab holding a name and an age. Once what you want out of
   // training moved to Settings there was nothing else in it, and a tab with
   // two fields is a tab people learn to skip. Your name and your age are
   // things about your body in the only sense this app cares about, so they
-  // sit with the rest of them.
-  { id: 'body', label: 'My body' },
+  // sit with the rest of them, in the card at the top of this page.
+  //
+  // There was a My body pill here as well. It held your weight and your sore
+  // joints. The weight went to Progress, where a measurement that moves
+  // belongs and where it can be read against the lifts, and what was left was
+  // one short list behind a pill of its own. It sits under the stats card now,
+  // which is what My body actually was.
   { id: 'week', label: 'My week' },
   // Movements you made yourself. They were only ever reachable as a filter
   // chip inside the picker you get mid session and inside the workout builder,
@@ -77,7 +82,6 @@ export default function ProfileSheet({
   inline,
   onSave,
   onApply,
-  onLogWeight,
   onCreateExercise,
   onEditExercise,
   onDeleteExercise,
@@ -101,7 +105,6 @@ export default function ProfileSheet({
   // are, and routing both through onSave closed the page under somebody in
   // the middle of laying out their week.
   onApply?: (next: Profile) => void
-  onLogWeight: (pounds: number) => void
   // A new one is an insert and a changed one is an update by id. Routing a
   // new movement through the update would have matched no row and written
   // nothing, quietly.
@@ -124,7 +127,7 @@ export default function ProfileSheet({
   // Off by default: the answers read as answers until somebody asks for the
   // boxes back.
   const [editing, setEditing] = useState(false)
-  const [section, setSection] = useState<Section>(focus === 'week' ? 'week' : 'body')
+  const [section, setSection] = useState<Section>('week')
   const unit = unitOf(profile)
 
   const [name, setName] = useState(profile.name ?? '')
@@ -344,6 +347,12 @@ export default function ProfileSheet({
         </div>
       )}
 
+      {/* Anything giving you trouble, directly under the card rather than
+          behind a pill. It is short, it changes week to week, and it is about
+          your body in exactly the sense the card above it is: together they
+          are what My body was, without a tap in front of them. */}
+      <SoreFields draft={draft} set={set} toggle={toggle} />
+
       {/* One way in, not two. This page carried a full width Settings card as
           well as the pill in its own header, on the reasoning that the pill
           was easy to miss. Two doors to the same room on the same screen is
@@ -392,23 +401,6 @@ export default function ProfileSheet({
             answers "how am I doing" was three taps deep inside a screen that
             otherwise looks like a form, and nobody would guess it lived
             there. */}
-
-        {section === 'body' ? (
-          <>
-            {/* Name, age, height and goal weight moved to the card at the top,
-                where they are read rather than typed. What is left here is the
-                weight you log rather than state, and anything giving you
-                trouble, which changes week to week. */}
-            <BodyWeightCard
-              weights={weights}
-              goalWeight={draft.goalWeight}
-              unit={unit}
-              onLog={onLogWeight}
-            />
-
-            <SoreFields draft={draft} set={set} toggle={toggle} />
-          </>
-        ) : null}
 
         {section === 'moves' ? (
           <MyMovements

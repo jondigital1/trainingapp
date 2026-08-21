@@ -2696,6 +2696,42 @@ named after the glutes.
 Measured rather than assumed: a leg day of ordinary movements counts exactly as
 it did before, and a generated four day plan is unchanged.
 
+## Weight moves to where the rest of the answer is
+
+The profile is a page of facts you gave and settings you chose. Bodyweight was
+neither: a measurement that moves, and the only thing on that page anybody
+would open the app to look at. Meanwhile Progress held sessions, sets, records
+and the lift charts, so the four things that answer "how is it going" were
+split across two tabs with no rule anybody could state.
+
+The card also had to be next to the lifts to be read properly, which is what
+the comment at the top of it has said since it was last there: strength
+climbing while weight holds is a different story from both climbing together,
+and those cannot be told apart from two different tabs.
+
+It sits on the view Progress opens on, above the sets per muscle, rather than
+behind a third pill. The whole card moved, chart and weigh-in together, because
+splitting the writing from the reading is what makes two homes for one thing.
+
+The idea considered first was the opposite, folding Progress into the profile
+so everything about you lived in one place. It was the right instinct about the
+grouping and the wrong container. Profile had three pills and Progress had
+three views, so merging is six sections on one screen, two levels of navigation
+before any content, and the thing people open the app to feel good about buried
+behind a word that means account. Splitting by question rather than by data
+works better: what am I doing is the calendar, how is it going is Progress, who
+am I and what did I choose is the profile.
+
+So the profile got simpler rather than larger. My body held the weight and the
+sore joints; once the weight left, one short list did not earn a pill, and it
+sits under the stats card now, which is what My body always was. Two pills
+left: My week and My movements. The stats line still reads your latest weigh-in,
+because that is a fact about you rather than a chart.
+
+Two signposts broke, which is the check on Lifty's answers doing its job: an
+answer sent people to the profile "under My body", and a plan error told them
+to loosen their joints there. Both now point at the top of the profile.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

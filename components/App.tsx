@@ -438,7 +438,7 @@ export default function App({
     // running clock over zero exercises with no explanation reads as a crash.
     if (items.length === 0) {
       setSheet(null)
-      setError('The plan could not fill this day: between the joints you flagged and the kit you said you have, nothing qualified. Loosen the joints under My body, or the gym by running the questionnaire again, or build the session by hand.')
+      setError('The plan could not fill this day: between the joints you flagged and the kit you said you have, nothing qualified. Loosen the joints on your profile, or the gym by running the questionnaire again, or build the session by hand.')
       return
     }
     // The plan decides how many rows a movement gets, so a templated session
@@ -1244,7 +1244,6 @@ export default function App({
           customs={data.custom}
           goal={data.settings.goal}
           onOpenSettings={() => setSheet('settings')}
-          onLogWeight={(lb) => void logWeight(lb)}
           onCreateExercise={(exercise) => void createCustomExercise(exercise)}
           onEditExercise={(exercise) => void editCustomExercise(exercise)}
           onDeleteExercise={(exercise) => void removeCustomExercise(exercise)}
@@ -1254,7 +1253,15 @@ export default function App({
       ) : null}
 
       {!loading && tab === 'progress' ? (
-        <RecordsTab workouts={data.workouts} today={now} target={weeklyTarget} />
+        <RecordsTab
+          workouts={data.workouts}
+          today={now}
+          target={weeklyTarget}
+          weights={data.bodyWeights}
+          goalWeight={profile.goalWeight}
+          unit={profile.units ?? 'lb'}
+          onLogWeight={(lb) => void logWeight(lb)}
+        />
       ) : null}
 
       <BottomNav tab={tab} onPick={setTab} onStart={() => setSheet('start')} />
@@ -1356,7 +1363,6 @@ export default function App({
           focus={profileFocus}
           weights={data.bodyWeights}
           workouts={data.workouts}
-          onLogWeight={(lb) => void logWeight(lb)}
           onApply={(next) => void saveProfile(next)}
           onSave={(next) => {
             void saveProfile(next)
