@@ -5,14 +5,14 @@ import {
   ageBand,
   GOAL_FROM_CHOICE,
   planFor,
-  PROGRAMS,
   SORE_JOINTS,
   unitOf,
   type Profile,
 } from '@/lib/onboarding'
 import BodyWeightCard from './BodyWeightCard'
 import ScheduleCard from './ScheduleCard'
-import { toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
+import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
+import { summarise } from '@/lib/body'
 import { fmtTime, today } from '@/lib/format'
 import HeightField from './HeightField'
 import NewExercise from './NewExercise'
@@ -23,7 +23,6 @@ import { weekStart } from '@/lib/week'
 import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
 import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import AdminDashboard from './AdminDashboard'
-import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
 type Focus = 'sore' | 'week' | 'all'
@@ -54,6 +53,13 @@ type Section = (typeof SECTIONS)[number]['id']
 function numOrNull(s: string): number | null {
   const n = Number(s)
   return s.trim() !== '' && Number.isFinite(n) && n > 0 ? n : null
+}
+
+function fmtHeight(inches: number, unit: Unit): string {
+  if (unit === 'kg') return `${Math.round(inches * 2.54)} cm`
+  const ft = Math.floor(inches / 12)
+  const inch = Math.round(inches % 12)
+  return inch ? `${ft} ft ${inch} in` : `${ft} ft`
 }
 
 function inputFor(lb: number | undefined, unit: Unit): string {
@@ -120,6 +126,9 @@ export default function ProfileSheet({
   // nothing and closing a touched one saves everything.
   const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
+  // Off by default: the answers read as answers until somebody asks for the
+  // boxes back.
+  const [editing, setEditing] = useState(false)
   const [section, setSection] = useState<Section>(focus === 'week' ? 'week' : 'body')
   const unit = unitOf(profile)
 
@@ -127,7 +136,6 @@ export default function ProfileSheet({
   const [age, setAge] = useState(profile.ageYears != null ? String(profile.ageYears) : '')
   const [goalWeight, setGoalWeight] = useState(inputFor(profile.goalWeight, unitOf(profile)))
   const [heightIn, setHeightIn] = useState<number | undefined>(profile.heightIn)
-  const [todayWeight, setTodayWeight] = useState('')
 
   // Every tap on this page saves itself.
   //
@@ -182,8 +190,6 @@ export default function ProfileSheet({
   function commit() {
     const next = buildNext()
     saved.current = JSON.stringify(next)
-    const w = numOrNull(todayWeight)
-    if (w != null) onLogWeight(toPounds(w, unit))
     onSave(next)
   }
 
@@ -225,8 +231,18 @@ export default function ProfileSheet({
     )
   }
 
+  // Everything filled in, in the order it reads: how old, how tall, what you
+  // weigh, what you are heading for. Blanks are left out rather than shown as
+  // dashes, so the line says what is known and nothing about what is not.
+  const body = summarise(weights, draft.goalWeight)
+  const stats = [
+    numOrNull(age) != null ? `${numOrNull(age)} years` : null,
+    heightIn != null ? fmtHeight(heightIn, unit) : null,
+    body.current != null ? fmtWeight(body.current, unit) : null,
+    draft.goalWeight != null ? `heading for ${fmtWeight(draft.goalWeight, unit)}` : null,
+  ].filter((s): s is string => !!s)
+
   const plan = planFor(draft, GOAL_FROM_CHOICE[draft.goalChoice ?? 'muscle'] ?? 'muscle')
-  const blurb = PROGRAMS.find((p) => p.id === plan.program)?.blurb ?? ''
 
   return (
     <Sheet
@@ -244,24 +260,68 @@ export default function ProfileSheet({
         ) : null
       }
     >
-      {/* The one dark surface in the app, which is where Cyan is allowed to be
-          text. It is the summary of who the plan thinks you are, so it earns
-          being the loudest thing on the page. */}
-      <div className="flex items-start gap-3 rounded-[20px] bg-midnight p-4">
-        <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-navy">
-          <LiftyMark size={30} />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-cyan">
-            {plan.program}
-          </p>
-          <p className="mt-1 font-display text-base font-semibold text-frost">
-            {name.trim() ? `${name.trim()}, on ` : ''}
-            {plan.splitName}, {plan.days} days a week
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-[#9FB0C4]">{blurb}</p>
+      {/* Your stats, read rather than typed.
+          
+          This was a dark card naming the program and the split, which is the
+          plan telling you about itself on the one page that is meant to be
+          about you, and the numbers it was talking around sat lower down as
+          five text boxes permanently open for editing. A saved answer is not a
+          form field: leaving it as one invites a stray tap into your height
+          and gives no sense that anything was ever written down.
+          
+          So the answers read as answers, and turn back into boxes only when
+          you say so. */}
+      {editing ? (
+        <div className="rounded-[20px] bg-card p-4 ring-1 ring-edge">
+          <Field label="Name" optional>
+            <TextInput value={name} onChange={setName} placeholder="Name" />
+          </Field>
+          <Field label="Age" optional>
+            <NumberInput value={age} onChange={setAge} suffix="years" />
+          </Field>
+          <HeightField inches={heightIn} unit={unit} onChange={setHeightIn} />
+          <Field label="Goal weight" optional>
+            <NumberInput decimal value={goalWeight} onChange={setGoalWeight} suffix={unitLabel(unit)} />
+          </Field>
+          <button
+            onClick={() => {
+              commit()
+              setEditing(false)
+            }}
+            className="mt-4 w-full rounded-xl bg-accent py-2.5 font-display text-sm font-bold text-on-accent"
+          >
+            Done
+          </button>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-[20px] bg-card p-4 ring-1 ring-edge">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 truncate font-display text-lg font-semibold">
+              {name.trim() || 'You'}
+            </p>
+            <button
+              onClick={() => setEditing(true)}
+              className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-muted ring-1 ring-edge"
+            >
+              Edit stats
+            </button>
+          </div>
+          {stats.length ? (
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              {stats.map((s, i) => (
+                <span key={s}>
+                  {i ? ' · ' : ''}
+                  <span className="num">{s}</span>
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              Nothing filled in yet. Edit stats to add your age, height and what you are heading for.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Two views of the same page, and only one person ever sees the switch. */}
       {admin ? (
@@ -385,13 +445,10 @@ export default function ProfileSheet({
 
         {section === 'body' ? (
           <>
-            <Field label="Name" optional>
-              <TextInput value={name} onChange={setName} placeholder="Name" />
-            </Field>
-            <Field label="Age" optional>
-              <NumberInput value={age} onChange={setAge} suffix="years" />
-            </Field>
-
+            {/* Name, age, height and goal weight moved to the card at the top,
+                where they are read rather than typed. What is left here is the
+                weight you log rather than state, and anything giving you
+                trouble, which changes week to week. */}
             <BodyWeightCard
               weights={weights}
               goalWeight={draft.goalWeight}
@@ -399,13 +456,7 @@ export default function ProfileSheet({
               onLog={onLogWeight}
             />
 
-            <Field label="Goal weight" optional>
-              <NumberInput decimal value={goalWeight} onChange={setGoalWeight} suffix={unitLabel(unit)} />
-            </Field>
-            <HeightField inches={heightIn} unit={unit} onChange={setHeightIn} />
-
             <SoreFields draft={draft} set={set} toggle={toggle} />
-
           </>
         ) : null}
 
@@ -420,7 +471,10 @@ export default function ProfileSheet({
         ) : null}
       </div>
 
-      <SaveButton onClick={commit} />
+      {/* No Save down here any more. The typed fields moved into the stats
+          card at the top, which has its own Done, and everything left on this
+          page saves on the tap it was made with. A button that commits nothing
+          is worse than no button: this one would have said Saved. */}
       </>
       )}
     </Sheet>

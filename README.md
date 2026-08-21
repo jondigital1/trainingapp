@@ -2407,6 +2407,36 @@ through the update by id, which matches no row and writes nothing at all. A new
 one is an insert. Creating and changing are one screen and two different
 writes.
 
+## A saved answer is not a form field
+
+The profile opened on a dark card naming the program and the split, which is
+the plan telling you about itself on the one page that is meant to be about
+you. Below it, the numbers it was talking around sat as five text boxes,
+permanently open for editing: name, age, height, goal weight, all of them
+cursors waiting for a stray thumb.
+
+That card is now your stats, read rather than typed:
+
+    Jon                                          [ Edit stats ]
+    43 years · 6 ft 1 in · 295 lb · heading for 225 lb
+
+Blanks are left out rather than shown as dashes, so the line says what is known
+and nothing about what is not. Edit stats turns it back into the four boxes,
+Done saves and turns it back into the line. The boxes disappearing is the
+feedback: nothing needs to announce a save you can see happen.
+
+Which settled something from earlier the same day. The page had a Save at the
+bottom that wrote the typed fields and changed nothing on screen, and it was
+reported as broken while working perfectly. The fix then was a label that said
+Saved for a moment. The better fix is that there is nothing left for it to do:
+the typed fields live in the card with its own Done, and everything else on the
+page saves on the tap it was made with. A button that commits nothing is worse
+than no button, and that one would have said Saved.
+
+Two dead things came out with it: a weigh in field nobody could reach, left
+behind when weighing in moved into its own card, and the commit branch that
+read it.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

@@ -4526,24 +4526,32 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
-check('saving says it saved', () => {
-  // The profile is a tab, so saving cannot close anything, and every option on
-  // it already saves on the tap. That left the button writing the typed fields
-  // and changing nothing on screen, which is indistinguishable from a button
-  // that does nothing. It was reported as broken while working perfectly,
-  // which is its own kind of broken.
+check('every save on the profile shows you something', () => {
+  // The tab's Save wrote the typed fields and changed nothing on screen, which
+  // is indistinguishable from a button that does nothing. It was reported as
+  // broken while working perfectly, which is its own kind of broken.
+  //
+  // The answer stopped being a label on that button once the typed fields
+  // moved into the stats card. There is no page level Save now, because there
+  // is nothing left for it to commit: the card has its own Done and everything
+  // else here saves on the tap it was made with. A button that commits nothing
+  // is worse than no button, and that one would have said Saved.
   const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
-  const button = profile.slice(profile.indexOf('function SaveButton'))
-  const body = button.slice(0, button.indexOf('\n}'))
-  assert.ok(body.includes("'Saved'"), 'the save button never says it saved')
-  assert.ok(body.includes('clearTimeout'), 'the saved label leaks a timer')
 
-  // And the tab really has nowhere to go, which is why the label has to do the
-  // work: the sheet version closes itself, the tab version cannot.
-  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
-  const tab = app.slice(app.indexOf("tab === 'profile'"))
-  const props = tab.slice(0, tab.indexOf('/>'))
-  assert.ok(props.includes('onSave={(next) => void saveProfile(next)}'), 'the profile tab save changed shape')
+  // Name, age, height and goal weight are read until you ask for the boxes.
+  assert.ok(profile.includes('Edit stats'), 'there is no way to change your stats')
+  assert.ok(/const \[editing, setEditing\] = useState\(false\)/.test(profile), 'the stats card opens as a form')
+  const done = profile.slice(profile.indexOf('Edit stats') - 1400, profile.indexOf('Edit stats'))
+  assert.ok(done.includes('commit()') && done.includes('setEditing(false)'), 'Done does not save and close')
+
+  // The page itself has one Save, in the sore joints sheet, and that one closes
+  // the sheet. Nothing sits at the bottom of the full page any more.
+  const full = profile.slice(profile.indexOf('</div>\n\n      {/* No Save'))
+  assert.ok(full.length > 0, 'a page level Save is back with nothing to commit')
+  assert.equal((profile.match(/<SaveButton onClick=\{commit\} \/>/g) ?? []).length, 1, 'more than one Save on this page')
+
+  // And nothing typed is left holding state nobody can reach.
+  assert.ok(!profile.includes('setTodayWeight'), 'the dead weigh in field is back')
 })
 
 check('a questionnaire answer is edited in one place', () => {
