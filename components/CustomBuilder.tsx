@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react'
 // four ways in the time most people have is one movement each, which is not
 // training a muscle, it is visiting it.
 const GROUP_CAP = 3
-import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
+import { LIBRARY, MINE, MUSCLE_GROUPS, groupsOf, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
 import { SESSION_MINUTES, accessLabel } from '@/lib/questions'
 import KitPill from './KitPill'
@@ -48,7 +48,10 @@ export default function CustomBuilder({
   // A template taken as a starting point: seeded like an edit, but with no id,
   // so saving leaves the template alone and creates one of your own.
   seed?: { name: string; items: CustomWorkoutItem[] } | null
-  onSave: (name: string, items: CustomWorkoutItem[], id?: string) => void
+  // Saving and starting are two outcomes, not one. A workout built on Sunday
+  // for Tuesday is the ordinary case, and until now building one always threw
+  // you straight into a live session you had not asked to be in.
+  onSave: (name: string, items: CustomWorkoutItem[], id: string | undefined, start: boolean) => void
   // A movement the library has never heard of. The same four answers the
   // picker inside a session asks for, because a movement created here has to
   // behave like one created there.
@@ -178,6 +181,10 @@ export default function CustomBuilder({
   }
 
   const groups = customs.length ? [MINE, ...MUSCLE_GROUPS] : MUSCLE_GROUPS
+
+  // What it saves under. Typed if you typed one, otherwise read off the
+  // movements you picked.
+  const saveName = name.trim() || autoName(picked)
 
   return (
     <Sheet
@@ -473,17 +480,68 @@ export default function CustomBuilder({
         />
       ) : null}
 
-      <button
-        disabled={!name.trim() || picked.length === 0}
-        onClick={() => onSave(name.trim(), picked, editing?.id)}
-        className="sticky bottom-0 mt-4 w-full rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
-      >
-        {editing ? 'Save changes' : 'Save and start'}
-      </button>
+      {/* Its own bar rather than a bare sticky button. Floating over the
+          movement list with nothing behind it, the words sat on top of the
+          rows they were covering and both were unreadable. */}
+      <div className="sticky bottom-0 -mx-4 mt-4 bg-card px-4 pb-1 pt-3">
+        {/* A name is not a requirement, it is a nicety. Nine movements picked
+            and a greyed out button that said nothing about why is what this
+            screen did before, and the only thing wrong was an empty field
+            further up than the button somebody was looking at. So it names
+            itself after what is in it, the same way filling from muscle
+            groups already did, and says so before you commit. */}
+        {picked.length && !name.trim() ? (
+          <p className="mb-2 text-xs text-muted">
+            No name, so it saves as <span className="font-bold text-body">{autoName(picked)}</span>.
+          </p>
+        ) : null}
+        {editing ? (
+          <button
+            disabled={picked.length === 0}
+            onClick={() => onSave(saveName, picked, editing.id, false)}
+            className="w-full rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
+          >
+            Save changes
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              disabled={picked.length === 0}
+              onClick={() => onSave(saveName, picked, undefined, false)}
+              className="flex-1 rounded-xl py-3 text-sm font-bold text-body ring-1 ring-edge disabled:opacity-40"
+            >
+              Save for later
+            </button>
+            <button
+              disabled={picked.length === 0}
+              onClick={() => onSave(saveName, picked, undefined, true)}
+              className="flex-1 rounded-xl bg-accent py-3 text-sm font-medium text-on-accent disabled:opacity-40"
+            >
+              Save and start
+            </button>
+          </div>
+        )}
+      </div>
       </>
       )}
     </Sheet>
   )
+}
+
+// Names a workout after the muscles it actually works, most represented
+// first, three at most so it stays a name rather than an inventory. Anything
+// the library cannot file falls back to the day it was built.
+function autoName(items: CustomWorkoutItem[]): string {
+  const count = new Map<string, number>()
+  for (const i of items) {
+    for (const g of groupsOf(i.name)) {
+      if (g === MINE) continue
+      count.set(g, (count.get(g) ?? 0) + 1)
+    }
+  }
+  const top = [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([g]) => g)
+  if (!top.length) return `Workout ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+  return listed(top)
 }
 
 // "Chest", "Chest and Back", "Chest, Back and Quads". Used to name a session

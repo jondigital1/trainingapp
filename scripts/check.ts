@@ -5943,6 +5943,52 @@ check('the six week block is gone, not hidden', () => {
   }
 })
 
+check('a workout with movements in it can always be saved', () => {
+  const src = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  const bar = src.slice(src.indexOf('sticky bottom-0'))
+
+  // Reported: nine movements picked, and both a save and a start greyed out
+  // with nothing on screen saying why. The only thing missing was a name in a
+  // field three scrolls up. Nothing but an empty list may disable saving.
+  const disables = [...bar.matchAll(/disabled=\{([^}]*)\}/g)].map((m) => m[1])
+  assert.ok(disables.length >= 2, 'the save bar lost its buttons')
+  for (const d of disables) {
+    assert.ok(!/name/.test(d), `a missing name still blocks saving: ${d}`)
+    assert.ok(/picked\.length === 0/.test(d), `saving is blocked by something other than an empty list: ${d}`)
+  }
+
+  // Because a nameless workout names itself, and says so before you commit
+  // rather than after.
+  assert.ok(/const saveName = name\.trim\(\) \|\| autoName\(picked\)/.test(src),
+    'an untyped name is not filled in from the movements')
+  assert.ok(/autoName\(picked\)/.test(bar), 'the screen never says what it will be called')
+
+  // Saving for later and training it now are two outcomes, not one. Building
+  // a workout on Sunday for Tuesday used to drop you into a live session.
+  assert.ok(/Save for later/.test(bar), 'there is no way to keep a workout without starting it')
+  assert.ok(/Save and start/.test(bar), 'there is no way to start what you just built')
+  assert.ok(/onSave\(saveName, picked, undefined, false\)/.test(bar), 'save for later starts a session')
+  assert.ok(/onSave\(saveName, picked, undefined, true\)/.test(bar), 'save and start does not start')
+
+  // The app has to honour the difference.
+  const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
+  assert.ok(/if \(start\) startWorkout\(name, items, false\)/.test(app),
+    'the app starts a session regardless of which button was pressed')
+  // And a workout kept for later has to be somewhere you can see it, or
+  // saving it looks like losing it.
+  assert.ok(/setSheet\(start \? null : 'start'\)/.test(app),
+    'saving for later closes to nowhere, so the new workout is never seen')
+})
+
+check('the save bar does not sit on top of the workout', () => {
+  // It was a bare sticky button over a scrolling list: the words and the rows
+  // underneath them overlapped and neither could be read.
+  const src = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  const bar = src.slice(src.indexOf('sticky bottom-0'))
+  const cls = bar.slice(0, bar.indexOf('>'))
+  assert.ok(/bg-card/.test(cls), 'the save bar is transparent, so the list shows through it')
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)

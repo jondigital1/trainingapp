@@ -612,7 +612,17 @@ export default function App({
     }
   }
 
-  async function saveCustomWorkout(name: string, items: CustomWorkoutItem[], id?: string) {
+  // Building a workout and training it are two things somebody might want,
+  // and for a long time this did both every time: save a new one and you were
+  // in a live session whether or not that was the errand. Now the builder says
+  // which it is, and saving without starting lands you back on the list with
+  // the new one on it, so it is visible rather than merely reported.
+  async function saveCustomWorkout(
+    name: string,
+    items: CustomWorkoutItem[],
+    id?: string,
+    start = false,
+  ) {
     const editing = !!id
     const workout = { id: id ?? uid(), name, items }
     setData((prev) => ({
@@ -623,13 +633,13 @@ export default function App({
     }))
     setEditingWorkout(null)
     setSeedWorkout(null)
-    setSheet(null)
+    setSheet(start ? null : 'start')
     try {
       await db.saveCustomWorkout(sb, userId, workout)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save workout')
     }
-    if (!editing) startWorkout(name, items, false)
+    if (start) startWorkout(name, items, false)
   }
 
   async function removeCustomWorkout(id: string) {
@@ -1318,7 +1328,7 @@ export default function App({
           onCreate={(exercise) => void createCustomExercise(exercise)}
           onEdit={(exercise) => void editCustomExercise(exercise)}
           onDelete={(exercise) => void removeCustomExercise(exercise)}
-          onSave={(name, items, id) => void saveCustomWorkout(name, items, id)}
+          onSave={(name, items, id, start) => void saveCustomWorkout(name, items, id, start)}
           onClose={() => {
             setEditingWorkout(null)
             setSeedWorkout(null)
