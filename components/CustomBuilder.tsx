@@ -49,7 +49,18 @@ export default function CustomBuilder({
   const [fixing, setFixing] = useState<CustomExercise | null>(null)
 
   const all = useMemo(
-    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: MINE })), ...LIBRARY],
+    // Filed under My exercises, and also under whatever muscles it says it
+    // trains, so browsing Adductors finds the one you typed in yourself
+    // alongside the seven the library has.
+    () => [
+      ...customs.map((c) => ({
+        name: c.name,
+        type: c.type,
+        group: MINE,
+        groups: [MINE, ...(c.groups ?? [])],
+      })),
+      ...LIBRARY,
+    ],
     [customs],
   )
 
@@ -57,7 +68,7 @@ export default function CustomBuilder({
     const q = query.trim().toLowerCase()
     return all.filter((e) => {
       if (q) return matchesQuery(e.name, q)
-      if (group) return e.group === group
+      if (group) return (e.groups ?? [e.group]).includes(group)
       return false
     })
   }, [all, query, group])

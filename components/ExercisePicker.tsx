@@ -49,7 +49,18 @@ export default function ExercisePicker({
   const [superset, setSuperset] = useState<string | null>(null)
 
   const all = useMemo(
-    () => [...customs.map((c) => ({ name: c.name, type: c.type, group: MINE })), ...LIBRARY],
+    // Filed under My exercises, and also under whatever muscles it says it
+    // trains, so browsing Adductors finds the one you typed in yourself
+    // alongside the seven the library has.
+    () => [
+      ...customs.map((c) => ({
+        name: c.name,
+        type: c.type,
+        group: MINE,
+        groups: [MINE, ...(c.groups ?? [])],
+      })),
+      ...LIBRARY,
+    ],
     [customs],
   )
 
@@ -71,7 +82,9 @@ export default function ExercisePicker({
     const q = query.trim().toLowerCase()
     if (replacing && !q && !group) return suggestions
     return all.filter((e) => {
-      if (group && e.group !== group) return false
+      // Anything that trains it, not only what it is filed under, so the
+      // Copenhagen Plank turns up under Adductors as well as Core.
+      if (group && !(e.groups ?? [e.group]).includes(group)) return false
       if (!q) return true
       return matchesQuery(e.name, q)
     })

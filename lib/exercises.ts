@@ -5,10 +5,28 @@ import type { SetType } from './types'
 export interface LibraryExercise {
   name: string
   type: SetType
+  // The one thing it mostly trains, and the key it is filed under below. Every
+  // question with a single answer reads this: what to offer as a substitute,
+  // where it sits in the running order, which slot a plan can fill with it.
   group: string
+  // Everything it trains, primary first. Optional because the pickers hand
+  // similarTo a couple of movements built by hand that only have the one.
+  groups?: string[]
 }
 
-// name|type, grouped by muscle group. Type drives which inputs a set row shows.
+// name|type, or name|type|other,groups, filed under the group it mostly trains.
+// Type drives which inputs a set row shows.
+//
+// The third field is for a movement that genuinely trains something else as
+// well, and it is deliberately rare. A bench press does not name the triceps
+// and a pull up does not name the biceps. Those muscles work, but crediting
+// them a full set every time would fill the weekly bars with work nobody did
+// directly and make the ten set target mean nothing.
+//
+// The bar is whether somebody would program the movement to train that muscle.
+// A Copenhagen Plank is an adductor exercise as much as a core one, and while
+// the library had no Adductors group at all it could only be filed as half of
+// what it is.
 const RAW: Record<string, string[]> = {
   Chest: [
     'Barbell Bench Press|W',
@@ -184,8 +202,8 @@ const RAW: Record<string, string[]> = {
     'Belt Squat|W',
     'Leg Press|W',
     'Single Leg Press|W',
-    'Wide Stance Leg Press|W',
-    'Sumo Squat|W',
+    'Wide Stance Leg Press|W|Adductors',
+    'Sumo Squat|W|Adductors',
     'Leg Extension|W',
     'Single Leg Extension|W',
     'Bulgarian Split Squat|W',
@@ -199,7 +217,7 @@ const RAW: Record<string, string[]> = {
     'Wall Sit|T',
     'Box Squat|W',
     'Pistol Squat|R',
-    'Cossack Squat|R',
+    'Cossack Squat|R|Adductors',
     'Jump Squat|R',
   ],
   Hamstrings: [
@@ -215,7 +233,7 @@ const RAW: Record<string, string[]> = {
     'Nordic Curl|R',
     'Glute Ham Raise|R',
     'Cable Pull Through|W',
-    'Sumo Deadlift|W',
+    'Sumo Deadlift|W|Glutes,Adductors',
     'Deficit Deadlift|W',
     'Snatch Grip Romanian Deadlift|W',
     'B-Stance Romanian Deadlift|W',
@@ -236,7 +254,7 @@ const RAW: Record<string, string[]> = {
     'Hip Abduction|W',
     'Standing Hip Abduction|W',
     'Frog Pump|R',
-    'Curtsy Lunge|W',
+    'Curtsy Lunge|W|Adductors',
     'Barbell Hip Thrust|W',
     'Dumbbell Hip Thrust|W',
     'B-Stance Hip Thrust|W',
@@ -271,7 +289,7 @@ const RAW: Record<string, string[]> = {
     'Cable Hip Adduction|W',
     'Side Lying Hip Adduction|R',
     'Adductor Squeeze|T',
-    'Lateral Lunge|W',
+    'Lateral Lunge|W|Quads,Glutes',
   ],
   Calves: [
     'Standing Calf Raise|W',
@@ -293,7 +311,7 @@ const RAW: Record<string, string[]> = {
     'Side Plank|T',
     'RKC Plank|T',
     'Hollow Body Hold|T',
-    'Copenhagen Plank|T',
+    'Copenhagen Plank|T|Adductors',
     'Hanging Leg Raise|R',
     'Hanging Knee Raise|R',
     'Captains Chair Leg Raise|R',
@@ -385,8 +403,12 @@ export const MINE = 'My exercises'
 
 export const LIBRARY: LibraryExercise[] = MUSCLE_GROUPS.flatMap((group) =>
   RAW[group].map((entry) => {
-    const [name, type] = entry.split('|')
-    return { name, type: type as SetType, group }
+    const [name, type, also] = entry.split('|')
+    const extra = (also ?? '')
+      .split(',')
+      .map((g) => g.trim())
+      .filter((g) => g && g !== group)
+    return { name, type: type as SetType, group, groups: [group, ...extra] }
   }),
 )
 
@@ -455,8 +477,9 @@ export function groupOf(name: string): string | null {
 export function groupsOf(name: string): string[] {
   const own = customGroups(name)
   if (own.length) return own
-  const filed = BY_NAME.get(name.trim().toLowerCase())?.group
-  return filed ? [filed] : []
+  const filed = BY_NAME.get(name.trim().toLowerCase())
+  if (!filed) return []
+  return filed.groups ?? [filed.group]
 }
 
 export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'other'

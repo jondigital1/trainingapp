@@ -2638,9 +2638,7 @@ once trained. The one thing that did need wiring was the sore hip: its pattern
 has always named Adduction and had nothing to match, because none of the three
 groups it scoped over contained any.
 
-The real limit showed here. A library movement is filed under exactly one
-group, while a movement you type in can now name several. The Copenhagen Plank
-is honestly both, and there is no way to say so.
+The real limit showed here, and was fixed next: see below.
 
 ## Searching the way people talk
 
@@ -2657,6 +2655,38 @@ The same trimming applies to the check deciding whether to offer creating a
 movement, and that one matters more. Typing "dips", being told nothing matched
 and creating a movement called dips leaves it next to Dip forever, splitting
 every count that reads either of them.
+
+## A library movement can train more than one thing too
+
+Movements you type in could name several muscle groups. The library could not,
+so the Copenhagen Plank, an adductor exercise as much as a core one, could only
+be filed as half of what it is.
+
+An entry is `name|type` or `name|type|other,groups`, and the group it is filed
+under stays the primary. That matters: every question with one answer still
+reads one thing, so what to offer as a substitute, where a movement sits in the
+running order and which slot a plan can fill with it are all untouched. Only the
+questions that should take several answers changed.
+
+Seven movements of 320, and the restraint is the design rather than laziness.
+A bench press works the triceps and a pull up works the biceps, and neither
+names them. Crediting every muscle that participates would fill the weekly bars
+with work nobody did directly and make the ten set target mean nothing. The bar
+is whether somebody would programme the movement to train that muscle. A check
+fails if the ten most tempting compounds ever start naming the muscles that
+merely assist them, and another fails if the multi-group list grows past a
+twentieth of the library.
+
+Three things read the full list now. The weekly count, so three sets of a sumo
+deadlift is three of hamstrings, three of glutes and three of adductors.
+Browsing a group, so the Copenhagen Plank turns up under Adductors as well as
+Core, and a movement you made yourself turns up under the muscles it says it
+trains as well as under My exercises. And a flagged joint, which used to scope
+only over the group a movement was filed under, so a sore hip reached a sumo
+deadlift through the hamstrings or not at all.
+
+Measured rather than assumed: a leg day of ordinary movements counts exactly as
+it did before, and a generated four day plan is unchanged.
 
 ## Not built yet
 

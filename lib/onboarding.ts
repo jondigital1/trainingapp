@@ -488,7 +488,10 @@ function banned(profile: Profile): Set<string> {
       const groups = RED_FLAG_GROUPS[joint]
       if (!strict || !groups) continue
       for (const e of LIBRARY) {
-        if (!groups.includes(e.group)) continue
+        // Every group the movement trains, so a flagged hip reaches a sumo
+        // deadlift through the adductors rather than only through the
+        // hamstrings it happens to be filed under.
+        if (!(e.groups ?? [e.group]).some((g) => groups.includes(g))) continue
         if (strict.test(e.name)) out.add(e.name)
       }
     }

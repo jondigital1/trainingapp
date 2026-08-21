@@ -5363,6 +5363,105 @@ check('searching the way people talk finds the movement', () => {
   }
 })
 
+check('a library movement can train more than one thing, rarely and on purpose', () => {
+  resetCustoms()
+  // Movements you type in could name several groups; the library could not.
+  // So the Copenhagen Plank, which is an adductor exercise as much as a core
+  // one, could only be filed as half of what it is.
+  assert.deepEqual(groupsOf('Copenhagen Plank'), ['Core', 'Adductors'])
+  assert.equal(groupOf('Copenhagen Plank'), 'Core', 'the primary moved, and every single answer question with it')
+  assert.deepEqual(groupsOf('Sumo Deadlift'), ['Hamstrings', 'Glutes', 'Adductors'])
+
+  // A plain movement is a list of one rather than a special case, which is
+  // what lets everything downstream read one shape.
+  assert.deepEqual(groupsOf('Barbell Bench Press'), ['Chest'])
+
+  const multi = LIBRARY.filter((e) => (e.groups ?? []).length > 1)
+
+  // Rare and deliberate. This is the guard on the whole idea: crediting every
+  // muscle that participates would fill the weekly bars with work nobody did
+  // directly and make the ten set target mean nothing.
+  assert.ok(multi.length < LIBRARY.length / 20, `${multi.length} of ${LIBRARY.length} name more than one group`)
+
+  // Named by the movements that would be most tempting and are most wrong.
+  // A bench press works the triceps. Nobody programmes it to train them.
+  for (const name of [
+    'Barbell Bench Press', 'Pull Up', 'Chin Up', 'Dip', 'Barbell Row',
+    'Overhead Press', 'Lat Pulldown', 'Romanian Deadlift', 'Hip Thrust', 'Leg Press',
+  ]) {
+    assert.equal(groupsOf(name).length, 1, `${name} started crediting the muscles that merely assist it`)
+  }
+
+  // Structure: the primary comes first, every group named is a real one, and
+  // none of them are repeated.
+  for (const e of multi) {
+    const groups = e.groups!
+    assert.equal(groups[0], e.group, `${e.name} does not lead with the group it is filed under`)
+    assert.equal(new Set(groups).size, groups.length, `${e.name} names a group twice`)
+    assert.ok(groups.length <= 3, `${e.name} names ${groups.length} groups, which is a movement doing everything`)
+    for (const g of groups) {
+      assert.ok(MUSCLE_GROUPS.includes(g), `${e.name} names ${g}, which is not a muscle group`)
+    }
+  }
+})
+
+check('the sets land on everything the movement trains', () => {
+  resetCustoms()
+  const sets = (n: number) => Array.from({ length: n }, (_, i) => ({ id: String(i), w: 60, r: 8 }))
+  const day = (names: string[]): Workout[] => [{
+    id: 'w', date: '2026-08-18', title: 'Legs',
+    exercises: names.map((name, i) => ({ id: String(i), name, type: 'W' as const, sets: sets(3) })),
+  }]
+  const read = (names: string[]) => {
+    const out = new Map<string, number>()
+    for (const g of weeklyCoverage(day(names), '2026-08-18')) out.set(g.group, g.sets)
+    return out
+  }
+
+  // A week of ordinary movements counts exactly as it did before. This is the
+  // half of the change that has to be invisible.
+  const plain = read(['Back Squat', 'Leg Extension'])
+  assert.equal(plain.get('Quads'), 6)
+  assert.equal(plain.get('Hamstrings'), 0)
+  assert.equal(plain.get('Adductors') ?? 0, 0)
+
+  // And a sumo deadlift credits the three things it actually trains.
+  const sumo = read(['Sumo Deadlift'])
+  assert.equal(sumo.get('Hamstrings'), 3)
+  assert.equal(sumo.get('Glutes'), 3)
+  assert.equal(sumo.get('Adductors'), 3)
+  assert.equal(sumo.get('Quads'), 0, 'a movement is crediting a group it does not name')
+
+  // The one that started this.
+  assert.equal(read(['Copenhagen Plank']).get('Adductors'), 3)
+  assert.equal(read(['Copenhagen Plank']).get('Core'), 3)
+})
+
+check('browsing a group finds what trains it, not only what is filed there', () => {
+  // The payoff. Filing is one group deep, so browsing had to be too, and the
+  // Copenhagen Plank was invisible to anybody looking for adductor work.
+  const trains = (group: string) => LIBRARY.filter((e) => (e.groups ?? [e.group]).includes(group))
+  const adductors = trains('Adductors').map((e) => e.name)
+  assert.ok(adductors.includes('Copenhagen Plank'), 'the plank is still hidden under Core')
+  assert.ok(adductors.includes('Sumo Deadlift'))
+  assert.ok(adductors.includes('Hip Adduction'), 'the movements filed here have gone')
+  assert.ok(adductors.length >= 12, `only ${adductors.length} movements train the adductors`)
+
+  // Both screens that browse by group read the same way.
+  for (const file of ['ExercisePicker', 'CustomBuilder']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(/\(e\.groups \?\? \[e\.group\]\)\.includes\(group\)/.test(src), `${file} still browses one group deep`)
+  }
+
+  // And a flagged joint reaches a movement through any group it trains, which
+  // is the difference between caution and caution with a hole in it.
+  const onboarding = readFileSync(new URL('../lib/onboarding.ts', import.meta.url), 'utf8')
+  assert.ok(
+    /\(e\.groups \?\? \[e\.group\]\)\.some\(\(g\) => groups\.includes\(g\)\)/.test(onboarding),
+    'a sore joint only scopes over the group a movement is filed under',
+  )
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)
