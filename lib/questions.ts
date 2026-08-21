@@ -68,6 +68,12 @@ export const ACCESS: Question<NonNullable<Profile['access']>> = {
 }
 
 
+// "Full gym", "Bodyweight only". One place, because two screens ask where you
+// are training today and two vocabularies for one question is how they drift.
+export function accessLabel(access: Profile['access']): string {
+  return ACCESS.options.find((o) => o.v === (access ?? 'full'))?.label ?? 'Full gym'
+}
+
 export const UNITS: Question<Unit> = {
   label: 'Weights in',
   columns: 2,

@@ -44,7 +44,7 @@ import { summarise, trend } from '../lib/body'
 import { bestLifts, longestStreak } from '../lib/gamify'
 import { safeNext } from '../lib/redirect'
 import { columnsFor } from '../lib/columns'
-import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, focusNote, focusOf, OTHER_NOTES, OTHER_TRAINING, STEP_COUNT } from '../lib/onboarding'
+import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, fitsKit, focusNote, focusOf, OTHER_NOTES, OTHER_TRAINING, STEP_COUNT } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
@@ -4913,9 +4913,14 @@ check('a question asked at signup is not asked again on the profile', () => {
   assert.ok(!settings.includes('Six week blocks'), 'the blocks switch is back on the profile')
 
   // Which gym is the one exception, because it is also asked where a workout
-  // is built: a hotel room is a fact about today, not about you.
-  const start = readFileSync(new URL('../components/StartSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(start.includes('AWAY_KITS'), 'building a workout cannot ask what the room has')
+  // is built: a hotel room is a fact about today, not about you. It is the
+  // same four answers in the same words on both screens now, rather than a
+  // second three option vocabulary that could not say "my own gym".
+  for (const file of ['StartSheet', 'CustomBuilder']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(src.includes('ACCESS.options'), `${file} cannot ask what the room has`)
+    assert.ok(src.includes('accessLabel('), `${file} names the kit its own way`)
+  }
 })
 
 check('a movement can be made from the screen that lists them', () => {
@@ -5511,6 +5516,82 @@ check('weight is answered where the rest of "how is it going" is answered', () =
   const pills = sheet.indexOf('{SECTIONS.map(')
   const sore = sheet.indexOf('<SoreFields draft={draft} set={set} toggle={toggle} />\n\n      {/* One way in')
   assert.ok(sore > 0 && sore < pills, 'the sore joints are not sitting under the stats card')
+})
+
+check('where you are training today is one question, asked once', () => {
+  // "Away from your gym?" was a collapsible section holding three things: a
+  // kit picker, a second copy of the plan days rebuilt for that kit, and a
+  // session built from muscle groups. Only the first was about being away.
+  //
+  // The plan days are the plan whatever room you are standing in, so a second
+  // list of them was a duplicate that could disagree with the first. And
+  // building a session for chosen muscles is what somebody at their own gym
+  // with forty minutes wants when the day does not suit them: a general
+  // feature reachable only by claiming to be somewhere else.
+  const start = readFileSync(new URL('../components/StartSheet.tsx', import.meta.url), 'utf8')
+  // Matched as rendered text rather than anywhere in the file, because the
+  // comment above the replacement says what it replaced, and a check that
+  // cannot tell a heading from a note about a heading is reporting on prose.
+  assert.ok(!/>Away from your gym/.test(start), 'the away section came back')
+  assert.ok(!/>Your plan, on today/.test(start), 'the plan days are drawn twice again')
+
+  // One list of plan days, built against today's kit rather than the profile's.
+  assert.equal((start.match(/<DayCard/g) || []).length, 1, 'the plan days are drawn from more than one place')
+  assert.ok(/awayDayFor\(day!, profile, kit\)/.test(start), 'the plan days ignore where you are today')
+
+  // One kit control for the sheet, since both things on it that build you a
+  // session read it and two controls for one question is how they disagree.
+  assert.equal((start.match(/ACCESS\.options/g) || []).length, 1, 'the kit is asked twice on one sheet')
+  assert.ok(/awaySession\(wanted, profile, kit\)/.test(start), 'the built session ignores where you are')
+
+  // Today only. A hotel is not a move, and nothing here may write the profile.
+  assert.ok(!/onSave|onApply|access:/.test(start.slice(start.indexOf('setKit('), start.indexOf('setKit(') + 400)),
+    'choosing a kit for today changes which gym is yours')
+})
+
+check('what the room has is a fact about the room, not about you', () => {
+  // The builder listed all 320 movements with no idea what was in the room,
+  // which is the one screen where that matters: it is where somebody builds a
+  // session because the plan does not fit where they are standing.
+  const src = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  assert.ok(/fitsKit\(e\.name, kit\)/.test(src), 'the builder shows a full gym wherever you are')
+  assert.ok(/e\.group !== MINE/.test(src), 'your own movements are being hidden by a guess about their kit')
+
+  // Equipment only. The plan builder also weighs experience and preference,
+  // which is right when the app chooses for you and wrong when you choose for
+  // yourself: a manual list must not quietly hide what somebody went to find.
+  assert.ok(fitsKit('Weighted Pull Up', 'body'), 'a demanding movement is hidden from a manual list')
+  assert.ok(!fitsKit('Barbell Bench Press', 'body'), 'a barbell turned up in a room with no barbell')
+  assert.ok(!fitsKit('Barbell Bench Press', 'home'), 'a barbell turned up at home with dumbbells')
+  assert.ok(fitsKit('Dumbbell Bench Press', 'home'))
+  assert.ok(fitsKit('Machine Chest Press', 'basic'))
+  assert.ok(!fitsKit('Machine Chest Press', 'home'), 'a machine turned up in a front room')
+  assert.ok(fitsKit('Push Up', 'body'))
+  // A filter that empties a group is a dead end unless the screen says so.
+  // With nothing but a floor, three groups genuinely have nothing: there is no
+  // bodyweight trap work and no loaded carry without a load. That is honest,
+  // and it is why the empty state has to name the reason rather than tell
+  // somebody to pick a muscle group they have just picked.
+  const empty = new Set<string>()
+  for (const kit of ['full', 'basic', 'home', 'body'] as const) {
+    for (const group of MUSCLE_GROUPS) {
+      const some = LIBRARY.some((e) => (e.groups ?? [e.group]).includes(group) && fitsKit(e.name, kit))
+      if (!some) empty.add(`${group} on ${kit}`)
+    }
+  }
+  assert.deepEqual(
+    [...empty].sort(),
+    ['Biceps on body', 'Carries on body', 'Traps on body'],
+    'a muscle group became unreachable on a kit, or one became reachable and this list is stale',
+  )
+
+  // So the screen says which of the three nothings it is. It used to say
+  // "pick a muscle group or search" to somebody who had just picked one.
+  assert.ok(/Nothing for \$\{group\.toLowerCase\(\)\}/.test(src), 'an emptied group says nothing useful')
+  assert.ok(/hiddenByKit/.test(src), 'searching for something the room cannot do reads as never heard of it')
+  // And the offer to create is read off the unfiltered list, or a movement the
+  // kit is hiding could be created a second time.
+  assert.ok(/const exact = all\.some/.test(src), 'a movement hidden by the kit can be created again')
 })
 
 void (async () => {

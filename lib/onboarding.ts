@@ -500,6 +500,18 @@ function banned(profile: Profile): Set<string> {
   return out
 }
 
+// Whether the room has what this movement needs.
+//
+// Equipment only, deliberately. The plan builder below also weighs how long
+// somebody has been training and what they said they would rather not do,
+// which is right when the app is choosing for you and wrong when you are
+// choosing for yourself: a manual builder must not quietly hide a movement
+// somebody went looking for. What kit is in the room is a fact about the room.
+// The rest is the plan's business.
+export function fitsKit(name: string, access: Profile['access']): boolean {
+  return ACCESS_EQUIPMENT[access ?? 'full'].includes(equipmentOf(name))
+}
+
 function allowed(profile: Profile, name: string, bans: Set<string>): boolean {
   if (bans.has(name)) return false
   const equipment = equipmentOf(name)
@@ -779,13 +791,11 @@ export function emphasise(items: PlannedItem[], focus: string[]): PlannedItem[] 
 //
 // The kits are the access levels that already exist, because a hotel gym is a
 // basic gym, a room with dumbbells is a home, and a room is a body.
-export type AwayKit = 'basic' | 'home' | 'body'
-
-export const AWAY_KITS: { v: AwayKit; label: string; note: string }[] = [
-  { v: 'basic', label: 'Hotel gym', note: 'Dumbbells, some machines' },
-  { v: 'home', label: 'Dumbbells only', note: 'A rack and a bench, maybe' },
-  { v: 'body', label: 'Just me', note: 'A floor and a door frame' },
-]
+// Any gym, including your own. This was three options because the only way to
+// reach the session builder was to say you were away from home, so "full" was
+// the one answer it could not take. That door is gone and your own gym is a
+// perfectly ordinary answer to where you are training today.
+export type AwayKit = Profile['access']
 
 // Today's planned day, rebuilt for today's kit. The same build that made the
 // day makes the away version, so the swaps land where a sore joint would send

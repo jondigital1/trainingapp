@@ -4,16 +4,15 @@ import { useEffect, useState } from 'react'
 import { SPLITS, dayItems, dayNames } from '@/lib/templates'
 import {
   AWAY_FULL_BODY,
-  AWAY_KITS,
   awayDayFor,
   awaySession,
   buildDay,
   dayById,
   FOCUS_GROUPS,
-  type AwayKit,
   type Plan,
   type Profile,
 } from '@/lib/onboarding'
+import { ACCESS, accessLabel } from '@/lib/questions'
 import { Many, Options } from './Form'
 import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import Sheet from './Sheet'
@@ -48,11 +47,16 @@ export default function StartSheet({
 }) {
   const [openSplit, setOpenSplit] = useState<string | null>(SPLITS[0].id)
   const [confirm, setConfirm] = useState<string | null>(null)
-  // The away section. A kit is chosen for today and stored nowhere: the
+  // One kit for the whole sheet, chosen for today and stored nowhere: the
   // profile keeps saying which gym is yours, because a hotel is not a move.
-  const [away, setAway] = useState(false)
-  const [kit, setKit] = useState<AwayKit>('home')
-  const [awayGroups, setAwayGroups] = useState<string[]>([])
+  //
+  // Asked once rather than per section. Both things on this sheet that build
+  // you a session read it, and two controls for one question on one screen is
+  // how the two of them come to disagree.
+  const [kit, setKit] = useState<Profile['access']>(profile.access ?? 'full')
+  const [kitOpen, setKitOpen] = useState(false)
+  const [groups, setGroups] = useState<string[]>([])
+  const [buildOpen, setBuildOpen] = useState(false)
 
   useEffect(() => {
     if (!confirm) return
@@ -88,6 +92,48 @@ export default function StartSheet({
   return (
     <Sheet title="Start a workout" onClose={onClose}>
       {build}
+      {/* One line, not a question. The honest answer is "my gym" almost every
+          day, so asking outright would put a decision in front of everybody
+          that matters to somebody a few times a year. It says where it thinks
+          you are and opens only when that is wrong.
+
+          There was a whole collapsible section called "Away from your gym?"
+          here. It held three things: this control, a second copy of the plan
+          days rebuilt for the kit, and a session built from muscle groups.
+          Only the first was about being away. The plan days are the plan
+          whatever room you are in, and building a session for chosen muscles
+          is what somebody at their own gym wants when the day does not suit
+          them. A general feature behind a specific pretext, and a duplicate
+          list, both gone. */}
+      <button
+        onClick={() => setKitOpen((v) => !v)}
+        aria-expanded={kitOpen}
+        className="mb-2 flex w-full items-center justify-between gap-3 px-1 py-1 text-left"
+      >
+        <span className="text-xs text-muted">
+          Built for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
+        </span>
+        <span className="shrink-0 text-xs text-faint">
+          {kitOpen ? 'close' : kit === (profile.access ?? 'full') ? 'somewhere else?' : 'change'}
+        </span>
+      </button>
+      {kitOpen ? (
+        <div className="mb-4">
+          <Options
+            value={kit ?? 'full'}
+            onPick={(v) => {
+              setKit(v)
+              setKitOpen(false)
+            }}
+            options={ACCESS.options}
+            columns={ACCESS.columns}
+          />
+          <p className="mt-1.5 text-xs leading-relaxed text-muted">
+            For today only. Your gym stays your gym, and tomorrow is normal.
+          </p>
+        </div>
+      ) : null}
+
       {planDays.length ? (
         <div className="mb-5">
           <h3 className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
@@ -95,9 +141,12 @@ export default function StartSheet({
           </h3>
           <div className="mt-2 flex flex-col gap-2">
             {planDays.map((day, i) => {
-              // What is actually in it and what it will cost you, so the choice
-              // is made before you commit rather than after.
-              const items = buildDay(day!, profile)
+              // Built against today's kit rather than the profile's, which for
+              // most people on most days is the same thing. A quad day in a
+              // hotel is still a quad day: the same build makes it, so the
+              // swaps land where a sore joint would send them.
+              const items = awayDayFor(day!, profile, kit)
+              if (!items.length) return null
               return (
                 <DayCard
                   key={`${day!.id}-${i}`}
@@ -112,89 +161,53 @@ export default function StartSheet({
         </div>
       ) : null}
 
-      {/* Training somewhere that is not your gym. The plan days are rebuilt
-          for what the room has, so a quad day in a hotel is still a quad day,
-          and there is a from-scratch builder for when the plan does not fit
-          the room at all. Nothing here touches the profile: tomorrow is
-          normal. */}
-      <div className="mt-5">
+      {/* Not "away from your gym". Somebody at their own gym with forty
+          minutes and a leg day that does not suit today wants this too, and
+          it was only reachable by claiming to be somewhere else. */}
+      <div className="mb-5">
         <button
-          onClick={() => setAway((v) => !v)}
-          aria-expanded={away}
+          onClick={() => setBuildOpen((v) => !v)}
+          aria-expanded={buildOpen}
           className="surface flex w-full items-center justify-between rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
         >
-          <span className="text-sm font-bold">Away from your gym?</span>
-          <span className="text-xs text-muted">{away ? 'close' : 'open'}</span>
+          <span className="text-sm font-bold">Build me one for today</span>
+          <span className="text-xs text-muted">{buildOpen ? 'close' : 'open'}</span>
         </button>
 
-        {away ? (
-          <div className="mt-3 flex flex-col gap-4">
-            <div>
-              <h4 className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-                What have you got?
-              </h4>
-              <Options value={kit} onPick={setKit} options={AWAY_KITS} />
-            </div>
-
-            {planDays.length ? (
-              <div>
-                <h4 className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-                  Your plan, on today's kit
-                </h4>
-                <div className="flex flex-col gap-2">
-                  {planDays.map((day, i) => {
-                    const items = awayDayFor(day!, profile, kit)
-                    if (!items.length) return null
-                    return (
-                      <DayCard
-                        key={`away-${day!.id}-${i}`}
-                        name={day!.name}
-                        items={items}
-                        goal={goal}
-                        onStart={() => onStart(day!.name, items, true, day!.id)}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            <div>
-              <h4 className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-                Or just for what you have
-              </h4>
-              <Many
-                columns={2}
-                value={awayGroups}
-                onToggle={(g) =>
-                  setAwayGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))
-                }
-                options={FOCUS_GROUPS.map((g) => ({ v: g, label: g }))}
-              />
-              {(() => {
-                const groups = awayGroups.length ? awayGroups : AWAY_FULL_BODY
-                const items = awaySession(groups, profile, kit)
-                if (!items.length) return null
-                const est = fmtEstimate(estimateSeconds(items, goal))
-                const title = awayGroups.length
-                  ? awayGroups.length === 1
-                    ? awayGroups[0]
-                    : `${awayGroups.slice(0, -1).join(', ')} and ${awayGroups[awayGroups.length - 1]}`
-                  : 'Full body'
-                return (
-                  <button
-                    onClick={() => onStart(title, items, true)}
-                    className="mt-2 w-full rounded-2xl bg-accent py-3 font-display text-sm font-bold text-on-accent"
-                  >
-                    Start {title.toLowerCase()} &middot; {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
-                  </button>
-                )
-              })()}
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                Nothing picked is a full body session. Sore joints and what you are bringing up
-                still apply, and your gym stays your gym: this is for today only.
-              </p>
-            </div>
+        {buildOpen ? (
+          <div className="mt-3">
+            <h4 className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+              What do you want to train?
+            </h4>
+            <Many
+              columns={2}
+              value={groups}
+              onToggle={(g) => setGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))}
+              options={FOCUS_GROUPS.map((g) => ({ v: g, label: g }))}
+            />
+            {(() => {
+              const wanted = groups.length ? groups : AWAY_FULL_BODY
+              const items = awaySession(wanted, profile, kit)
+              if (!items.length) return null
+              const est = fmtEstimate(estimateSeconds(items, goal))
+              const title = groups.length
+                ? groups.length === 1
+                  ? groups[0]
+                  : `${groups.slice(0, -1).join(', ')} and ${groups[groups.length - 1]}`
+                : 'Full body'
+              return (
+                <button
+                  onClick={() => onStart(title, items, true)}
+                  className="mt-2 w-full rounded-2xl bg-accent py-3 font-display text-sm font-bold text-on-accent"
+                >
+                  Start {title.toLowerCase()} &middot; {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
+                </button>
+              )
+            })()}
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Nothing picked is a full body session. Sore joints and what you are bringing up still
+              apply, and it is built for wherever you said you are today.
+            </p>
           </div>
         ) : null}
       </div>

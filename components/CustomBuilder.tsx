@@ -3,6 +3,9 @@
 import { useMemo, useState } from 'react'
 import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
+import { ACCESS, accessLabel } from '@/lib/questions'
+import { fitsKit, type Profile } from '@/lib/onboarding'
+import { Options } from './Form'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
 import Sheet from './Sheet'
@@ -17,6 +20,7 @@ export default function CustomBuilder({
   onCreate,
   onEdit,
   onDelete,
+  access,
   onClose,
 }: {
   customs: CustomExercise[]
@@ -35,11 +39,20 @@ export default function CustomBuilder({
   // Changing one of your own, from the same screen you made it on.
   onEdit?: (exercise: CustomExercise) => void
   onDelete?: (exercise: CustomExercise) => void
+  // The gym you usually train in, which is where the kit filter starts. This
+  // screen is where somebody builds a session because the plan does not fit
+  // the room they are standing in, so it is the one place a manual list of
+  // 320 movements has to be able to narrow to what is actually there.
+  access?: Profile['access']
   onClose: () => void
 }) {
   const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string | null>(null)
+  // Today only, and stored nowhere. A hotel is not a move: the profile keeps
+  // saying which gym is yours.
+  const [kit, setKit] = useState<Profile['access']>(access ?? 'full')
+  const [kitOpen, setKitOpen] = useState(false)
   const [picked, setPicked] = useState<CustomWorkoutItem[]>(editing?.items ?? seed?.items ?? [])
   // While on, everything picked joins the same superset, exactly like the
   // picker in a live session. Off and on again starts a new group.
@@ -67,14 +80,26 @@ export default function CustomBuilder({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     return all.filter((e) => {
+      // Your own movements are never filtered by kit. The app has no idea
+      // what a movement somebody typed in needs, and guessing wrong hides the
+      // thing they made specifically because the library did not have it.
+      if (e.group !== MINE && !fitsKit(e.name, kit)) return false
       if (q) return matchesQuery(e.name, q)
       if (group) return (e.groups ?? [e.group]).includes(group)
       return false
     })
-  }, [all, query, group])
+  }, [all, query, group, kit])
 
   // Already in the library, or already yours, so there is nothing to create.
+  // Read off the unfiltered list on purpose: a movement the kit is hiding is
+  // still a movement, and offering to create a second one would be the
+  // duplicate this guard exists to stop.
   const exact = all.some((e) => isExistingName(e.name, query))
+
+  // Searched for something real that this room cannot do. Worth saying, since
+  // an empty list under a search box reads as "we have never heard of it".
+  const hiddenByKit =
+    !!query.trim() && results.length === 0 && all.some((e) => matchesQuery(e.name, query))
 
   function toggle(item: CustomWorkoutItem) {
     setPicked((prev) =>
@@ -141,6 +166,37 @@ export default function CustomBuilder({
         placeholder="Or search every movement"
         className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
+
+      {/* One quiet line rather than a question. The honest answer is "my gym"
+          almost every day, so asking outright would put a decision in front of
+          everybody that matters to somebody a few times a year. It says where
+          it thinks you are and opens only when that is wrong. */}
+      <button
+        onClick={() => setKitOpen((v) => !v)}
+        aria-expanded={kitOpen}
+        className="mt-2 flex w-full items-center justify-between gap-3 px-1 py-1.5 text-left"
+      >
+        <span className="text-xs text-muted">
+          Building for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
+        </span>
+        <span className="shrink-0 text-xs text-faint">{kitOpen ? 'close' : 'change'}</span>
+      </button>
+      {kitOpen ? (
+        <div className="mt-1">
+          <Options
+            value={kit ?? 'full'}
+            onPick={(v) => {
+              setKit(v)
+              setKitOpen(false)
+            }}
+            options={ACCESS.options}
+            columns={ACCESS.columns}
+          />
+          <p className="mt-1.5 text-xs text-muted">
+            For this workout only. Your gym stays your gym.
+          </p>
+        </div>
+      ) : null}
 
       <button
         onClick={() => setSuperset(superset ? null : uid())}
@@ -227,8 +283,20 @@ export default function CustomBuilder({
             </div>
           )
         })}
-        {results.length === 0 && !query.trim() ? (
-          <p className="py-6 text-center text-sm text-muted">Pick a muscle group or search</p>
+        {/* Three different nothings, and they used to all say "pick a muscle
+            group or search", which tells somebody to do the thing they just
+            did. The kit filter can empty a group outright: there is no
+            bodyweight trap work, and there never will be. */}
+        {results.length === 0 ? (
+          <p className="py-6 text-center text-sm leading-relaxed text-muted">
+            {hiddenByKit
+              ? `${query.trim()} needs more than ${accessLabel(kit).toLowerCase()}. Change what you have above to reach it.`
+              : group
+                ? `Nothing for ${group.toLowerCase()} with ${accessLabel(kit).toLowerCase()}. Try another muscle, or change what you have above.`
+                : query.trim()
+                  ? null
+                  : 'Pick a muscle group or search'}
+          </p>
         ) : null}
       </div>
 

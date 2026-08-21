@@ -2732,6 +2732,56 @@ Two signposts broke, which is the check on Lifty's answers doing its job: an
 answer sent people to the profile "under My body", and a plan error told them
 to loosen their joints there. Both now point at the top of the profile.
 
+## Away from your gym stops being a place you go
+
+It was a collapsible section holding three things, and only one of them was
+about being away. The kit picker was. The second copy of the plan days rebuilt
+for that kit was not, because the plan is the plan whatever room you are
+standing in. And a session built from chosen muscle groups was not either: that
+is what somebody at their own gym with forty minutes and a leg day that does
+not suit wants, and it was reachable only by claiming to be somewhere else. A
+general feature behind a specific pretext, next to a duplicate list that could
+disagree with the original.
+
+Three pieces, three homes.
+
+The kit is one question for the Start sheet, asked once and read by both things
+on it that build you a session. One quiet line saying where it thinks you are,
+opening only when that is wrong, because the honest answer is "my gym" almost
+every day and a selector sitting there asks everybody a question that matters
+to somebody a few times a year. The plan days rebuild in place: same four
+cards, same names, different movements. A full gym upper day of seven
+movements and an hour and ten becomes five movements and forty minutes on
+bodyweight, through the same builder, so a sore joint still sends the swaps
+where it would have.
+
+Build me one for today is its own section, available wherever you are.
+
+And the builder learned what a room has, which was the original suggestion and
+the best of the three. It listed all 320 movements with no idea what was
+around, on the one screen where that matters most: it is where somebody builds
+a session precisely because the plan does not fit where they are standing.
+Chest goes from 26 movements to 8 with nothing but a floor.
+
+Equipment only, deliberately. The plan builder also weighs how long somebody
+has trained and what they said they would rather avoid, which is right when the
+app is choosing and wrong when you are: a manual list must not quietly hide a
+movement somebody went looking for. Movements you typed in yourself are never
+filtered, because the app has no idea what they need and guessing wrong hides
+the thing you made because the library lacked it.
+
+Writing the check found a dead end. With nothing but a floor, three groups are
+genuinely empty: there is no bodyweight trap work and no loaded carry without a
+load. The screen said "pick a muscle group or search" to somebody who had just
+picked one. It now names the reason, and searching for a real movement the room
+cannot do says so rather than reading as never heard of it. The three empty
+combinations are pinned, so a fourth fails.
+
+Two vocabularies became one. The away section had its own three options, Hotel
+gym and Dumbbells only and Just me, which could not say "my own gym" because
+the only way to reach them was to say you were not there. It is the
+questionnaire's four answers in the questionnaire's words on both screens now.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

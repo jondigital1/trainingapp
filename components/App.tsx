@@ -1305,6 +1305,7 @@ export default function App({
 
       {sheet === 'builder' ? (
         <CustomBuilder
+          access={profile.access}
           customs={data.custom}
           editing={data.customWorkouts.find((w) => w.id === editingWorkout) ?? null}
           seed={seedWorkout}
