@@ -5919,6 +5919,52 @@ check('a muscle gets trained several ways, not one way several times', () => {
   assert.ok(legs.some((i) => i.name === 'Hip Thrust'), 'the plain hip thrust lost to a variant')
 })
 
+check('a superset is any number of movements, up to the whole session', () => {
+  // Two was never the limit and there is no cap: a tri set, a giant set, or
+  // the entire session as one circuit are the same mechanism, since a superset
+  // is consecutive exercises sharing a tag and a tag can be on any number of
+  // them. Checked here because it is a capability nothing else would notice
+  // losing, and the only visible way in is tapping Superset again.
+  const names = ['Bench', 'Row', 'Curl', 'Pushdown', 'Plank', 'Carry']
+  let list: Exercise[] = names.map((name, i) => ({
+    id: String(i), name, type: 'W' as const, sets: [], superset: null,
+  }))
+  for (let i = 1; i < names.length; i += 1) {
+    list = linkWith(list, '0', String(i))
+    const runs = groupRuns(list)
+    const grouped = runs.filter(isSuperset)
+    assert.equal(grouped.length, 1, `linking a ${i + 1}th movement made ${grouped.length} groups`)
+    assert.equal(grouped[0].exercises.length, i + 1, `a group of ${i + 1} came back as ${grouped[0].exercises.length}`)
+  }
+  // Everything ends up in the one group, in the order it was added.
+  assert.deepEqual(groupRuns(list)[0].exercises.map((e) => e.name), names)
+  assert.equal(groupRuns(list).length, 1, 'the whole session is not one run')
+
+  // And two separate groups stay separate, however big either gets.
+  let two: Exercise[] = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({
+    id, name: id, type: 'W' as const, sets: [], superset: null,
+  }))
+  two = linkWith(two, 'a', 'b')
+  two = linkWith(two, 'a', 'c')
+  two = linkWith(two, 'd', 'e')
+  two = linkWith(two, 'd', 'f')
+  const runs = groupRuns(two).filter(isSuperset)
+  assert.deepEqual(runs.map((r) => r.exercises.length), [3, 3], 'two tri sets did not stay two')
+  assert.deepEqual(runs.map((r) => supersetLetter(r.index)), ['A', 'B'], 'the groups are not lettered apart')
+
+  // One clock for the group, set by whichever movement asks for the most, so
+  // adding a fifth movement cannot shorten the rest.
+  const long: Exercise[] = [
+    { id: '1', name: 'Back Squat', type: 'W' as const, sets: [], superset: 'x' },
+    { id: '2', name: 'Cable Curl', type: 'W' as const, sets: [], superset: 'x' },
+    { id: '3', name: 'Plank', type: 'T' as const, sets: [], superset: 'x' },
+  ]
+  assert.equal(supersetRest(groupRuns(long)[0], 'muscle'), restFor('Back Squat', 'W', 'muscle'))
+
+  // A movement already in the group is not offered again.
+  assert.deepEqual(partnersFor(long, '1').map((e) => e.id), [])
+})
+
 void (async () => {
   for (const run of later) await run()
   console.log(`\n${checks} checks passed`)
