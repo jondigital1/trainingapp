@@ -741,9 +741,13 @@ professional fails too, and three of them are checked for the actual numbers
 somebody came for: the protein range, the rate of gain, the size of a surplus.
 An answer that will not say them is not a safer answer.
 
-The panel draws the same line rather than leaving it to be inferred one answer
-at a time. It answers training questions, eating to train among them, and says
-that an injury, a condition or medication belongs with a doctor or a physio.
+A paragraph at the bottom of the panel drew the same line in general terms for
+a while, and it has gone. It is the third place on that screen saying what the
+library is, after the line under Lifty's name and the answer given to a
+question it cannot take, and a standing disclaimer is read once and never
+again. The line is held where it does work: in the six clinical answers
+themselves, each of which names a professional, and in the check that fails if
+one stops.
 
 ## Looking outward for the questions
 

@@ -3676,14 +3676,15 @@ check('the line between a health question and a performance one', () => {
   assert.ok(/half a pound a week|few hundred calories/i.test(KNOWLEDGE.find((e) => e.id === 'basic-bulk')!.a))
   assert.ok(/pound or two a month/i.test(KNOWLEDGE.find((e) => e.id === 'basic-rate-of-gain')!.a))
 
-  // The panel says which of the two it is, rather than leaving it to be
-  // inferred from the answers one at a time.
+  // The panel carried a paragraph at the bottom saying the same thing in
+  // general terms, and it went. The two lines above it already said what the
+  // library is, the answer for a question it cannot take already says so, and
+  // the rule itself is enforced where it matters: on the answers, above.
+  // A standing disclaimer is read once and then never again, so it was doing
+  // no work the six clinical answers were not already doing on their own.
   const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(/answers training questions/.test(sheet), 'the panel stopped saying what it does')
-  assert.ok(/injury, a condition or medication/.test(sheet), 'the panel stopped saying what it does not')
-  // And it must not claim to be no use on food, since eating to train is half
-  // of what people ask about and it answers that.
-  assert.ok(!/nutrition service/.test(sheet), 'the panel disowns questions it actually answers')
+  assert.ok(/looks them up rather than/.test(sheet), 'nothing says the answers are looked up rather than made up')
+  assert.ok(/never\n\s*searches the internet/.test(sheet), 'a question it cannot take no longer says why')
 })
 
 check('the questions the whole internet asks have answers here', () => {
