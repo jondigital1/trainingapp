@@ -233,7 +233,6 @@ export default function ProfileSheet({
     numOrNull(age) != null ? `${numOrNull(age)} years` : null,
     heightIn != null ? fmtHeight(heightIn, unit) : null,
     body.current != null ? fmtWeight(body.current, unit) : null,
-    draft.goalWeight != null ? `heading for ${fmtWeight(draft.goalWeight, unit)}` : null,
   ].filter((s): s is string => !!s)
 
   const plan = planFor(draft, GOAL_FROM_CHOICE[draft.goalChoice ?? 'muscle'] ?? 'muscle')
@@ -275,6 +274,12 @@ export default function ProfileSheet({
         </div>
       ) : null}
 
+      {asAdmin ? (
+        <div className="mt-4">
+          <AdminDashboard today={today()} me={email ?? ''} />
+        </div>
+      ) : (
+      <>
       {/* Your stats, read rather than typed.
           
           This was a dark card naming the program and the split, which is the
@@ -338,12 +343,6 @@ export default function ProfileSheet({
         </div>
       )}
 
-      {asAdmin ? (
-        <div className="mt-4">
-          <AdminDashboard today={today()} me={email ?? ''} />
-        </div>
-      ) : (
-      <>
       {/* One way in, not two. This page carried a full width Settings card as
           well as the pill in its own header, on the reasoning that the pill
           was easy to miss. Two doors to the same room on the same screen is

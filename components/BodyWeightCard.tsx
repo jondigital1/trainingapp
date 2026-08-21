@@ -108,6 +108,18 @@ export default function BodyWeightCard({
         </>
       ) : null}
 
+      {/* Asked rather than offered.
+      
+          A bare box next to a Save is a form waiting to be filled in by
+          somebody who already decided to fill it in. The question is the part
+          that gets a weight out of a person who opened this page for another
+          reason, and it is a question, not a reminder: it says nothing about
+          the days you did not weigh, because a run of skipped days is not a
+          thing to answer for. */}
+      <p className="mt-3 text-sm font-semibold">
+        {alreadyToday ? 'Weighed in today' : 'What do you weigh today?'}
+      </p>
+
       {/* The one box on the profile that stays open.
       
           Everything else there is an answer you gave once and now read, and
@@ -116,7 +128,7 @@ export default function BodyWeightCard({
           asking whether you would like to type today's weight is a tap that
           buys nothing. The numbers above update as it saves, which is the only
           confirmation it needs. */}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-1.5 flex gap-2">
         <div className="flex-1">
           <NumberInput
             decimal
@@ -134,11 +146,11 @@ export default function BodyWeightCard({
           Save
         </button>
       </div>
-      {alreadyToday ? (
-        <p className="mt-1.5 text-xs text-muted">
-          Weighed in today already. Saving again replaces it rather than adding a second reading.
-        </p>
-      ) : null}
+      <p className="mt-1.5 text-xs text-muted">
+        {alreadyToday
+          ? 'Saving again replaces it rather than adding a second reading.'
+          : 'Whenever you get to it. The line reads across weeks, so a missed day costs nothing.'}
+      </p>
     </section>
   )
 }

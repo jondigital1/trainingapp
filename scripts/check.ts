@@ -4526,6 +4526,22 @@ check('the app does not draw the same thing twice', () => {
   )
 })
 
+check('the admin side is not about you', () => {
+  // Your height and what you weigh sat above a table of everybody else's sign
+  // up dates, which is your stats in the one place they are not the subject.
+  // The switch stays: it is how you get back.
+  const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const admin = profile.indexOf('{asAdmin ? (')
+  const stats = profile.indexOf('Your stats, read rather than typed')
+  const toggle = profile.indexOf('Two views of the same page')
+  assert.ok(toggle < admin, 'the switch is inside the branch it switches')
+  assert.ok(stats > admin, 'your stats still show over the admin screen')
+
+  // And the goal weight is not in the stats line, because the card below it
+  // says the same number with the distance attached.
+  assert.ok(!profile.includes('heading for ${fmtWeight'), 'the goal weight is said twice')
+})
+
 check('every save on the profile shows you something', () => {
   // The tab's Save wrote the typed fields and changed nothing on screen, which
   // is indistinguishable from a button that does nothing. It was reported as
@@ -4559,7 +4575,15 @@ check('every save on the profile shows you something', () => {
   assert.ok(!card.includes('setOpen'), 'the weight box is behind a button again')
   assert.ok(!/Weigh in<\/button>|>\s*Weigh in/.test(card), 'there is a tap in front of typing a weight')
   assert.ok(card.includes('disabled={!entry.trim()}'), 'an empty weight can be saved')
-  assert.ok(card.includes('Weighed in today already'), 'a second reading looks like it adds one')
+  assert.ok(card.includes('replaces it rather than adding a second reading'), 'a second reading looks like it adds one')
+  // Asked, not offered. A bare box next to a Save only gets filled in by
+  // somebody who already decided to.
+  assert.ok(card.includes('What do you weigh today?'), 'the weight box does not ask for anything')
+  // And it never counts the gap back at you. Saying a missed day costs nothing
+  // is the opposite of guilt; "you have not weighed in for five days" is the
+  // thing this app does not do, and it needs a number to do it.
+  assert.ok(!/daysBetween|days since|you have not weighed|havenn't weighed/i.test(card), 'the weight box counts your misses back at you')
+  assert.ok(card.includes('a missed day costs nothing'), 'the ask stopped saying that skipping is fine')
 })
 
 check('a questionnaire answer is edited in one place', () => {

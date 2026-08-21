@@ -2450,9 +2450,26 @@ read it.
 One box stays open, and it is the one whose answer is different tomorrow. Your
 weight sits on My body as a field and a Save, rather than behind a button
 asking whether you would like to type today's weight, which is a tap that buys
-nothing. Saving clears the box and the numbers above it move, which is the only
-confirmation it needs, and a second reading on the same day says out loud that
-it replaces the first rather than adding one.
+nothing. Saving clears the box and the numbers above it move, the stats line at
+the top included, and a second reading on the same day says out loud that it
+replaces the first rather than adding one.
+
+It asks, rather than offering. A bare box next to a Save only gets filled in by
+somebody who had already decided to fill it in; the question is what gets a
+weight out of somebody who opened the page for another reason. So the label
+reads "What do you weigh today?" until you have, and "Weighed in today"
+afterwards.
+
+The line under it is the part that matters more than the question: whenever you
+get to it, a missed day costs nothing, because the chart reads across weeks.
+The app never counts the gap back at you, and it cannot: doing that needs a
+number of days, and a check fails if one ever appears there.
+
+The stats line does not repeat the goal weight. The card directly below it says
+the same number with the distance attached, and twice is once too many. And the
+stats do not show at all on the admin side, where your height above a table of
+everybody else's sign up dates is your stats in the one place they are not the
+subject.
 
 ## Not built yet
 
