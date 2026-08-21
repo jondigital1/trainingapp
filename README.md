@@ -2847,6 +2847,34 @@ same screen, which toggles its muscles with identical code, so browsing could
 go back to one at a time and the check would nod it through. Found by
 negative testing, and scoped to the chips.
 
+## How long have you got, asked about today
+
+The session Lifty builds read the minutes off the profile, which is the answer
+given once at signup. Somebody who said ninety then and has forty five this
+afternoon was handed an hour and twenty five minutes of work, which is not a
+session they can do.
+
+It asks now, on the screen, at the moment it matters. Same four numbers as the
+questionnaire, on purpose, and a check fails if the two lists ever offer
+different ones. Nothing is written back: your standing answer is still your
+standing answer, and this is about this afternoon.
+
+The labels differ though, and that is deliberate. Ninety in the questionnaire
+is "no limit, nothing gets trimmed", which is true of the days the plan writes:
+a template day runs out of movements long before the clock does. It stopped
+being true of a built session the moment the generator learned to read the
+clock, because that round robins the whole library and never runs out. So here
+ninety is "an hour and a half", and a check fails if the no limit wording ever
+appears on this question.
+
+Muscle groups cap at three here as well. A session split four ways in the time
+most people have is one movement each, which is visiting a muscle rather than
+training it. Three chosen and the rest go quiet.
+
+Which needed the multi select control to learn what a cap is: it silently
+accepted a disabled flag and rendered it as nothing, so the limit worked and
+was invisible. Now it dims and stops taking taps.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

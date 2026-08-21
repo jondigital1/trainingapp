@@ -56,6 +56,26 @@ export const MINUTES: Question<NonNullable<Profile['minutes']>> = {
   ],
 }
 
+// How long you have got today, which is a different question from the one
+// above even though the numbers match.
+//
+// The profile answer is a standing ceiling for the days the plan writes, and
+// ninety there genuinely means no limit: a template day runs out of movements
+// long before the clock does, so nothing is ever trimmed against it. A session
+// built on the spot does not run out, it round robins the whole library, so
+// ninety here is ninety. Labelling it "no limit" would be a promise the
+// generator stopped keeping the moment it learned to read the clock.
+export const SESSION_MINUTES: Question<NonNullable<Profile['minutes']>> = {
+  label: 'How long have you got?',
+  columns: 2,
+  options: [
+    { v: 30, label: '30 minutes' },
+    { v: 45, label: '45 minutes' },
+    { v: 60, label: 'An hour' },
+    { v: LONG_SESSION, label: 'An hour and a half' },
+  ],
+}
+
 export const ACCESS: Question<NonNullable<Profile['access']>> = {
   label: 'Where are you training?',
   columns: 2,

@@ -2,11 +2,17 @@
 
 import { useMemo, useState } from 'react'
 
-// Three muscle groups at once when browsing. Four is most of the library.
-const BROWSE_CAP = 3
+// Three muscle groups, both when browsing the library and when asking for a
+// session to be built.
+//
+// Browsing, because four is most of the library again and a filter that
+// returns everything has stopped filtering. Asking, because a session split
+// four ways in the time most people have is one movement each, which is not
+// training a muscle, it is visiting it.
+const GROUP_CAP = 3
 import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
-import { ACCESS, accessLabel } from '@/lib/questions'
+import { ACCESS, SESSION_MINUTES, accessLabel } from '@/lib/questions'
 import {
   AWAY_FULL_BODY,
   awaySession,
@@ -75,6 +81,11 @@ export default function CustomBuilder({
   // movements, which is a choice inside one screen rather than two doors.
   const [fillGroups, setFillGroups] = useState<string[]>([])
   const [fillOpen, setFillOpen] = useState(false)
+  // How long you have got today, which is not what you told the questionnaire.
+  // That answer is a standing ceiling for the days the plan writes; this one is
+  // about this afternoon. Somebody who said ninety at signup and has forty five
+  // today was handed an hour and twenty five minutes of work.
+  const [minutes, setMinutes] = useState<NonNullable<Profile['minutes']>>(profile.minutes ?? 60)
   const [picked, setPicked] = useState<CustomWorkoutItem[]>(editing?.items ?? seed?.items ?? [])
   // While on, everything picked joins the same superset, exactly like the
   // picker in a live session. Off and on again starts a new group.
@@ -126,8 +137,8 @@ export default function CustomBuilder({
   // What it would give you for the muscles ticked, recomputed as they change
   // so the button can say how many movements and how long before you commit.
   const filling = useMemo(
-    () => awaySession(fillGroups.length ? fillGroups : AWAY_FULL_BODY, profile, kit),
-    [fillGroups, profile, kit],
+    () => awaySession(fillGroups.length ? fillGroups : AWAY_FULL_BODY, { ...profile, minutes }, kit),
+    [fillGroups, profile, kit, minutes],
   )
 
   function fill() {
@@ -197,9 +208,33 @@ export default function CustomBuilder({
               columns={2}
               value={fillGroups}
               onToggle={(g) =>
-                setFillGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))
+                setFillGroups((v) =>
+                  v.includes(g) ? v.filter((x) => x !== g) : v.length >= GROUP_CAP ? v : [...v, g],
+                )
               }
-              options={FOCUS_GROUPS.map((g) => ({ v: g, label: g }))}
+              options={FOCUS_GROUPS.map((g) => ({
+                v: g,
+                label: g,
+                // Three is the limit, and the ones you have not picked say so
+                // by going quiet rather than by ignoring a tap.
+                disabled: !fillGroups.includes(g) && fillGroups.length >= GROUP_CAP,
+              }))}
+            />
+          </div>
+
+          {/* Asked here rather than taken from the profile. That answer is a
+              standing ceiling for the days the plan writes; this is about this
+              afternoon. Somebody who said ninety at signup and has forty five
+              today was handed an hour and twenty five minutes of work. */}
+          <p className="mt-4 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            {SESSION_MINUTES.label}
+          </p>
+          <div className="mt-2">
+            <Options
+              value={minutes}
+              onPick={setMinutes}
+              options={SESSION_MINUTES.options}
+              columns={SESSION_MINUTES.columns}
             />
           </div>
 
@@ -263,11 +298,11 @@ export default function CustomBuilder({
             // At the cap, the ones you have not picked go quiet and stop
             // responding, so the limit is something you can see rather than a
             // tap that silently does nothing.
-            disabled={!browse.includes(g) && browse.length >= BROWSE_CAP}
+            disabled={!browse.includes(g) && browse.length >= GROUP_CAP}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${
               browse.includes(g)
                 ? 'bg-midnight text-frost'
-                : browse.length >= BROWSE_CAP
+                : browse.length >= GROUP_CAP
                   ? 'surface text-faint opacity-45 ring-1 ring-edge'
                   : 'surface text-muted ring-1 ring-edge'
             }`}

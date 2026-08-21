@@ -112,7 +112,10 @@ export function Many<T extends string>({
   columns = 1,
   ordered = false,
 }: {
-  options: { v: T; label: string; note?: string }[]
+  // disabled is for a cap: the ones you have not picked go quiet once the
+  // limit is reached, so the limit is something you can see rather than a tap
+  // that silently does nothing.
+  options: { v: T; label: string; note?: string; disabled?: boolean }[]
   value: T[]
   onToggle: (v: T) => void
   columns?: 1 | 2
@@ -129,8 +132,9 @@ export function Many<T extends string>({
             key={o.v}
             type="button"
             aria-pressed={on}
+            disabled={o.disabled}
             onClick={() => onToggle(o.v)}
-            className={`${PILL} ${on ? ON : OFF}`}
+            className={`${PILL} ${on ? ON : OFF} ${o.disabled ? 'opacity-45' : ''}`}
           >
             <span className="block">{o.label}</span>
             {o.note ? <span className="mt-0.5 block text-xs text-muted">{o.note}</span> : null}

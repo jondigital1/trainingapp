@@ -49,7 +49,7 @@ import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
-import { ACCESS, DAYS, LEG_DAYS, MINUTES, UNITS } from '../lib/questions'
+import { ACCESS, DAYS, LEG_DAYS, MINUTES, SESSION_MINUTES, UNITS } from '../lib/questions'
 import { assignDay, datesAhead, dayIdFor, hasSchedule, scheduledDays, scheduleOf, suggestSchedule, swapDays, todaysDayId, trainedOn, upcomingDays } from '../lib/schedule'
 import { localNow, MAX_MISSES, nudgeDue, nudgeFor } from '../lib/nudge'
 import { averageWeek, weekOf } from '../lib/nudgeWeek'
@@ -5552,8 +5552,10 @@ check('where you are training today is one question, asked once', () => {
   // movements, so it is a choice inside the builder rather than a second door.
   assert.ok(!/>Build me one for today/.test(start), 'the second door came back')
   const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
-  assert.ok(/awaySession\(fillGroups\.length \? fillGroups : AWAY_FULL_BODY, profile, kit\)/.test(builder),
-    'the generated session ignores where you are or who you are')
+  assert.ok(
+    /awaySession\(\s*fillGroups\.length \? fillGroups : AWAY_FULL_BODY,\s*\{ \.\.\.profile, minutes \},\s*kit,?\s*\)/.test(builder),
+    'the generated session ignores where you are, who you are, or how long you have',
+  )
   // One definition of the kit control, placed on both sides of this screen and
   // never on screen twice. Two copies of a control over one piece of state is
   // how the two of them come to look different.
@@ -5686,12 +5688,12 @@ check('browsing takes three muscle groups at once', () => {
 
   // Capped, because four is most of the library again and a filter that
   // returns everything has stopped filtering.
-  assert.ok(/const BROWSE_CAP = 3/.test(src), 'the cap is gone')
-  assert.ok(/browse\.length >= BROWSE_CAP/.test(chips), 'the fourth tap silently does nothing rather than the chip going quiet')
+  assert.ok(/const GROUP_CAP = 3/.test(src), 'the cap is gone')
+  assert.ok(/browse\.length >= GROUP_CAP/.test(chips), 'the fourth tap silently does nothing rather than the chip going quiet')
   // And one you have already picked stays tappable at the cap, or there is no
   // way back out of three.
   assert.ok(
-    /disabled=\{!browse\.includes\(g\) && browse\.length >= BROWSE_CAP\}/.test(chips),
+    /disabled=\{!browse\.includes\(g\) && browse\.length >= GROUP_CAP\}/.test(chips),
     'at the cap you cannot unpick what you already picked',
   )
 
@@ -5706,6 +5708,64 @@ check('browsing takes three muscle groups at once', () => {
   // A screen reader can tell which are on, since they are toggles now rather
   // than one selection.
   assert.ok(/aria-pressed=\{browse\.includes\(g\)\}/.test(src), 'the chips do not say which are on')
+})
+
+check('a session built for you fits the time you have today', () => {
+  // The generator read the minutes off the profile, which is the answer given
+  // once at signup. Somebody who said ninety then and has forty five this
+  // afternoon was handed an hour and twenty five minutes of work.
+  const profile = {
+    units: 'lb' as const, days: 4 as const, minutes: 90 as const, access: 'full' as const,
+    legDays: 2 as const, goalChoice: 'muscle' as const, goals: ['muscle' as const], focus: [],
+  }
+  const forToday = (minutes: 30 | 45 | 60 | 90) =>
+    awaySession(['Chest', 'Back'], { ...profile, minutes }, 'full')
+
+  // Today's answer decides, not the standing one.
+  assert.ok(forToday(45).length < forToday(90).length, "today's answer is being ignored")
+  // Within the budget, except while still on the first pass, which is the one
+  // deliberate overrun: everything asked for gets touched once before the
+  // clock gets a say. Two groups in thirty minutes is exactly that case.
+  for (const m of [30, 45, 60, 90] as const) {
+    const items = forToday(m)
+    const overran = estimateSeconds(items, 'muscle') > m * 60
+    assert.ok(!overran || items.length <= 2, `${m} minutes overran past the first pass`)
+  }
+  // And each step up buys more work.
+  const counts = ([30, 45, 60, 90] as const).map((m) => forToday(m).length)
+  assert.deepEqual([...counts].sort((a, b) => a - b), counts, 'a longer session did not get more work')
+
+  // Balanced across what was asked for: every group gets one before any gets
+  // two, so a short session touches everything rather than doing four chest
+  // movements and calling it chest and back.
+  const short = awaySession(['Chest', 'Back', 'Quads'], { ...profile, minutes: 45 }, 'full')
+  const hit = new Set(short.map((i) => groupOf(i.name)))
+  for (const g of ['Chest', 'Back', 'Quads']) {
+    assert.ok(hit.has(g), `${g} was asked for and never appeared`)
+  }
+
+  // The screen asks. Reusing the questionnaire's own option list would carry
+  // its "no limit" label, which stopped being true for a built session the
+  // moment the generator learned to read the clock: it round robins the whole
+  // library, so ninety here is ninety.
+  const src = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  assert.ok(src.includes('SESSION_MINUTES'), 'the screen never asks how long you have')
+  const q = readFileSync(new URL('../lib/questions.ts', import.meta.url), 'utf8')
+  const block = q.slice(q.indexOf('export const SESSION_MINUTES'), q.indexOf('export const ACCESS'))
+  assert.ok(!/No limit|Nothing gets trimmed/.test(block), 'a built session promises no limit and then trims')
+  assert.deepEqual(SESSION_MINUTES.options.map((o) => o.v), MINUTES.options.map((o) => o.v),
+    'the two time questions offer different numbers, so one of them is a lie about the other')
+
+  // Three muscles, not four. A session split four ways in the time most people
+  // have is one movement each, which is visiting a muscle rather than
+  // training it.
+  assert.ok(/v\.length >= GROUP_CAP \? v : \[\.\.\.v, g\]/.test(src), 'asking for four muscles is allowed')
+  assert.ok(/disabled: !fillGroups\.includes\(g\) && fillGroups\.length >= GROUP_CAP/.test(src),
+    'the fourth muscle silently does nothing rather than going quiet')
+  // Which needs the control to support it, or the cap is invisible.
+  const form = readFileSync(new URL('../components/Form.tsx', import.meta.url), 'utf8')
+  assert.ok(/disabled\?: boolean/.test(form), 'the multi select cannot show a cap')
+  assert.ok(/disabled=\{o\.disabled\}/.test(form), 'a capped option still takes taps')
 })
 
 void (async () => {
