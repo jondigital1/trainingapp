@@ -4552,6 +4552,14 @@ check('every save on the profile shows you something', () => {
 
   // And nothing typed is left holding state nobody can reach.
   assert.ok(!profile.includes('setTodayWeight'), 'the dead weigh in field is back')
+
+  // One box stays open, and it is the one whose answer is different tomorrow.
+  // Everything else on this page is an answer you gave once and now read.
+  const card = readFileSync(new URL('../components/BodyWeightCard.tsx', import.meta.url), 'utf8')
+  assert.ok(!card.includes('setOpen'), 'the weight box is behind a button again')
+  assert.ok(!/Weigh in<\/button>|>\s*Weigh in/.test(card), 'there is a tap in front of typing a weight')
+  assert.ok(card.includes('disabled={!entry.trim()}'), 'an empty weight can be saved')
+  assert.ok(card.includes('Weighed in today already'), 'a second reading looks like it adds one')
 })
 
 check('a questionnaire answer is edited in one place', () => {

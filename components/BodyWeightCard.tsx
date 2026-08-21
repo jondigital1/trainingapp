@@ -33,7 +33,6 @@ export default function BodyWeightCard({
   onLog: (pounds: number) => void
 }) {
   const [entry, setEntry] = useState('')
-  const [open, setOpen] = useState(false)
   const body = summarise(weights, goalWeight)
   const line = trend(weights)
 
@@ -42,7 +41,6 @@ export default function BodyWeightCard({
     if (entry.trim() === '' || !Number.isFinite(n) || n <= 0) return
     onLog(toPounds(n, unit))
     setEntry('')
-    setOpen(false)
   }
 
   const alreadyToday = body.currentDate === today()
@@ -110,29 +108,37 @@ export default function BodyWeightCard({
         </>
       ) : null}
 
-      {open ? (
-        <div className="mt-3 flex gap-2">
-          <div className="flex-1">
-            <NumberInput
-              decimal
-              value={entry}
-              onChange={setEntry}
-              suffix={unitLabel(unit)}
-              placeholder={unit === 'kg' ? '82' : '180'}
-            />
-          </div>
-          <button onClick={log} className="rounded-xl bg-accent px-4 font-display text-sm font-bold text-on-accent">
-            Save
-          </button>
+      {/* The one box on the profile that stays open.
+      
+          Everything else there is an answer you gave once and now read, and
+          turns back into a field only when you ask. This is the opposite: a
+          number that is different tomorrow, and putting it behind a button
+          asking whether you would like to type today's weight is a tap that
+          buys nothing. The numbers above update as it saves, which is the only
+          confirmation it needs. */}
+      <div className="mt-3 flex gap-2">
+        <div className="flex-1">
+          <NumberInput
+            decimal
+            value={entry}
+            onChange={setEntry}
+            suffix={unitLabel(unit)}
+            placeholder={unit === 'kg' ? '82' : '180'}
+          />
         </div>
-      ) : (
         <button
-          onClick={() => setOpen(true)}
-          className="mt-3 w-full rounded-xl bg-ink py-2.5 text-sm text-muted ring-1 ring-edge"
+          disabled={!entry.trim()}
+          onClick={log}
+          className="rounded-xl bg-accent px-4 font-display text-sm font-bold text-on-accent disabled:opacity-40"
         >
-          {alreadyToday ? 'Weighed in today. Change it' : 'Weigh in'}
+          Save
         </button>
-      )}
+      </div>
+      {alreadyToday ? (
+        <p className="mt-1.5 text-xs text-muted">
+          Weighed in today already. Saving again replaces it rather than adding a second reading.
+        </p>
+      ) : null}
     </section>
   )
 }

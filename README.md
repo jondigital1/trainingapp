@@ -2437,6 +2437,13 @@ Two dead things came out with it: a weigh in field nobody could reach, left
 behind when weighing in moved into its own card, and the commit branch that
 read it.
 
+One box stays open, and it is the one whose answer is different tomorrow. Your
+weight sits on My body as a field and a Save, rather than behind a button
+asking whether you would like to type today's weight, which is a tap that buys
+nothing. Saving clears the box and the numbers above it move, which is the only
+confirmation it needs, and a second reading on the same day says out loud that
+it replaces the first rather than adding one.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half
