@@ -839,6 +839,17 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
     .filter((pool) => pool.length > 0)
 
   const goal = profile.goalChoice ? GOAL_FROM_CHOICE[profile.goalChoice] : 'muscle'
+
+  // The clock is the clock here, which is not true of a template day.
+  //
+  // fits() returns true above ninety minutes because that is the no ceiling
+  // answer, and a template day runs out of movements long before the clock
+  // does, so trimming it against a budget would never fire. This does not run
+  // out: it round robins the whole library, so it filled to the cap of twelve
+  // every single time somebody answered ninety, and handed them two and a half
+  // hours. Chest and back came back as twelve movements. Found by putting the
+  // estimate on the button that starts it.
+  const budget = (profile.minutes ?? 60) * 60
   const used = new Set<string>()
   const out: PlannedItem[] = []
   // Every group asked for gets its first movement before any group gets its
@@ -854,7 +865,9 @@ export function awaySession(groups: string[], profile: Profile, kit: AwayKit): P
       const next = pool.find((e) => !used.has(e.name))
       if (!next) continue
       const item = { name: next.name, type: next.type, superset: null }
-      if (round > 0 && !fits([...out, item], profile, goal)) return emphasise(out, focusOf(profile))
+      if (round > 0 && estimateSeconds([...out, item], goal) > budget) {
+        return emphasise(out, focusOf(profile))
+      }
       used.add(next.name)
       out.push(item)
       picked = true

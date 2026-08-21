@@ -2,18 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { SPLITS, dayItems, dayNames } from '@/lib/templates'
-import {
-  AWAY_FULL_BODY,
-  awayDayFor,
-  awaySession,
-  buildDay,
-  dayById,
-  FOCUS_GROUPS,
-  type Plan,
-  type Profile,
-} from '@/lib/onboarding'
+import { awayDayFor, dayById, type Plan, type Profile } from '@/lib/onboarding'
 import { ACCESS, accessLabel } from '@/lib/questions'
-import { Many, Options } from './Form'
+import { Options } from './Form'
 import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
 import Sheet from './Sheet'
 import type { CustomWorkout, CustomWorkoutItem, Goal } from '@/lib/types'
@@ -55,8 +46,7 @@ export default function StartSheet({
   // how the two of them come to disagree.
   const [kit, setKit] = useState<Profile['access']>(profile.access ?? 'full')
   const [kitOpen, setKitOpen] = useState(false)
-  const [groups, setGroups] = useState<string[]>([])
-  const [buildOpen, setBuildOpen] = useState(false)
+
 
   useEffect(() => {
     if (!confirm) return
@@ -160,57 +150,6 @@ export default function StartSheet({
           </div>
         </div>
       ) : null}
-
-      {/* Not "away from your gym". Somebody at their own gym with forty
-          minutes and a leg day that does not suit today wants this too, and
-          it was only reachable by claiming to be somewhere else. */}
-      <div className="mb-5">
-        <button
-          onClick={() => setBuildOpen((v) => !v)}
-          aria-expanded={buildOpen}
-          className="surface flex w-full items-center justify-between rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
-        >
-          <span className="text-sm font-bold">Build me one for today</span>
-          <span className="text-xs text-muted">{buildOpen ? 'close' : 'open'}</span>
-        </button>
-
-        {buildOpen ? (
-          <div className="mt-3">
-            <h4 className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-              What do you want to train?
-            </h4>
-            <Many
-              columns={2}
-              value={groups}
-              onToggle={(g) => setGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))}
-              options={FOCUS_GROUPS.map((g) => ({ v: g, label: g }))}
-            />
-            {(() => {
-              const wanted = groups.length ? groups : AWAY_FULL_BODY
-              const items = awaySession(wanted, profile, kit)
-              if (!items.length) return null
-              const est = fmtEstimate(estimateSeconds(items, goal))
-              const title = groups.length
-                ? groups.length === 1
-                  ? groups[0]
-                  : `${groups.slice(0, -1).join(', ')} and ${groups[groups.length - 1]}`
-                : 'Full body'
-              return (
-                <button
-                  onClick={() => onStart(title, items, true)}
-                  className="mt-2 w-full rounded-2xl bg-accent py-3 font-display text-sm font-bold text-on-accent"
-                >
-                  Start {title.toLowerCase()} &middot; {items.length} exercises{est ? ` \u00b7 ${est}` : ''}
-                </button>
-              )
-            })()}
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              Nothing picked is a full body session. Sore joints and what you are bringing up still
-              apply, and it is built for wherever you said you are today.
-            </p>
-          </div>
-        ) : null}
-      </div>
 
       {customWorkouts.length ? (
         <div className="mt-5">

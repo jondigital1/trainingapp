@@ -4,8 +4,15 @@ import { useMemo, useState } from 'react'
 import { LIBRARY, MINE, MUSCLE_GROUPS, isExistingName, matchesQuery } from '@/lib/exercises'
 import NewExercise from './NewExercise'
 import { ACCESS, accessLabel } from '@/lib/questions'
-import { fitsKit, type Profile } from '@/lib/onboarding'
-import { Options } from './Form'
+import {
+  AWAY_FULL_BODY,
+  awaySession,
+  fitsKit,
+  FOCUS_GROUPS,
+  type Profile,
+} from '@/lib/onboarding'
+import { estimateSeconds, fmtEstimate } from '@/lib/estimate'
+import { Many, Options } from './Form'
 import { uid } from '@/lib/format'
 import { supersetLetter } from '@/lib/superset'
 import Sheet from './Sheet'
@@ -20,7 +27,7 @@ export default function CustomBuilder({
   onCreate,
   onEdit,
   onDelete,
-  access,
+  profile,
   onClose,
 }: {
   customs: CustomExercise[]
@@ -39,11 +46,11 @@ export default function CustomBuilder({
   // Changing one of your own, from the same screen you made it on.
   onEdit?: (exercise: CustomExercise) => void
   onDelete?: (exercise: CustomExercise) => void
-  // The gym you usually train in, which is where the kit filter starts. This
-  // screen is where somebody builds a session because the plan does not fit
-  // the room they are standing in, so it is the one place a manual list of
-  // 320 movements has to be able to narrow to what is actually there.
-  access?: Profile['access']
+  // Everything the plan knows about you. The kit filter starts from the gym
+  // you usually train in, and filling a session from muscle groups needs the
+  // rest of it: the joints you flagged, what you are bringing up, what you
+  // never want offered.
+  profile: Profile
   onClose: () => void
 }) {
   const [name, setName] = useState(editing?.name ?? (seed ? `My ${seed.name}` : ''))
@@ -51,8 +58,16 @@ export default function CustomBuilder({
   const [group, setGroup] = useState<string | null>(null)
   // Today only, and stored nowhere. A hotel is not a move: the profile keeps
   // saying which gym is yours.
-  const [kit, setKit] = useState<Profile['access']>(access ?? 'full')
+  const [kit, setKit] = useState<Profile['access']>(profile.access ?? 'full')
   const [kitOpen, setKitOpen] = useState(false)
+  // Filling the list from muscle groups rather than picking every movement.
+  // This was its own section on the Start sheet called "Build me one for
+  // today", next to a button called Create custom workout, and the word build
+  // was doing two jobs a few inches apart. They are the same errand: make me
+  // something that is not a plan day. The difference is only who picks the
+  // movements, which is a choice inside one screen rather than two doors.
+  const [fillGroups, setFillGroups] = useState<string[]>([])
+  const [fillOpen, setFillOpen] = useState(false)
   const [picked, setPicked] = useState<CustomWorkoutItem[]>(editing?.items ?? seed?.items ?? [])
   // While on, everything picked joins the same superset, exactly like the
   // picker in a live session. Off and on again starts a new group.
@@ -101,6 +116,23 @@ export default function CustomBuilder({
   const hiddenByKit =
     !!query.trim() && results.length === 0 && all.some((e) => matchesQuery(e.name, query))
 
+  // What it would give you for the muscles ticked, recomputed as they change
+  // so the button can say how many movements and how long before you commit.
+  const filling = useMemo(
+    () => awaySession(fillGroups.length ? fillGroups : AWAY_FULL_BODY, profile, kit),
+    [fillGroups, profile, kit],
+  )
+
+  function fill() {
+    if (!filling.length) return
+    // Stripped back to a name and a type. What comes out of the plan builder
+    // also carries why it chose each one, which is a note about a session
+    // rather than part of a saved workout.
+    setPicked(filling.map((i) => ({ name: i.name, type: i.type })))
+    if (!name.trim()) setName(listed(fillGroups))
+    setFillOpen(false)
+  }
+
   function toggle(item: CustomWorkoutItem) {
     setPicked((prev) =>
       prev.some((p) => p.name === item.name)
@@ -143,6 +175,75 @@ export default function CustomBuilder({
         className="w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
+      {/* A mode rather than a panel. The first version opened underneath the
+          muscle group chips that browse the library, which put two identical
+          lists of muscles on one screen doing entirely different jobs: one
+          filters what you are looking at, the other decides what goes in.
+          Found by rendering it. While this is open it is the only thing here. */}
+      {fillOpen ? (
+        <div className="mt-4">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            What do you want to train?
+          </p>
+          <div className="mt-2">
+            <Many
+              columns={2}
+              value={fillGroups}
+              onToggle={(g) =>
+                setFillGroups((v) => (v.includes(g) ? v.filter((x) => x !== g) : [...v, g]))
+              }
+              options={FOCUS_GROUPS.map((g) => ({ v: g, label: g }))}
+            />
+          </div>
+
+          <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
+
+          <button
+            onClick={fill}
+            disabled={!filling.length}
+            className="mt-3 w-full rounded-2xl bg-accent py-3.5 font-display text-sm font-bold text-on-accent disabled:opacity-40"
+          >
+            {filling.length
+              ? `Fill it in \u00b7 ${filling.length} exercises${
+                  fmtEstimate(estimateSeconds(filling, goal))
+                    ? ` \u00b7 ${fmtEstimate(estimateSeconds(filling, goal))}`
+                    : ''
+                }`
+              : `Nothing for that with ${accessLabel(kit).toLowerCase()}`}
+          </button>
+          <button
+            onClick={() => setFillOpen(false)}
+            className="mt-1 w-full py-2.5 text-sm font-extrabold text-muted"
+          >
+            I will pick them myself
+          </button>
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            Nothing picked is a full body session. Sore joints and what you are bringing up still
+            apply, and everything it picks lands in the list here so you can change it before you
+            start.
+          </p>
+        </div>
+      ) : (
+      <>
+      {/* Offered on an empty builder only, because it fills the list rather
+          than adding to it, and because it is a way to start rather than a
+          tool you reach for halfway through.
+
+          It was its own section on the Start sheet called "Build me one for
+          today", a few inches under a button called Create custom workout,
+          with the word build doing two jobs. Same errand, and the only
+          difference was who picks the movements, which is a choice inside one
+          screen rather than two doors. */}
+      {picked.length === 0 && !editing && !seed ? (
+        <button
+          onClick={() => setFillOpen(true)}
+          className="surface mt-3 flex w-full items-center justify-between rounded-[14px] px-3.5 py-3 text-left ring-1 ring-edge"
+        >
+          <span className="text-sm font-bold">Or tell me what to train</span>
+          <span className="text-xs text-muted">open</span>
+        </button>
+      ) : null}
+
       <div className="mt-3 flex flex-wrap gap-2">
         {groups.map((g) => (
           <button
@@ -167,36 +268,7 @@ export default function CustomBuilder({
         className="mt-3 w-full rounded-xl bg-ink px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
       />
 
-      {/* One quiet line rather than a question. The honest answer is "my gym"
-          almost every day, so asking outright would put a decision in front of
-          everybody that matters to somebody a few times a year. It says where
-          it thinks you are and opens only when that is wrong. */}
-      <button
-        onClick={() => setKitOpen((v) => !v)}
-        aria-expanded={kitOpen}
-        className="mt-2 flex w-full items-center justify-between gap-3 px-1 py-1.5 text-left"
-      >
-        <span className="text-xs text-muted">
-          Building for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
-        </span>
-        <span className="shrink-0 text-xs text-faint">{kitOpen ? 'close' : 'change'}</span>
-      </button>
-      {kitOpen ? (
-        <div className="mt-1">
-          <Options
-            value={kit ?? 'full'}
-            onPick={(v) => {
-              setKit(v)
-              setKitOpen(false)
-            }}
-            options={ACCESS.options}
-            columns={ACCESS.columns}
-          />
-          <p className="mt-1.5 text-xs text-muted">
-            For this workout only. Your gym stays your gym.
-          </p>
-        </div>
-      ) : null}
+      <KitLine kit={kit} open={kitOpen} onToggle={setKitOpen} onPick={setKit} />
 
       <button
         onClick={() => setSuperset(superset ? null : uid())}
@@ -346,6 +418,67 @@ export default function CustomBuilder({
       >
         {editing ? 'Save changes' : 'Save and start'}
       </button>
+      </>
+      )}
     </Sheet>
+  )
+}
+
+// "Chest", "Chest and Back", "Chest, Back and Quads". Used to name a session
+// after the muscles it was asked for, so saving it is one tap rather than a
+// naming exercise nobody wants standing in a gym.
+function listed(groups: string[]): string {
+  if (!groups.length) return 'Full body'
+  if (groups.length === 1) return groups[0]
+  return `${groups.slice(0, -1).join(', ')} and ${groups[groups.length - 1]}`
+}
+
+// Where you are training today, said once and placed twice: the manual side of
+// this screen and the tell-me-what-to-train side both need it, and they are
+// never on screen together. One definition, because two copies of a control
+// over one piece of state is how the two of them come to look different.
+//
+// A quiet line rather than a question. The honest answer is "my gym" almost
+// every day, so asking outright would put a decision in front of everybody
+// that matters to somebody a few times a year. It says where it thinks you are
+// and opens only when that is wrong.
+function KitLine({
+  kit,
+  open,
+  onToggle,
+  onPick,
+}: {
+  kit: Profile['access']
+  open: boolean
+  onToggle: (open: boolean) => void
+  onPick: (kit: Profile['access']) => void
+}) {
+  return (
+    <>
+      <button
+        onClick={() => onToggle(!open)}
+        aria-expanded={open}
+        className="mt-2 flex w-full items-center justify-between gap-3 px-1 py-1.5 text-left"
+      >
+        <span className="text-xs text-muted">
+          Building for <span className="font-bold text-accent-ink">{accessLabel(kit)}</span>
+        </span>
+        <span className="shrink-0 text-xs text-faint">{open ? 'close' : 'change'}</span>
+      </button>
+      {open ? (
+        <div className="mt-1">
+          <Options
+            value={kit ?? 'full'}
+            onPick={(v) => {
+              onPick(v)
+              onToggle(false)
+            }}
+            options={ACCESS.options}
+            columns={ACCESS.columns}
+          />
+          <p className="mt-1.5 text-xs text-muted">For this workout only. Your gym stays your gym.</p>
+        </div>
+      ) : null}
+    </>
   )
 }

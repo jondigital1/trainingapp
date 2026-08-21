@@ -5539,10 +5539,34 @@ check('where you are training today is one question, asked once', () => {
   assert.equal((start.match(/<DayCard/g) || []).length, 1, 'the plan days are drawn from more than one place')
   assert.ok(/awayDayFor\(day!, profile, kit\)/.test(start), 'the plan days ignore where you are today')
 
-  // One kit control for the sheet, since both things on it that build you a
-  // session read it and two controls for one question is how they disagree.
+  // One kit control on the sheet, and one in the builder, since that is the
+  // other place a session gets made. Never two on one screen.
   assert.equal((start.match(/ACCESS\.options/g) || []).length, 1, 'the kit is asked twice on one sheet')
-  assert.ok(/awaySession\(wanted, profile, kit\)/.test(start), 'the built session ignores where you are')
+
+  // Build me one for today was a section here, next to a button called Create
+  // custom workout, with the word build doing two jobs a few inches apart.
+  // They were the same errand and the difference was only who picks the
+  // movements, so it is a choice inside the builder rather than a second door.
+  assert.ok(!/>Build me one for today/.test(start), 'the second door came back')
+  const builder = readFileSync(new URL('../components/CustomBuilder.tsx', import.meta.url), 'utf8')
+  assert.ok(/awaySession\(fillGroups\.length \? fillGroups : AWAY_FULL_BODY, profile, kit\)/.test(builder),
+    'the generated session ignores where you are or who you are')
+  // One definition of the kit control, placed on both sides of this screen and
+  // never on screen twice. Two copies of a control over one piece of state is
+  // how the two of them come to look different.
+  assert.equal((builder.match(/ACCESS\.options/g) || []).length, 1, 'the kit control is written twice')
+  assert.equal((builder.match(/<KitLine /g) || []).length, 2, 'one side of the builder cannot say where you are')
+
+  // What it gives you lands in the list rather than straight into a live
+  // session, which is the reason it is worth moving rather than deleting: it
+  // used to be take it or leave it.
+  assert.ok(/setPicked\(filling\.map/.test(builder), 'the generated session still starts without being seen')
+  // Offered on an empty builder only, since it fills the list rather than
+  // adding to it.
+  assert.ok(/picked\.length === 0 && !editing && !seed/.test(builder), 'it offers to wipe a list you have started')
+  // Named from the muscles, so saving stays one tap rather than a naming
+  // exercise nobody wants standing in a gym.
+  assert.ok(/setName\(listed\(fillGroups\)\)/.test(builder), 'a generated session has to be named by hand')
 
   // Today only. A hotel is not a move, and nothing here may write the profile.
   assert.ok(!/onSave|onApply|access:/.test(start.slice(start.indexOf('setKit('), start.indexOf('setKit(') + 400)),
@@ -5592,6 +5616,50 @@ check('what the room has is a fact about the room, not about you', () => {
   // And the offer to create is read off the unfiltered list, or a movement the
   // kit is hiding could be created a second time.
   assert.ok(/const exact = all\.some/.test(src), 'a movement hidden by the kit can be created again')
+})
+
+check('a session built for you respects the time you said you had', () => {
+  // Every answer from thirty to seventy five sized sensibly and landed near
+  // the time somebody said they had. Ninety fell off a cliff: twelve movements
+  // and two and a half hours, every time, whatever was asked for. Chest and
+  // back came back as twelve movements.
+  //
+  // fits() returns true above ninety on purpose, because that is the no
+  // ceiling answer and a template day runs out of movements long before the
+  // clock does. This does not run out. It round robins the whole library, so
+  // nothing stopped it short of the cap.
+  const at = (minutes: 30 | 45 | 60 | 75 | 90, groups: string[]) => {
+    const profile = {
+      units: 'lb' as const, days: 4 as const, minutes, access: 'full' as const,
+      legDays: 2 as const, goalChoice: 'muscle' as const, goals: ['muscle' as const], focus: [],
+    }
+    const items = awaySession(groups, profile, 'full')
+    return { count: items.length, seconds: estimateSeconds(items, 'muscle') }
+  }
+
+  // Longer answers get more work, and none of them run away.
+  const two = ([30, 45, 60, 75, 90] as const).map((m) => at(m, ['Chest', 'Back']))
+  assert.deepEqual([...two].sort((a, b) => a.count - b.count).map((r) => r.count), two.map((r) => r.count),
+    'a longer session did not get more work than a shorter one')
+  for (const [i, m] of ([30, 45, 60, 75, 90] as const).entries()) {
+    // Over the budget only while it is still on the first pass, which is the
+    // one deliberate overrun: everything asked for gets touched once before
+    // the clock gets a say. Past that, the clock decides.
+    const firstPassOnly = two[i].count <= 2
+    assert.ok(
+      two[i].seconds <= m * 60 || firstPassOnly,
+      `${m} minutes was answered with ${Math.round(two[i].seconds / 60)} across ${two[i].count} movements`,
+    )
+  }
+  assert.ok(at(90, ['Chest', 'Back']).count < 12, 'ninety minutes still fills to the cap')
+
+  // The one deliberate overrun stays: the first pass touches every group asked
+  // for even if that goes over, because somebody who names four muscles and
+  // has half an hour would rather train all four than have a tidy thirty
+  // minutes that never reached their shoulders.
+  const many = at(30, ['Quads', 'Hamstrings', 'Glutes', 'Chest', 'Back', 'Shoulders', 'Core'])
+  assert.equal(many.count, 7, 'a group asked for was dropped to make the clock work')
+  assert.ok(many.seconds > 30 * 60, 'the first pass stopped touching every group asked for')
 })
 
 void (async () => {

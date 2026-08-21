@@ -2755,8 +2755,6 @@ movements and an hour and ten becomes five movements and forty minutes on
 bodyweight, through the same builder, so a sore joint still sends the swaps
 where it would have.
 
-Build me one for today is its own section, available wherever you are.
-
 And the builder learned what a room has, which was the original suggestion and
 the best of the three. It listed all 320 movements with no idea what was
 around, on the one screen where that matters most: it is where somebody builds
@@ -2781,6 +2779,46 @@ Two vocabularies became one. The away section had its own three options, Hotel
 gym and Dumbbells only and Just me, which could not say "my own gym" because
 the only way to reach them was to say you were not there. It is the
 questionnaire's four answers in the questionnaire's words on both screens now.
+
+## One door for "make me something"
+
+Create custom workout sat at the top of the Start sheet and Build me one for
+today sat a few inches below it, and they read as the same thing. They were not:
+one is you picking every movement, the other is you picking muscles and the app
+picking movements. But the word build was doing two jobs on one screen, and the
+only real difference was who chooses, which is a choice inside one screen rather
+than two doors.
+
+So the generator moved into the builder. Open an empty one and it offers to fill
+the list for you: tick the muscles, and what it picks lands in the list rather
+than starting immediately. That is the part worth having. The generated session
+used to be take it or leave it, straight into a live workout, and now you can
+drop the movement you do not fancy, reorder it, superset two of them. The name
+fills in from the muscles you ticked, so saving stays one tap rather than a
+naming exercise nobody wants standing in a gym.
+
+It is a mode, not a panel. The first version opened underneath the muscle group
+chips that browse the library, which put two identical lists of muscles on one
+screen doing entirely different jobs: one filters what you are looking at, the
+other decides what goes in. Found by rendering it.
+
+## Ninety minutes stopped meaning two and a half hours
+
+Putting the estimate on that button exposed a cliff. Every answer from thirty to
+seventy five minutes sized sensibly and landed near the time somebody said they
+had. Ninety produced twelve movements and two and a half hours, every time,
+whatever was asked for: chest and back came back as twelve movements.
+
+The trim function returns true above ninety on purpose, because that is the no
+ceiling answer and a template day runs out of movements long before the clock
+does. A generated session does not run out. It round robins the whole library,
+so nothing ever stopped it short of the cap of twelve. It reads the clock
+directly now: ninety minutes gives six movements and an hour and twenty five.
+
+The one deliberate overrun stays. The first pass touches every muscle group
+asked for before the clock gets a say, because somebody who names four muscles
+and has half an hour would rather train all four than have a tidy thirty minutes
+that never reached their shoulders.
 
 ## Not built yet
 
