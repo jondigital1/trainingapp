@@ -93,11 +93,14 @@ export interface Profile {
   // always read it, and because a profile written before the list existed has
   // only this.
   goalChoice?: 'muscle' | 'strength' | 'lean' | 'health'
-  // Six week training blocks, opt in. Named for what they are rather than for
-  // the three week wave they replaced: three weeks is not long enough to be a
-  // block, and the deload at the end is the point of having one.
-  block?: boolean
-  blockStart?: string
+  // The streak of hard weeks at which an easier week was last suggested, so it
+  // is not suggested again until the streak crosses another six.
+  //
+  // This replaced `block` and `blockStart`, a six week cycle with a switch in
+  // settings and a card on the calendar naming which of six weeks you were in.
+  // Its only enforced effect was scaling the rest clock, and it spent four of
+  // its six weeks telling people to stop short of what they actually do.
+  deloadSeen?: number
   // Which day of the week runs which session, Sunday first. A template day id
   // trains that day, null rests. Empty until somebody sets it, and the app
   // works exactly as before while it is.
@@ -156,7 +159,7 @@ export type Program = 'Foundation' | 'Build' | 'Performance'
 export const PROGRAMS: { id: Program; blurb: string }[] = [
   { id: 'Foundation', blurb: 'Learn the movements, build the habit, add weight as it gets easy.' },
   { id: 'Build', blurb: 'You know the lifts. Now add muscle and load, one session at a time.' },
-  { id: 'Performance', blurb: 'Long training age. Effort targets and six week blocks from day one.' },
+  { id: 'Performance', blurb: 'Long training age. Effort targets and the heaviest lifts from day one.' },
 ]
 
 const YEARS_SCORE = { never: 0, under6: 1, sixToTwo: 2, overTwo: 3 }
@@ -964,7 +967,6 @@ export interface Plan {
   exercises: number
   reps: string
   sets: string
-  block: boolean
   // Said once, on the plan screen, and never again. Seven days a week is the
   // person's call, not something to argue with every time they open the app.
   restNote: string | null
@@ -1240,7 +1242,6 @@ export function planFor(profile: Profile, goal: Goal): Plan {
     exercises: typical,
     reps: choice ? REPS[choice] : goal === 'strength' ? '3 to 6' : goal === 'endurance' ? '12 to 20' : '6 to 12',
     sets: prog === 'Foundation' || ageBand(profile) === 'over60' ? '2 to 3' : '3 to 4',
-    block: prog === 'Performance',
     restNote:
       days === 6
         ? 'Six days is a lot of weeks in a row. The plan repeats rather than inventing new work, so a missed day is a day you have already done, and the seventh is a rest day on purpose.'

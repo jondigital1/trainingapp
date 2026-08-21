@@ -2926,6 +2926,38 @@ a regression, so this one asks only that the name and the session have
 something to do with each other. The Big Three is exempt and is the only name
 here that is a phrase rather than a description.
 
+## The six week block is gone, the deload stayed
+
+A card sat on the Calendar tab every day of the year naming which of six weeks
+you were in and how hard to push. Asked twice what it was for and unable to
+answer either time, I went and traced what it actually did.
+
+One thing. It scaled the rest timer: a back squat rested 135, 150, 150, 165,
+195, then 120 seconds across the six weeks. That was the entire enforced
+effect. It changed no sets, no reps, no loads, and no exercise selection.
+
+Everything else on it was advice nothing checked. And the advice was wrong for
+most of the people reading it: four of its six weeks told you to stop one, two
+or three reps short, which is the opposite of what the logs on this account
+show every single session, drop sets and all. A strength periodisation model
+sitting on top of bodybuilding volume.
+
+So it went: the card, the six week model, the settings switch, the two profile
+fields, the rest scaling, and the plan flag that turned it on for Performance.
+
+The deload was the one idea in it worth keeping, and a deload is not something
+you need told about weekly. After six weeks in a row of hitting your target the
+app says so once, in plain words, and dismissing it holds until twelve. It
+reads the log rather than a calendar, so somebody training intermittently is
+never told they are due one.
+
+Nothing replaced it as a setting. An easier week is suggested when the log
+earns it, and there is nothing to configure about a suggestion.
+
+Lifty keeps an answer for where the card went, because somebody who used it
+will come looking. What it says about blocks and deloads in general stays: that
+was true before the app had one and it is true now.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

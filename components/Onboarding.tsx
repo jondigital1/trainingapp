@@ -141,7 +141,7 @@ export default function Onboarding({
       // know they want.
       // A rerun keeps a running block where it was: answering the questions
       // again is not starting week one again.
-      profile: plan.block ? { ...merged, block: true, blockStart: initial?.blockStart ?? weekStart(todayIso()) } : merged,
+      profile: merged,
       goal,
       startDayId,
       build,
@@ -513,10 +513,6 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
   if (plan.restNote) notes.push(plan.restNote)
   if (plan.returning)
     notes.push('You have done this before, so this is two to three weeks of rebuilding, not a beginner course.')
-  if (plan.block)
-    notes.push(
-      'Six week blocks are on from day one: five weeks of climbing effort, then a deload that turns the work into progress. Off from settings if you would rather not.',
-    )
   if (plan.goalNote) notes.push(plan.goalNote)
   if (profile.goalWeight != null)
     notes.push(`Goal weight ${fmtWeight(profile.goalWeight, unit)}. It sits with your bodyweight on your profile, next to the lifts.`)
@@ -556,7 +552,6 @@ function PlanReview({ profile, goal, unit }: { profile: Profile; goal: Goal; uni
         <Row label="Exercises per session" value={String(plan.exercises)} />
         <Row label="How hard" value="stop 2 to 3 short" />
         <Row label="Leg days" value={plan.legDays === 2 ? 'two, quads and posterior' : 'one'} />
-        <Row label="Training blocks" value={plan.block ? '6 weeks, on' : 'off'} />
       </div>
 
       {notes.map((n) => (

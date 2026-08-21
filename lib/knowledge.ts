@@ -66,7 +66,7 @@ const APP: KnowledgeEntry[] = [
     q: 'Why is there no RPE box on a set?',
     group: 'Using the app',
     aliases: ['no rpe field', 'rpe missing', 'effort scale hidden', 'where did rpe go', 'rate of perceived exertion'],
-    a: 'Because it was a number guessed between sets while out of breath, and ten guesses do not average into a fact. Instead the app asks one question when you end a session: how was that, 1 to 10. That single honest answer is what the training block reads. Progress on the sets themselves is simpler than RPE ever was: add a rep until you clear the top of the range, then add weight and start again at the bottom.',
+    a: 'Because it was a number guessed between sets while out of breath, and ten guesses do not average into a fact. Instead the app asks one question when you end a session: how was that, 1 to 10. That single honest answer is what the app reads back to you. Progress on the sets themselves is simpler than RPE ever was: add a rep until you clear the top of the range, then add weight and start again at the bottom.',
   },
   {
     id: 'app-offline',
@@ -207,10 +207,10 @@ const APP: KnowledgeEntry[] = [
   },
   {
     id: 'app-block-week',
-    q: 'What is the block number on my calendar?',
+    q: 'What happened to the block number on my calendar?',
     group: 'Using the app',
     aliases: ['block number', 'week of the block', 'what block am i in', 'training block app'],
-    a: 'Which week of the current block you are in. A block is four to six weeks of the same plan with the load creeping up, ending in an easier week. It is there so an easy week reads as part of the plan rather than as a week you fell off.',
+    a: 'There is not one any more. A card used to sit on the Calendar tab naming which of six weeks you were in. It was removed because its only real effect was moving the rest timer a little, while the visible half told people to stop two or three reps short of what most of them were actually doing every session. What replaced it says one thing: after six weeks in a row of hitting your target, take an easier one.',
   },
   {
     id: 'app-bodyweight',
@@ -271,7 +271,7 @@ const NUMBERS: KnowledgeEntry[] = [
     q: 'What is a training block?',
     group: 'Your numbers',
     aliases: ['six week block', 'deload', 'mesocycle', 'effort cycle', 'block week', 'training block'],
-    a: 'Six weeks, optional, switched on from settings. A groove week to find the loads, two build weeks at two reps in reserve, a push week at one, a peak week where last sets go to the end, then a deload at half the sets. The deload is the point: it is the week the other five turn into progress. Six is the floor rather than the target, because three weeks is not long enough for the body to finish adapting before the cycle restarts. The card on the Calendar tab says which week you are in and reads your session scores back against what the week asks for.',
+    a: 'A stretch of weeks run with the same plan while the load creeps up, four to six of them, ending in an easier week. The app used to run one for you on a six week cycle and does not any more: most of what that card said was advice nothing checked, and it spent four of its six weeks telling people to stop short of what they were actually doing. What is left is the part that mattered. After six weeks in a row of hitting your target it suggests an easier week, once, and then leaves you alone.',
   },
   {
     id: 'num-sets-bar-empty',
@@ -486,7 +486,7 @@ const BASICS: KnowledgeEntry[] = [
     q: 'Should I train to failure?',
     group: 'The basics',
     aliases: ['go to failure', 'leave reps in the tank', 'max out every set'],
-    a: 'No. Stopping 1 to 3 reps short builds essentially the same muscle as grinding to zero, with far less wear. The effort has to be real, the last reps should be slow, but the set does not have to end in a failed rep. The exception is the peak week of a training block, where last sets deliberately go to the end.',
+    a: 'No. Stopping 1 to 3 reps short builds essentially the same muscle as grinding to zero, with far less wear. The effort has to be real, the last reps should be slow, but the set does not have to end in a failed rep. The exception is a deliberate peak week at the end of a block, where last sets go to the end on purpose.',
   },
   {
     id: 'basic-soreness',
@@ -1020,7 +1020,7 @@ const WORDS: KnowledgeEntry[] = [
     q: 'What is a block or mesocycle?',
     group: 'Words you will see',
     aliases: ['block', 'mesocycle', 'training block', 'wave'],
-    a: 'A stretch of weeks run with the same plan while the load creeps up, usually four to six, ending in an easier week before the next one starts. This app calls it a block and shows which week you are in. It exists because progress is not linear forever and a planned easy week beats an unplanned forced one.',
+    a: 'A stretch of weeks run with the same plan while the load creeps up, usually four to six, ending in an easier week before the next one starts. It exists because progress is not linear forever and a planned easy week beats an unplanned forced one.',
   },
   {
     id: 'w-deload-term',

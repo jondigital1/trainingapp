@@ -13,7 +13,7 @@ import HelpSheet from './HelpSheet'
 import HelloSheet from './HelloSheet'
 import ProfileSheet from './ProfileSheet'
 import RecordsTab from './RecordsTab'
-import BlockCard from './BlockCard'
+import DeloadCard from './DeloadCard'
 import TodayCard from './TodayCard'
 import UpcomingList from './UpcomingList'
 import WhichDaySheet from './WhichDaySheet'
@@ -31,8 +31,8 @@ import type { LastSession } from './ExerciseBlock'
 import { buildDay, dayById, GOAL_FROM_CHOICE, goalLabel, goalsOf, MIN_DAYS, needsCheckin, planFor, primaryGoal, promoteGoal, unitOf, type Profile } from '@/lib/onboarding'
 import type { OnboardingResult } from './Onboarding'
 import { isEmptySet } from '@/lib/format'
-import { bestsFor as computeBests, trainingGrid } from '@/lib/gamify'
-import { blockNumber, blockWeek, effortFactor } from '@/lib/block'
+import { bestsFor as computeBests, trainingGrid, weeklyStreak} from '@/lib/gamify'
+import { deloadDue } from '@/lib/deload'
 import { customFor, registerCustoms } from '@/lib/custom'
 import { isLighter, prescribedSets } from '@/lib/prescribe'
 import { clearSnapshot, looksOffline, readSnapshot, saveSnapshot } from '@/lib/offline'
@@ -846,9 +846,6 @@ export default function App({
   // to be current before anything reads them this render.
   registerCustoms(data.custom)
 
-  const week = blockWeek(profile, now)
-  const blockNo = blockNumber(profile, now)
-  const effort = effortFactor(week)
 
   // Only ask about sore joints once a session is behind them, on a later visit.
   // Asking the moment onboarding hands over the first session is two sheets back
@@ -877,6 +874,9 @@ export default function App({
   // Counting this session, which is why it is computed from the live data
   // rather than from the copy the score was written into.
   const weeklyTarget = scheduledDays(profile) || profile.days || 3
+  // Consecutive weeks hitting that target, which is what decides whether an
+  // easier week is worth suggesting.
+  const hardWeeks = weeklyStreak(data.workouts, now, weeklyTarget)
 
   // First sign in lands straight in the questionnaire. Nothing to tap through
   // first: the account is new, there is no history to look at, and the plan is
@@ -969,8 +969,14 @@ export default function App({
         />
       ) : null}
 
-      {!loading && tab === 'calendar' && week ? (
-        <BlockCard week={week} number={blockNo ?? 1} workouts={data.workouts} today={now} />
+      {/* A six week block card used to live here, every day of the year. What
+          replaced it says one thing, once, after a long enough run: take an
+          easier week. */}
+      {!loading && tab === 'calendar' && deloadDue(hardWeeks, profile.deloadSeen ?? 0) ? (
+        <DeloadCard
+          streak={hardWeeks}
+          onDismiss={() => void saveProfile({ ...profile, deloadSeen: hardWeeks })}
+        />
       ) : null}
 
       {!loading && tab === 'calendar' && behind ? (
@@ -1099,7 +1105,6 @@ export default function App({
               key={workout.id}
               workout={workout}
               goal={data.settings.goal}
-              effort={effort}
               lighter={lighter}
               lastFor={lastFor}
               bestsFor={bestsFor}

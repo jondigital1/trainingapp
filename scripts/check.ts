@@ -47,6 +47,7 @@ import { columnsFor } from '../lib/columns'
 import { AWAY_FULL_BODY, awayDayFor, awaySession, defaultFocus, emphasise, fitsKit, focusNote, focusOf, OTHER_NOTES, OTHER_TRAINING, STEP_COUNT } from '../lib/onboarding'
 import { historyFor } from '../lib/progress'
 import { failedSearches, gapReport } from '../lib/gaps'
+import { DELOAD_AFTER, deloadDue } from '../lib/deload'
 import { advanceCopy, advanceFor, graduationCopy, graduationFor } from '../lib/advance'
 import { estimateSeconds, fmtEstimate } from '../lib/estimate'
 import { ACCESS, DAYS, LEG_DAYS, MINUTES, SESSION_MINUTES, UNITS } from '../lib/questions'
@@ -69,7 +70,6 @@ import {
   weeklyCoverage,
   weeklyStreak,
 } from '../lib/gamify'
-import { BLOCK, BLOCK_WEEKS, blockNumber, blockWeek, effortFactor, readBlock } from '../lib/block'
 import { averageIntensity, durationOf, fmtDuration, intensityLabel, INTENSITY, isRunning, wantsScore } from '../lib/session'
 import { TIER_LABELS, isCompound, isFullSet, restFor, restForTier, restTier, scaleRest } from '../lib/rest'
 import { groupRuns, isSuperset, linkWith, partnersFor, supersetLetter, supersetRest } from '../lib/superset'
@@ -292,7 +292,6 @@ check('the top program is reachable, which is the whole point of asking', () => 
   const answered = { years: 'overTwo' as const, barbell: 'confident' as const, knows: 'yes' as const }
   assert.equal(program(answered), 'Performance')
   assert.equal(planFor({ ...answered, days: 4 }, 'muscle').splitName, '4 Day Split')
-  assert.equal(planFor({ ...answered, days: 4 }, 'muscle').block, true)
 })
 
 check('profiles written before the weights question keep their program', () => {
@@ -331,7 +330,6 @@ check('the health question is gone, and so is what it drove', () => {
   // Everyone lands on the same plan the cleared answer used to change.
   const plan = planFor({ years: 'overTwo', barbell: 'confident', knows: 'yes' }, 'muscle')
   assert.equal(plan.sets, '3 to 4')
-  assert.equal(plan.block, true)
 
   // Foundation and over sixty still get the lighter set count on their own.
   assert.equal(planFor({ years: 'never' }, 'muscle').sets, '2 to 3')
@@ -795,44 +793,6 @@ check('landmarks point at the next round number', () => {
   assert.equal(nextLandmark(99_999_999, LADDERS.volume).pct, 100)
 })
 
-check('a block runs six weeks and repeats', () => {
-  // Three weeks was never long enough to be a block: the cycle restarted
-  // before the body had finished adapting to it.
-  assert.equal(blockWeek({}, '2026-08-18'), null, 'off unless it is turned on')
-  const on = { block: true, blockStart: '2026-08-03' }
-  assert.equal(blockWeek(on, '2026-08-05')!.index, 1)
-  assert.equal(blockWeek(on, '2026-09-07')!.index, 6, 'the sixth week is the deload')
-  assert.equal(blockWeek(on, '2026-09-07')!.name, 'Deload')
-  assert.equal(blockWeek(on, '2026-09-14')!.index, 1, 'and round again')
-  assert.equal(blockNumber(on, '2026-08-05'), 1)
-  assert.equal(blockNumber(on, '2026-09-14'), 2, 'a new block, not week seven')
-  assert.equal(BLOCK.length, BLOCK_WEEKS)
-  assert.ok(BLOCK_WEEKS >= 6, 'a block is at least six weeks')
-  // A block week is the same week as everything else: Sunday to Saturday.
-  // This used to compare mondayOf against weekStart and call it proof of one
-  // definition. They were the same function under two names, so it could only
-  // ever pass, and the name was wrong besides: it returns a Sunday.
-  assert.equal(weekStart('2026-08-19'), '2026-08-16')
-  // Effort climbs to the peak and then drops off for the deload.
-  assert.deepEqual(BLOCK.map((w) => w.score[1]), [6, 7, 8, 9, 10, 4])
-})
-
-check('a block reads the session scores written down this week', () => {
-  const week = BLOCK[3]
-  const sessions = (scores: number[]): Workout[] =>
-    scores.map((n, i) => ({
-      id: String(i), date: '2026-08-18', title: 'Push', intensity: n, exercises: [],
-    }))
-  assert.equal(readBlock(sessions([8, 8]), week, '2026-08-18').verdict, 'on')
-  assert.equal(readBlock(sessions([4, 5]), week, '2026-08-18').verdict, 'under')
-  assert.equal(readBlock(sessions([10, 10]), week, '2026-08-18').verdict, 'over')
-  assert.equal(readBlock([], week, '2026-08-18').verdict, null)
-  assert.equal(readBlock(sessions([9, 8]), week, '2026-08-18').average, 8.5)
-  // A session logged last week is not this week's evidence.
-  const old = [{ id: 'o', date: '2026-08-10', title: 'Push', intensity: 2, exercises: [] }]
-  assert.equal(readBlock(old, week, '2026-08-18').verdict, null)
-})
-
 check('a set is only a set once the fields that matter are filled', () => {
   assert.equal(isFullSet({ id: 'a', w: 80 }, 'W'), false, 'a load with no reps is half a set')
   assert.equal(isFullSet({ id: 'a', r: 8 }, 'W'), false)
@@ -918,32 +878,6 @@ check('moving your own bodyweight is not the same effort as a barbell', () => {
   // And these two are single joint whatever their names suggest.
   assert.equal(restTier('Straight Arm Pulldown', 'W'), 'cable')
   assert.equal(restTier('21s', 'W'), 'isolation')
-})
-
-check('the week you are in moves the clock', () => {
-  // What the block asks for is the app's own read on how hard today should be,
-  // and it is the only intensity signal left after RPE went.
-  const week = (name: string) => BLOCK.find((w) => w.name === name)!
-  assert.equal(effortFactor(null), 1, 'off a block, nothing moves')
-  // Scaled off the base, which moved when the muscle column stopped resting a
-  // big lift for ninety seconds. The shape is what matters here: a peak week
-  // rests longest, a deload least, and every step between them is even.
-  const base = restFor('Back Squat', 'W', 'muscle')
-  assert.equal(base, 150)
-  const byWeek = ['Peak', 'Push', 'Build', 'Groove', 'Deload'].map((n) =>
-    restFor('Back Squat', 'W', 'muscle', effortFactor(week(n))),
-  )
-  assert.deepEqual(byWeek, [195, 165, 150, 135, 120])
-  assert.deepEqual([...byWeek].sort((a, b) => b - a), byWeek, 'a harder week rested less')
-  // Rounded to fifteen seconds, and never under thirty.
-  assert.equal(scaleRest(45, 1.25), 60)
-  assert.equal(scaleRest(45, 0.75), 30)
-  assert.equal(scaleRest(30, 0.75), 30, 'nothing is worth less than thirty seconds')
-  assert.equal(scaleRest(0, 1.25), 0, 'and cardio still starts no clock')
-  for (const w of BLOCK) {
-    const seconds = restFor('Cable Curl', 'W', 'muscle', effortFactor(w))
-    assert.equal(seconds % 15, 0, `week ${w.index} gave ${seconds}, which is false precision`)
-  }
 })
 
 check('a machine press is supported work, whatever the word press implies', () => {
@@ -4479,7 +4413,7 @@ check('one place does the calendar arithmetic', () => {
   const week = readFileSync(new URL('../lib/week.ts', import.meta.url), 'utf8')
   assert.ok(!/T00:00:00'/.test(week), 'the one date module parses local midnight')
 
-  for (const file of ['schedule', 'admin', 'gamify', 'block', 'nudge', 'nudgeWeek', 'advance']) {
+  for (const file of ['schedule', 'admin', 'gamify', 'deload', 'nudge', 'nudgeWeek', 'advance']) {
     const src = readFileSync(new URL(`../lib/${file}.ts`, import.meta.url), 'utf8')
     assert.ok(!/function (weekStart|weekStartOf|daysBetween|shiftDays)\b/.test(src), `${file} has a calendar of its own`)
     assert.ok(!/export \{[^}]*\b(weekStart|daysBetween|weekdayOf)\b[^}]*\} from/.test(src), `${file} re-exports the calendar under a second name`)
@@ -4958,10 +4892,11 @@ check('a question asked at signup is not asked again on the profile', () => {
   const sheet = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
   assert.ok(sheet.includes('Run the questionnaire again'), 'settings lost the way back')
 
-  // Training blocks is something you set, so it went with the rest of what you
-  // set. My week is which session lands on which day and nothing else.
-  assert.ok(sheet.includes('Six week blocks'), 'the blocks switch has no home')
-  assert.ok(!settings.includes('Six week blocks'), 'the blocks switch is back on the profile')
+  // The six week block switch was here and is gone with the block. Nothing
+  // replaced it as a setting: an easier week is suggested when the log earns
+  // it, and there is nothing to configure about a suggestion.
+  assert.ok(!sheet.includes('Six week blocks'), 'the blocks switch came back')
+  assert.ok(!settings.includes('Six week blocks'), 'the blocks switch came back on the profile')
 
   // Which gym is the one exception, because it is also asked where a workout
   // is built: a hotel room is a fact about today, not about you. It is the
@@ -5108,39 +5043,6 @@ check('the builder is the first thing on the start sheet', () => {
   assert.ok(/own\s*\n?\s*\?/.test(build), 'the same treatment is given to both kinds of user')
   assert.ok(build.includes('bg-accent'), 'somebody who writes their own gets no primary button')
   assert.ok(build.includes('border-dashed'), 'somebody on a plan gets the loud button over their plan')
-})
-
-check('the block card says one thing, in one vocabulary', () => {
-  // It said "3 in reserve" as the headline, "leave three in the tank" in the
-  // note under it and "aim 4 to 6 out of 10" at the bottom: three scales for
-  // one instruction, none of them explained on the card. Reported by somebody
-  // who lifts every day and could not tell what it was asking of him.
-  const JARGON = /in reserve|in the tank|\bRIR\b|\bRPE\b/i
-  for (const w of BLOCK) {
-    assert.ok(w.cue, `week ${w.index} has no instruction`)
-    assert.ok(!JARGON.test(w.cue), `week ${w.index} states its instruction in jargon`)
-    assert.ok(!JARGON.test(w.note), `week ${w.index} explains itself in jargon`)
-    // And nothing assumes a layoff. "First week back on these movements" is
-    // wrong for anybody training every week, which is most people using this.
-    assert.ok(!/week back|back on these|returning/i.test(w.note), `week ${w.index} assumes a break that may not have happened`)
-  }
-
-  const card = readFileSync(new URL('../components/BlockCard.tsx', import.meta.url), 'utf8')
-  assert.ok(card.includes('{week.cue}'), 'the card does not say what to do this week')
-
-  // The week's name floated alone in the top right, naming nothing. It sits
-  // with the week number it belongs to, once.
-  assert.equal((card.match(/\{week\.name\}/g) || []).length, 1, 'the week name is drawn more than once')
-  const heading = card.slice(card.indexOf('<h2'), card.indexOf('</h2>'))
-  assert.ok(heading.includes('{week.index}'), 'the heading stopped saying which week it is')
-  assert.ok(heading.includes('{week.name}'), 'the week name is adrift from the week it names')
-
-  // And the number at the bottom carries a label saying what it measures,
-  // rather than a bare "Aim 4 to 6" over a scale nothing names.
-  assert.ok(
-    /border-t border-edge pt-3[\s\S]{0,240}uppercase tracking/.test(card),
-    'the score target has nothing saying what it is a score of',
-  )
 })
 
 check('a movement of your own can train more than one thing', () => {
@@ -5963,6 +5865,82 @@ check('a superset is any number of movements, up to the whole session', () => {
 
   // A movement already in the group is not offered again.
   assert.deepEqual(partnersFor(long, '1').map((e) => e.id), [])
+})
+
+check('an easier week is suggested once, not scheduled forever', () => {
+  // A six week block card sat on the calendar every day of the year naming
+  // which of six weeks you were in. Its only enforced effect was scaling the
+  // rest clock by up to forty five seconds; everything else on it was advice
+  // nothing checked, and it spent four of its six weeks telling people to stop
+  // two or three reps short of what most of them do every session.
+  //
+  // The deload was the one idea in it worth keeping, and a deload is not a
+  // thing you need told about weekly.
+  assert.equal(deloadDue(0), false)
+  assert.equal(deloadDue(DELOAD_AFTER - 1), false, 'asked before the run is long enough')
+  assert.equal(deloadDue(DELOAD_AFTER), true)
+
+  // Dismissed at six holds it until twelve, so it is not a card you close and
+  // close again the next morning.
+  assert.equal(deloadDue(DELOAD_AFTER, DELOAD_AFTER), false, 'it comes straight back after dismissal')
+  assert.equal(deloadDue(DELOAD_AFTER + 3, DELOAD_AFTER), false)
+  assert.equal(deloadDue(DELOAD_AFTER * 2, DELOAD_AFTER), true, 'it never comes back')
+  assert.equal(deloadDue(DELOAD_AFTER * 2, DELOAD_AFTER * 2), false)
+  assert.equal(deloadDue(DELOAD_AFTER * 3, DELOAD_AFTER * 2), true)
+
+  // It reads the log rather than a calendar, so somebody who trains
+  // intermittently is never told they are due one.
+  const target = 3
+  const sets = [{ id: 's', w: 60, r: 8 }]
+  const on = (date: string) => ({ id: date, date, title: 'S', exercises: [{ id: 'e', name: 'Back Squat', type: 'W' as const, sets }] })
+  // Six full weeks behind today, three sessions each.
+  const solid: Workout[] = []
+  for (let w = 0; w < 6; w += 1) {
+    for (const d of [1, 3, 5]) solid.push(on(shiftDays(weekStart('2026-08-21'), -7 * w + d)))
+  }
+  assert.ok(weeklyStreak(solid, '2026-08-21', target) >= DELOAD_AFTER, 'six solid weeks did not read as six')
+  // One thin week in the middle and the run is broken, which is the point:
+  // the suggestion is earned rather than scheduled.
+  const patchy = solid.filter((w) => w.date !== shiftDays(weekStart('2026-08-21'), -21 + 1))
+  assert.ok(weeklyStreak(patchy, '2026-08-21', target) < DELOAD_AFTER, 'a missed week still counted as a run')
+})
+
+check('the six week block is gone, not hidden', () => {
+  // Removed rather than switched off, because a feature nobody could explain
+  // the purpose of is not improved by defaulting to off.
+  for (const gone of ['lib/block.ts', 'components/BlockCard.tsx']) {
+    let there = true
+    try {
+      readFileSync(new URL(`../${gone}`, import.meta.url), 'utf8')
+    } catch {
+      there = false
+    }
+    assert.equal(there, false, `${gone} is still here`)
+  }
+
+  // Nothing left reads a block week, and the rest clock no longer moves by one.
+  for (const file of ['App', 'WorkoutEditor', 'SettingsSheet', 'Onboarding']) {
+    const src = readFileSync(new URL(`../components/${file}.tsx`, import.meta.url), 'utf8')
+    assert.ok(!/blockWeek|effortFactor|BlockCard|blockNumber/.test(src), `${file} still reads the block`)
+  }
+  const onboarding = readFileSync(new URL('../lib/onboarding.ts', import.meta.url), 'utf8')
+  // A field declaration, not any mention: the comment above its replacement
+  // names what it replaced, and a check that cannot tell a field from a note
+  // about a field is reporting on prose.
+  assert.ok(!/^\s+block\?: boolean/m.test(onboarding), 'the profile still carries a block')
+  assert.ok(!/^\s+blockStart\?:/m.test(onboarding), 'the profile still carries a block start')
+  assert.ok(/^\s+deloadSeen\?: number/m.test(onboarding), 'nothing remembers that you were already asked')
+
+  // And Lifty stopped describing a card that is not there. The answer stays,
+  // because somebody who used it will come looking for it.
+  const asked = KNOWLEDGE.find((e) => e.id === 'app-block-week')
+  assert.ok(asked, 'nothing answers where the block card went')
+  assert.ok(/not one any more|removed/i.test(asked!.a), 'the answer still describes the card as present')
+  // General training knowledge about blocks and deloads stays: it was true
+  // before the app had one and it is true after.
+  for (const id of ['strong-deload', 'w-block', 'w-deload-term', 'strong-how-long-block']) {
+    assert.ok(KNOWLEDGE.some((e) => e.id === id), `${id} was thrown out with the feature`)
+  }
 })
 
 void (async () => {

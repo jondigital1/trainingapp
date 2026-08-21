@@ -8,7 +8,6 @@ import { GoalPicker } from './GoalPicker'
 import { BringUpField, SexField } from './FocusField'
 import { toCsv } from '@/lib/csv'
 import { today } from '@/lib/format'
-import { blockWeek } from '@/lib/block'
 import { weekStart } from '@/lib/week'
 import { importArtifactData } from '@/lib/importer'
 import { disablePush, enableNudge, enablePush, pushState, type PushState } from '@/lib/push'
@@ -288,39 +287,6 @@ export default function SettingsSheet({
           </p>
         </>
       )}
-
-      {/* Something you set, like everything else on this screen. It was on the
-          profile under My week, which is the one place it is not: your week is
-          which session lands on which day, and this is how hard the whole
-          thing runs for six weeks at a time. */}
-      <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
-        Training blocks
-      </h3>
-      <div className="mt-2">
-        <Field hint="Six weeks: five of climbing effort, then a deload. The deload is the week the other five turn into progress.">
-          <Options
-            columns={2}
-            value={profile.block ? 'on' : 'off'}
-            onPick={(v) =>
-              onProfileChange(
-                v === 'on'
-                  ? { block: true, blockStart: profile.blockStart ?? weekStart(today()) }
-                  : { block: false },
-              )
-            }
-            options={[
-              { v: 'off' as const, label: 'Off' },
-              { v: 'on' as const, label: 'Six week blocks' },
-            ]}
-          />
-          {profile.block ? (
-            <Note>
-              Currently week {blockWeek(profile, today())?.index ?? 1} of 6.{' '}
-              {blockWeek(profile, today())?.cue ?? ''}.
-            </Note>
-          ) : null}
-        </Field>
-      </div>
 
       <h3 className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">You</h3>
       <div className="mt-2">
