@@ -170,7 +170,7 @@ export default function App({
   // that copy was taken. Null when the data is live.
   const [offline, setOffline] = useState<string | null>(null)
   const [openHistory, setOpenHistory] = useState<string | null>(null)
-  const [profileFocus, setProfileFocus] = useState<'minutes' | 'sore' | 'week' | 'all'>('all')
+  const [profileFocus, setProfileFocus] = useState<'sore' | 'week' | 'all'>('all')
   const [rerun, setRerun] = useState(false)
   const [scoring, setScoring] = useState<string | null>(null)
   const [editingWorkout, setEditingWorkout] = useState<string | null>(null)
@@ -1244,7 +1244,9 @@ export default function App({
           customs={data.custom}
           goal={data.settings.goal}
           onOpenSettings={() => setSheet('settings')}
+          onRerunQuestionnaire={() => setRerun(true)}
           onLogWeight={(lb) => void logWeight(lb)}
+          onCreateExercise={(exercise) => void createCustomExercise(exercise)}
           onEditExercise={(exercise) => void editCustomExercise(exercise)}
           onDeleteExercise={(exercise) => void removeCustomExercise(exercise)}
           onSave={(next) => void saveProfile(next)}

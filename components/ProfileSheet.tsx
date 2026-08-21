@@ -20,6 +20,7 @@ import { toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
 import { fmtTime, today } from '@/lib/format'
 import HeightField from './HeightField'
 import NewExercise from './NewExercise'
+import { LIBRARY } from '@/lib/exercises'
 import { blockWeek } from '@/lib/block'
 import { restForTier } from '@/lib/rest'
 import { weekStart } from '@/lib/week'
@@ -30,7 +31,7 @@ import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
 
-type Focus = 'minutes' | 'sore' | 'week' | 'all'
+type Focus = 'sore' | 'week' | 'all'
 
 // What this page is for, now that what you set lives in Settings: your week,
 // your body, and the movements you made. Three subjects, each with enough in
@@ -77,9 +78,11 @@ export default function ProfileSheet({
   onSave,
   onApply,
   onLogWeight,
+  onCreateExercise,
   onEditExercise,
   onDeleteExercise,
   onOpenSettings,
+  onRerunQuestionnaire,
   admin,
   email,
   onClose,
@@ -100,9 +103,16 @@ export default function ProfileSheet({
   // the middle of laying out their week.
   onApply?: (next: Profile) => void
   onLogWeight: (pounds: number) => void
+  // A new one is an insert and a changed one is an update by id. Routing a
+  // new movement through the update would have matched no row and written
+  // nothing, quietly.
+  onCreateExercise?: (exercise: CustomExercise) => void
   onEditExercise?: (exercise: CustomExercise) => void
   onDeleteExercise?: (exercise: CustomExercise) => void
   onOpenSettings?: () => void
+  // The way back to the questions that are asked once. Days a week, session
+  // length and which gym are answered there and nowhere else.
+  onRerunQuestionnaire?: () => void
   // Set when the person looking at this page can see everybody else's. The
   // admin screen lives here rather than at its own address, because this is
   // where you already are when you want it.
@@ -115,7 +125,7 @@ export default function ProfileSheet({
   // nothing and closing a touched one saves everything.
   const saved = useRef('')
   const [asAdmin, setAsAdmin] = useState(false)
-  const [section, setSection] = useState<Section>(focus === 'minutes' || focus === 'week' ? 'week' : 'body')
+  const [section, setSection] = useState<Section>(focus === 'week' ? 'week' : 'body')
   const unit = unitOf(profile)
 
   const [name, setName] = useState(profile.name ?? '')
@@ -206,14 +216,15 @@ export default function ProfileSheet({
   // not belong in this branch. It landed here when the type gained a third
   // value and the condition still said anything but all, which meant Lay out
   // your week opened Anything sore.
-  if (focus === 'minutes' || focus === 'sore') {
+  // How long have you got used to be asked here too, in its own sheet in the
+  // doorway of a session. It was taken out of that doorway because two things
+  // between somebody and the workout they opened the app to do is one too
+  // many, and nothing has set this focus since. It is asked in the
+  // questionnaire and nowhere else now.
+  if (focus === 'sore') {
     return (
-      <Sheet title={focus === 'minutes' ? 'How long have you got?' : 'Anything sore?'} onClose={close}>
-        {focus === 'minutes' ? (
-          <Ask q={MINUTES} value={draft.minutes} onPick={(v) => set({ minutes: v })} />
-        ) : (
-          <SoreFields draft={draft} set={set} toggle={toggle} />
-        )}
+      <Sheet title="Anything sore?" onClose={close}>
+        <SoreFields draft={draft} set={set} toggle={toggle} />
         <SaveButton onClick={commit} />
       </Sheet>
     )
@@ -325,14 +336,24 @@ export default function ProfileSheet({
               onChange={(schedule) => set({ schedule })}
             />
 
-            <Ask q={DAYS} value={draft.days} onPick={(v) => set({ days: v })} />
+            {/* Days a week, leg days, how long you have got and where you
+                train were all asked at signup and then sat loose here as well,
+                which is the same answer in two places and one of them always
+                the stale one. They are asked once, in the questionnaire, and
+                this is the way back to it. */}
+            <button
+              onClick={onRerunQuestionnaire}
+              className="surface mt-4 flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left ring-1 ring-edge"
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">Days a week, session length, your gym</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Answered in the questionnaire. Run it again to change them.
+                </span>
+              </span>
+              <span className="shrink-0 text-xs text-muted">open</span>
+            </button>
 
-            {(draft.days ?? 0) >= 4 ? (
-              <Ask q={LEG_DAYS} value={legDaysOf(draft)} onPick={(v) => set({ legDays: v })} />
-            ) : null}
-
-            <Ask q={MINUTES} value={draft.minutes} onPick={(v) => set({ minutes: v })} />
-            <Ask q={ACCESS} value={draft.access} onPick={(v) => set({ access: v })} />
             <Field label="Rest of the week" optional>
               <Chips options={OTHER_TRAINING} selected={draft.other ?? []} onToggle={(v) => toggle('other', v)} />
               {/* This field's whole job is the advice under it, and until every
@@ -411,6 +432,7 @@ export default function ProfileSheet({
           <MyMovements
             customs={customs ?? []}
             goal={goal ?? 'muscle'}
+            onCreate={onCreateExercise}
             onEdit={onEditExercise}
             onDelete={onDeleteExercise}
           />
@@ -522,23 +544,63 @@ function SaveButton({ onClick }: { onClick: () => void }) {
 function MyMovements({
   customs,
   goal,
+  onCreate,
   onEdit,
   onDelete,
 }: {
   customs: CustomExercise[]
   goal: Goal
+  onCreate?: (exercise: CustomExercise) => void
   onEdit?: (exercise: CustomExercise) => void
   onDelete?: (exercise: CustomExercise) => void
 }) {
   const [fixing, setFixing] = useState<CustomExercise | null>(null)
+  const [making, setMaking] = useState(false)
+
+  // Already in the library, or already yours. The pickers get this for free
+  // from the search that failed to find it; this screen has no search, so it
+  // asks outright.
+  const taken = (name: string) => {
+    const key = name.trim().toLowerCase()
+    return (
+      customs.some((c) => c.name.toLowerCase() === key) ||
+      LIBRARY.some((e) => e.name.toLowerCase() === key)
+    )
+  }
+
+  const create = making ? (
+    <NewExercise
+      name=""
+      action="Create it"
+      goal={goal}
+      taken={taken}
+      onCreate={(exercise) => {
+        onCreate?.(exercise)
+        setMaking(false)
+      }}
+    />
+  ) : (
+    <button
+      onClick={() => {
+        setMaking(true)
+        setFixing(null)
+      }}
+      className="surface mt-3 w-full rounded-xl py-3 text-sm font-bold ring-1 ring-edge"
+    >
+      Create a movement
+    </button>
+  )
 
   if (!customs.length) {
     return (
-      <p className="py-6 text-sm leading-relaxed text-muted">
-        Nothing yet. Search for a movement the app does not have, in a workout or
-        while you are training, and you can create it there. It turns up here
-        afterwards.
-      </p>
+      <>
+        <p className="py-6 text-sm leading-relaxed text-muted">
+          Nothing yet. Search for a movement the app does not have, in a workout
+          or while you are training, and you can create it there. Or make one
+          from scratch here.
+        </p>
+        {create}
+      </>
     )
   }
 
@@ -574,6 +636,7 @@ function MyMovements({
           action="Save changes"
           goal={goal}
           editing={fixing}
+          taken={taken}
           onCreate={(exercise) => {
             onEdit?.(exercise)
             setFixing(null)
@@ -583,7 +646,9 @@ function MyMovements({
             setFixing(null)
           }}
         />
-      ) : null}
+      ) : (
+        create
+      )}
     </>
   )
 }

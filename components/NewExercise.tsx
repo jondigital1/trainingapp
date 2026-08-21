@@ -33,6 +33,7 @@ export default function NewExercise({
   action,
   goal,
   editing,
+  taken: isTaken,
   onCreate,
   onDelete,
 }: {
@@ -45,6 +46,9 @@ export default function NewExercise({
   // keeps the id, so a rename moves the movement you have rather than leaving
   // the old spelling behind next to the new one.
   editing?: CustomExercise | null
+  // Names already spoken for, so a second Bench Press cannot be made from a
+  // screen with no search box to have found the first one.
+  taken?: (name: string) => boolean
   onCreate: (exercise: CustomExercise) => void
   onDelete?: (exercise: CustomExercise) => void
 }) {
@@ -56,16 +60,27 @@ export default function NewExercise({
   // into the search box above, and two places to type it is one too many.
   const [named, setNamed] = useState(editing?.name ?? '')
   const [confirm, setConfirm] = useState(false)
-  const finalName = (editing ? named : name).trim()
+  // Type it here when the caller has not got a name to hand. The pickers do:
+  // it is whatever you searched for and did not find, and asking for it twice
+  // on one screen is asking for it twice. Editing does, and My movements does
+  // not, because there is no search box above it.
+  const typing = !!editing || !name.trim()
+  const finalName = (typing ? named : name).trim()
+  const taken = !!finalName && finalName !== editing?.name && !!isTaken?.(finalName)
 
   return (
     <div className="surface mt-4 rounded-[14px] p-3.5 ring-1 ring-edge">
-      {editing ? (
+      {typing ? (
         <>
           <Label>Called</Label>
           <div className="mt-1.5">
-            <TextInput value={named} onChange={setNamed} placeholder="Name" />
+            <TextInput value={named} onChange={setNamed} placeholder="What is it called" />
           </div>
+          {taken ? (
+            <p className="mt-1.5 text-xs text-alert">
+              {finalName} is already a movement. Search for it rather than making a second one.
+            </p>
+          ) : null}
         </>
       ) : (
         <p className="text-sm">
@@ -102,7 +117,7 @@ export default function NewExercise({
       />
 
       <button
-        disabled={!finalName}
+        disabled={!finalName || taken}
         onClick={() =>
           onCreate({ id: editing?.id ?? uid(), name: finalName, type, group, tier, sets })
         }

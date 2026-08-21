@@ -2359,6 +2359,46 @@ you trouble.
 Anyone who had answered yes moves to the standard plan. That is the honest
 consequence of the question going, and it is the point of it going.
 
+## Asked once, and a link back to where
+
+Days a week, leg days, how long you have got and which gym were answered in the
+questionnaire and then sat loose on the profile as well: the same answer in two
+places, and one of them always the stale one. They are asked once now, and My
+week carries a single line back to the questionnaire instead of a copy of it.
+
+Which gym is the one exception, and it is a real one. It is also asked where a
+workout gets built, because a hotel room is a fact about today rather than a
+fact about you, and the Away from your gym list already rebuilds the session on
+whatever the room has without touching the profile.
+
+What stays on My week is what the questionnaire never asked: which session
+lands on which day, what else you do in a week, whether blocks are on, and the
+movements you never want suggested.
+
+Removed on the way past: the how long have you got sheet. It used to open in
+the doorway of a session, was taken out of that doorway because two things
+between somebody and their workout is one too many, and had been unreachable
+ever since. The check that guarded that branch was pinned to the exact
+expression rather than the rule, so it failed on a change that kept the rule
+perfectly. It names the rule now.
+
+## Making one from the screen that lists them
+
+My movements told you to go and search somewhere else for a movement that does
+not exist, which is a strange thing to ask of somebody standing on the page for
+making them. There is a Create a movement button on it now, and the name is
+typed rather than inherited, because this is the one screen with no search box
+above it to have failed to find it in.
+
+It refuses a name the library already has, since the pickers get that check for
+free from the search that came up empty and this screen has nothing to get it
+from.
+
+One bug caught before it shipped: the first version routed a new movement
+through the update by id, which matches no row and writes nothing at all. A new
+one is an insert. Creating and changing are one screen and two different
+writes.
+
 ## Not built yet
 
 A one time code by text. The password is in, and the code by text is the half

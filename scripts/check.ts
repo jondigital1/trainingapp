@@ -4215,13 +4215,17 @@ check('a day you picked is saved when you pick it', () => {
 
   // Week is a section of the full page, not a one question detour. When the
   // focus type gained a third value the branch still said anything but all,
-  // so Lay out your week opened Anything sore.
+  // so Lay out your week opened Anything sore. Named outright rather than
+  // matched against the old expression, so the rule survives the branch
+  // changing shape: how long have you got left it when that question stopped
+  // being asked in the doorway of a session.
+  const branch = sheet.slice(sheet.indexOf('if (focus ==='))
+  const test = branch.slice(0, branch.indexOf(')'))
+  assert.ok(!test.includes("'week'"), 'focus week falls into the one question branch again')
+  assert.ok(!test.includes("'all'"), 'the whole page falls into the one question branch')
+  assert.ok(test.includes("'sore'"), 'the sore joints detour is gone')
   assert.ok(
-    sheet.includes("if (focus === 'minutes' || focus === 'sore')"),
-    'focus week falls into the one question branch again',
-  )
-  assert.ok(
-    sheet.includes("focus === 'minutes' || focus === 'week' ? 'week'"),
+    sheet.includes("focus === 'week' ? 'week'"),
     'focus week no longer opens the week section',
   )
 })
@@ -4738,6 +4742,42 @@ check('Lifty points at tabs that are actually there', () => {
   for (const label of labels) {
     assert.ok(sheet.includes(`label: '${label}'`), `${label} is not a section after all`)
   }
+})
+
+check('a question asked at signup is not asked again on the profile', () => {
+  // Days a week, leg days, session length and which gym were all answered in
+  // the questionnaire and then sat loose on the profile as well. Two homes for
+  // one answer, and one of them always the stale one.
+  const settings = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  for (const name of ['DAYS', 'LEG_DAYS', 'MINUTES', 'ACCESS']) {
+    assert.ok(!settings.includes(`q={${name}}`), `the profile asks ${name} again`)
+  }
+  // And there is a way back to where they are asked.
+  assert.ok(settings.includes('onRerunQuestionnaire'), 'the profile drops the answers with no way to change them')
+
+  // Which gym is the one exception, because it is also asked where a workout
+  // is built: a hotel room is a fact about today, not about you.
+  const start = readFileSync(new URL('../components/StartSheet.tsx', import.meta.url), 'utf8')
+  assert.ok(start.includes('AWAY_KITS'), 'building a workout cannot ask what the room has')
+})
+
+check('a movement can be made from the screen that lists them', () => {
+  // My movements told you to go and search somewhere else for a movement that
+  // does not exist, which is a strange thing to ask of somebody standing on
+  // the page for making them.
+  const profile = readFileSync(new URL('../components/ProfileSheet.tsx', import.meta.url), 'utf8')
+  const list = profile.slice(profile.indexOf('function MyMovements'))
+  const body = list.slice(0, list.indexOf('\n}\n'))
+  assert.ok(body.includes('Create a movement'), 'there is no way to make one from here')
+  // A new one is an insert; routing it through the update by id would match no
+  // row and write nothing at all.
+  assert.ok(body.includes('onCreate?.(exercise)'), 'creating goes through the update path')
+  assert.ok(body.includes('taken'), 'a second Bench Press can be made from here')
+
+  // The name is typed here, because this screen has no search box to have
+  // failed to find it in.
+  const create = readFileSync(new URL('../components/NewExercise.tsx', import.meta.url), 'utf8')
+  assert.ok(create.includes('const typing = !!editing || !name.trim()'), 'the name cannot be typed')
 })
 
 check('your own movements have a place you can get to', () => {
