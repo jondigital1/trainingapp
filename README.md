@@ -2371,9 +2371,17 @@ workout gets built, because a hotel room is a fact about today rather than a
 fact about you, and the Away from your gym list already rebuilds the session on
 whatever the room has without touching the profile.
 
-What stays on My week is what the questionnaire never asked: which session
-lands on which day, what else you do in a week, whether blocks are on, and the
-movements you never want suggested.
+What else you do in a week and the movements you never want suggested went the
+same way, into the steps they belong in: the rest of your week under what you
+can commit to, never suggest next to anything giving you trouble, since both of
+those are things the plan works around. The advice under rest of the week
+travelled with it, because that advice is the whole reason the question is
+worth asking.
+
+What stays on My week is which session lands on which day, and whether blocks
+are on. The schedule is the one thing the questionnaire never asks, and blocks
+are not a question at all: the plan turns them on and the plan review says so
+in as many words, pointing here to turn them off.
 
 Removed on the way past: the how long have you got sheet. It used to open in
 the doorway of a session, was taken out of that doorway because two things

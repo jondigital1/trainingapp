@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ageBand,
-    COMMON_DISLIKES,
   GOAL_FROM_CHOICE,
-  legDaysOf,
-  OTHER_NOTES,
-  OTHER_TRAINING,
   planFor,
   PROGRAMS,
   SORE_JOINTS,
@@ -25,8 +21,7 @@ import { blockWeek } from '@/lib/block'
 import { restForTier } from '@/lib/rest'
 import { weekStart } from '@/lib/week'
 import type { BodyWeight, CustomExercise, Goal, Workout } from '@/lib/types'
-import { Ask, Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
-import { ACCESS, DAYS, LEG_DAYS, MINUTES } from '@/lib/questions'
+import { Chips, Field, NumberInput, Note, Options, TextInput } from './Form'
 import AdminDashboard from './AdminDashboard'
 import LiftyMark from './LiftyMark'
 import Sheet from './Sheet'
@@ -354,13 +349,6 @@ export default function ProfileSheet({
               <span className="shrink-0 text-xs text-muted">open</span>
             </button>
 
-            <Field label="Rest of the week" optional>
-              <Chips options={OTHER_TRAINING} selected={draft.other ?? []} onToggle={(v) => toggle('other', v)} />
-              {/* This field's whole job is the advice under it, and until every
-                  answer had a line, four of the five were collected and read by
-                  nothing, which is the exact bug the barbell question had. */}
-              {(draft.other ?? []).map((o) => (OTHER_NOTES[o] ? <Note key={o}>{OTHER_NOTES[o]}</Note> : null))}
-            </Field>
             <Field
               label="Training blocks"
               hint="Six weeks: five of climbing effort, then a deload. The deload is the week the other five turn into progress."
@@ -386,13 +374,6 @@ export default function ProfileSheet({
                   {blockWeek(draft, today())?.name.toLowerCase()}.
                 </Note>
               ) : null}
-            </Field>
-            <Field label="Never suggest" optional>
-              <Chips
-                options={COMMON_DISLIKES}
-                selected={draft.dislikes ?? []}
-                onToggle={(v) => toggle('dislikes', v)}
-              />
             </Field>
           </>
         ) : null}

@@ -4752,6 +4752,20 @@ check('a question asked at signup is not asked again on the profile', () => {
   for (const name of ['DAYS', 'LEG_DAYS', 'MINUTES', 'ACCESS']) {
     assert.ok(!settings.includes(`q={${name}}`), `the profile asks ${name} again`)
   }
+  // The two multi selects went the same way: what else is in your week, and
+  // what you never want suggested. Both are asked at signup now.
+  const signup = readFileSync(new URL('../components/Onboarding.tsx', import.meta.url), 'utf8')
+  for (const [label, options] of [
+    ['Rest of the week', 'OTHER_TRAINING'],
+    ['Never suggest', 'COMMON_DISLIKES'],
+  ] as const) {
+    assert.ok(signup.includes(`label="${label}"`), `the questionnaire does not ask ${label}`)
+    assert.ok(signup.includes(`options={${options}}`), `${label} has nothing to pick from at signup`)
+    assert.ok(!settings.includes(`label="${label}"`), `the profile asks ${label} again`)
+  }
+  // The advice under Rest of the week is the whole point of the question, and
+  // it travelled with it rather than being left behind.
+  assert.ok(signup.includes('OTHER_NOTES[o]'), 'the questionnaire collects it and says nothing back')
   // And there is a way back to where they are asked.
   assert.ok(settings.includes('onRerunQuestionnaire'), 'the profile drops the answers with no way to change them')
 

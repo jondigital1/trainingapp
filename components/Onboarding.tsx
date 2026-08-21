@@ -14,6 +14,9 @@ import {
   PROGRAMS,
   selfDirected,
   SORE_JOINTS,
+  OTHER_TRAINING,
+  OTHER_NOTES,
+  COMMON_DISLIKES,
   type Profile,
 } from '@/lib/onboarding'
 import { fmtWeight, toDisplay, toPounds, unitLabel, type Unit } from '@/lib/units'
@@ -97,9 +100,10 @@ export default function Onboarding({
 
   const unit: Unit = profile.units === 'kg' ? 'kg' : 'lb'
   const set = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }))
-  const toggleSore = (v: string) => {
-    const list = profile.sore ?? []
-    set({ sore: list.includes(v) ? list.filter((x) => x !== v) : [...list, v] })
+  const toggleSore = (v: string) => toggleList('sore', v)
+  const toggleList = (key: 'sore' | 'other' | 'dislikes', v: string) => {
+    const list = profile[key] ?? []
+    set({ [key]: list.includes(v) ? list.filter((x) => x !== v) : [...list, v] } as Partial<Profile>)
   }
 
   const num = (s: string): number | null => {
@@ -319,6 +323,21 @@ export default function Onboarding({
                 <Ask q={LEG_DAYS} value={legDaysOf(profile)} onPick={(v) => set({ legDays: v })} />
               ) : null}
               <Ask q={MINUTES} value={profile.minutes} onPick={(v) => set({ minutes: v })} />
+
+              {/* What else is already in the week, because the lifting has to
+                  fit around it rather than pretend it is not there. Every
+                  answer has a line under it: four of the five were once
+                  collected and read by nothing. */}
+              <Field label="Rest of the week" optional>
+                <Chips
+                  options={OTHER_TRAINING}
+                  selected={profile.other ?? []}
+                  onToggle={(v) => toggleList('other', v)}
+                />
+                {(profile.other ?? []).map((o) =>
+                  OTHER_NOTES[o] ? <Note key={o}>{OTHER_NOTES[o]}</Note> : null,
+                )}
+              </Field>
             </>
           ) : null}
 
@@ -336,6 +355,17 @@ export default function Onboarding({
                     We swap the movement, not the muscle. A sore knee gets the leg press, not a week off legs.
                   </Note>
                 ) : null}
+              </Field>
+
+              {/* The same job as the question above it: things the plan works
+                  around. A movement you will not do is not a gap to argue
+                  with, it is one the library has plenty of answers for. */}
+              <Field label="Never suggest" optional>
+                <Chips
+                  options={COMMON_DISLIKES}
+                  selected={profile.dislikes ?? []}
+                  onToggle={(v) => toggleList('dislikes', v)}
+                />
               </Field>
 
             </>
