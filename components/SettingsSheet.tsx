@@ -257,7 +257,7 @@ export default function SettingsSheet({
             aria-pressed={alerts === 'on'}
             className="surface mt-2 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
           >
-            <span className="font-bold">Alert me when rest is up</span>
+            <span className="font-bold">Rest timer</span>
             <Switch on={alerts === 'on'} />
           </button>
           <p className="mt-2 text-xs leading-relaxed text-muted">

@@ -6138,7 +6138,7 @@ check('Lifty names the switches by the names on them', () => {
   const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
   const answer = KNOWLEDGE.find((e) => e.id === 'app-notifications')
   assert.ok(answer, 'nothing explains the notification switches')
-  for (const label of ['Alert me when rest is up', 'Weekly check-in']) {
+  for (const label of ['Rest timer', 'Weekly check-in']) {
     assert.ok(settings.includes(`>${label}<`), `no switch in Settings is labelled ${label}`)
     assert.ok(answer!.a.includes(label), `Lifty never mentions the ${label} switch`)
   }
