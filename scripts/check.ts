@@ -6130,6 +6130,20 @@ check('supersets are set between movements, not for the whole session', () => {
   }
 })
 
+check('Lifty names the switches by the names on them', () => {
+  // The answer about notifications quotes both switch labels. Renaming one in
+  // Settings and not here leaves Lifty telling somebody to look for a control
+  // that is not there, which is exactly what happened to the superset answer
+  // when the controls behind it changed.
+  const settings = readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8')
+  const answer = KNOWLEDGE.find((e) => e.id === 'app-notifications')
+  assert.ok(answer, 'nothing explains the notification switches')
+  for (const label of ['Alert me when rest is up', 'Weekly check-in']) {
+    assert.ok(settings.includes(`>${label}<`), `no switch in Settings is labelled ${label}`)
+    assert.ok(answer!.a.includes(label), `Lifty never mentions the ${label} switch`)
+  }
+})
+
 check('the key never leaves the server', () => {
   const route = readFileSync(new URL('../app/api/lifty/route.ts', import.meta.url), 'utf8')
 

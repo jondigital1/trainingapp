@@ -271,7 +271,7 @@ export default function SettingsSheet({
             aria-pressed={nudge.day !== null}
             className="surface mt-4 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm ring-1 ring-edge"
           >
-            <span className="font-bold">Check in on my week</span>
+            <span className="font-bold">Weekly check-in</span>
             <Switch on={nudge.day !== null} />
           </button>
           {nudge.day !== null ? (

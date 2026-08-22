@@ -119,7 +119,7 @@ const APP: KnowledgeEntry[] = [
     q: 'How do I turn notifications on or off?',
     group: 'Using the app',
     aliases: ['push notifications', 'reminders', 'rest timer alert', 'weekly check in', 'stop notifications'],
-    a: 'Settings has two switches and they are separate. Alert me when rest is up buzzes you when a rest timer finishes. Check in on my week sends one message a week at a day and time you choose. Turning either off is immediate. On an iPhone, notifications only work if LiftyBot is on your home screen, and your phone only asks permission once, so if you said no to it earlier you have to change it in your phone settings rather than in the app.',
+    a: 'Settings has two switches and they are separate. Alert me when rest is up buzzes you when a rest timer finishes. Weekly check-in sends one message a week at a day and time you choose. Turning either off is immediate. On an iPhone, notifications only work if LiftyBot is on your home screen, and your phone only asks permission once, so if you said no to it earlier you have to change it in your phone settings rather than in the app.',
   },
   {
     id: 'app-install',
