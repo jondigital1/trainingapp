@@ -1,6 +1,7 @@
 // Plain assertions over the pure logic: library, templates, coaching, the
 // artifact importer and CSV export. Run with npm run check.
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { DAILY_CAP, MAX_QUESTION, systemPrompt, trainingContext } from '../lib/lifty'
 import { daysBetween, shiftDays, weekStart, weekdayOf } from '../lib/week'
 import assert from 'node:assert/strict'
 import { LIBRARY, MUSCLE_GROUPS, demandOf, equipmentOf, groupOf, groupsOf, isExistingName, lookupType, matchesQuery, patternOf, similarTo } from '../lib/exercises'
@@ -3587,9 +3588,17 @@ check('what Lifty could not answer is written down, not lost', () => {
   const app = readFileSync(new URL('../components/App.tsx', import.meta.url), 'utf8')
   assert.ok(/logQuestion\([^)]*\)\.catch\(/.test(app), 'a failed log can surface as an error')
 
-  // Recorded when the typing settles, not per keystroke.
+  // One row per question asked, not one per keystroke. This used to be a
+  // debounce, because the box searched as you typed and "how" and "how m" and
+  // "how much" were three searches. A question is submitted now, so the rule
+  // is that the log watches what was sent rather than what is in the box.
   const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(sheet.includes('setTimeout'), 'every keystroke is a question')
+  const effect = sheet.slice(sheet.indexOf('const logged = useRef'))
+  const deps = effect.slice(effect.indexOf('}, ['), effect.indexOf('])') + 2)
+  assert.ok(!/query/.test(deps), `the log still fires on what is in the box: ${deps}`)
+  assert.ok(/asked/.test(deps), `the log does not fire on the question that was sent: ${deps}`)
+  // And the same wording is only ever recorded once a visit.
+  assert.ok(/logged\.current\.has\(/.test(effect), 'asking the same thing twice is two rows')
   assert.ok(sheet.includes('logged.current'), 'the same wording is logged over and over')
 })
 
@@ -3644,15 +3653,23 @@ check('the line between a health question and a performance one', () => {
   assert.ok(/half a pound a week|few hundred calories/i.test(KNOWLEDGE.find((e) => e.id === 'basic-bulk')!.a))
   assert.ok(/pound or two a month/i.test(KNOWLEDGE.find((e) => e.id === 'basic-rate-of-gain')!.a))
 
-  // The panel carried a paragraph at the bottom saying the same thing in
-  // general terms, and it went. The two lines above it already said what the
-  // library is, the answer for a question it cannot take already says so, and
-  // the rule itself is enforced where it matters: on the answers, above.
-  // A standing disclaimer is read once and then never again, so it was doing
-  // no work the six clinical answers were not already doing on their own.
+  // The line under the name used to say Lifty looked these up rather than
+  // making them up. It was the most trustworthy thing on the sheet and it
+  // stopped being true when a model started answering, so it is gone, and the
+  // check that pinned it now pins its successor: say the hand written answers
+  // are behind this, because they are and it is the reason to trust it.
+  //
+  // The safety rule itself never depended on that line. It is enforced where
+  // it matters, on the clinical answers above, and now also on what Lifty is
+  // forbidden to do, which the prompt check covers.
   const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
-  assert.ok(/looks them up rather than/.test(sheet), 'nothing says the answers are looked up rather than made up')
-  assert.ok(/never\n\s*searches the internet/.test(sheet), 'a question it cannot take no longer says why')
+  assert.ok(/written by hand/.test(sheet), 'nothing says the answers behind this were written by hand')
+  assert.ok(/KNOWLEDGE\.length/.test(sheet), 'the sheet no longer says how many there are')
+  // The empty-search answer promised the app never searches the internet. It
+  // still does not, but the promise was a claim about a lookup that no longer
+  // happens, so the state it lived in is gone with it. What replaced it is the
+  // rule that no state leaves the box empty: every way this can fail says
+  // something, which the sheet check pins one by one.
 })
 
 check('the questions the whole internet asks have answers here', () => {
@@ -3835,7 +3852,12 @@ check('Lifty does not dress a lookup up as a conversation', () => {
   ]) {
     assert.ok(searchKnowledge(q).some((e) => e.id === 'basic-pain'), `${q} finds nothing about pain`)
   }
-  assert.ok(sheet.includes('does not know that one'), 'the miss stopped admitting it is a miss')
+  // Admitting a miss moved rather than went. The sheet's version was for a
+  // search that returned nothing; the model can miss on any question, so the
+  // permission to say so lives in the prompt now and the prompt check pins it.
+  // What the sheet still owes is a fallback that admits it: with no model
+  // reachable and nothing in the library, it says both of those things.
+  assert.ok(/do not cover that/.test(sheet), 'the fallback stopped admitting it is a miss')
 })
 
 check('two sessions with the same name are the same session', () => {
@@ -6105,6 +6127,134 @@ check('supersets are set between movements, not for the whole session', () => {
     assert.ok(answer!.a.includes(word), `the answer never says ${word}`)
     assert.ok(builder.includes(`'${word}'`) || builder.includes(`>${word}<`),
       `the answer says ${word} but no builder control is labelled that`)
+  }
+})
+
+check('the key never leaves the server', () => {
+  const route = readFileSync(new URL('../app/api/lifty/route.ts', import.meta.url), 'utf8')
+
+  // Three things keep it there. The env var is not NEXT_PUBLIC, so the bundler
+  // never inlines it. The `server-only` import makes the build fail rather
+  // than the key ship if this file is ever pulled into a client component.
+  // And nothing else in the app reads it.
+  assert.ok(/^import 'server-only'/m.test(route), 'the route is not marked server only')
+  assert.ok(/process\.env\.ANTHROPIC_API_KEY/.test(route), 'the route reads the key from somewhere else')
+  assert.ok(!/NEXT_PUBLIC_ANTHROPIC/.test(route), 'the key is exposed to the browser')
+
+  for (const dir of ['components', 'lib']) {
+    for (const file of readdirSync(new URL(`../${dir}`, import.meta.url))) {
+      if (!file.endsWith('.ts') && !file.endsWith('.tsx')) continue
+      const src = readFileSync(new URL(`../${dir}/${file}`, import.meta.url), 'utf8')
+      assert.ok(!/ANTHROPIC_API_KEY/.test(src), `${dir}/${file} reads the API key`)
+    }
+  }
+
+  // Their log is read under their own session, so row level security is what
+  // says it is theirs. The service role would read anybody's.
+  assert.ok(/supabaseServer\(\)/.test(route), 'the route does not use the caller session')
+  assert.ok(!/supabaseAdmin/.test(route), 'the route reads the log with the service role')
+  assert.ok(/not authenticated/.test(route), 'anybody can ask on anybody else behalf')
+
+  // A fuse, so one account cannot spend the key. Pinned to the guard rather
+  // than to the name: an earlier version of this check matched the import and
+  // passed with the comparison replaced by `if (false)`.
+  assert.ok(/count[\s\S]{0,40}>\s*DAILY_CAP/.test(route), 'nothing compares the count to the cap')
+  assert.ok(/status: 429/.test(route), 'going over the cap is not refused')
+  assert.ok(/asked_questions/.test(route), 'the cap counts nothing')
+  assert.ok(DAILY_CAP > 0 && DAILY_CAP <= 200, `the daily cap is not a cap: ${DAILY_CAP}`)
+  assert.ok(MAX_QUESTION <= 1000, `a question can be ${MAX_QUESTION} characters, which is an essay`)
+})
+
+check('Lifty is told what it may not do', () => {
+  const prompt = systemPrompt()
+
+  // The library goes in whole, every time. It is not searched any more: over
+  // 68 questions written before anybody looked at what it held, scoring
+  // returned something 87 percent of the time and the right thing 63 percent,
+  // so a fifth came back confidently wrong. Every answer being present is what
+  // replaced picking one.
+  for (const entry of KNOWLEDGE) {
+    assert.ok(prompt.includes(entry.a), `${entry.id} is not in the prompt, so Lifty cannot give it`)
+  }
+
+  // The medical line, which is the one that actually matters.
+  assert.ok(/[Nn]ever diagnose/.test(prompt), 'nothing stops it naming an injury')
+  assert.ok(/physio|doctor/.test(prompt), 'nothing sends anybody to a professional')
+  assert.ok(/pregnant/.test(prompt), 'nothing covers pregnancy')
+  // And saying nothing is a permitted answer, which is what keeps it honest
+  // when it is out of its depth.
+  assert.ok(/do not know|not have a good answer/i.test(prompt), 'it is never allowed to say it does not know')
+  assert.ok(/[Nn]ever invent a feature/.test(prompt), 'it may describe a button that does not exist')
+
+  // House style, said to Lifty because it is now writing copy in this app.
+  assert.ok(/em dashes/.test(prompt), 'Lifty was never told about the dashes')
+  assert.ok(/8 to 12/.test(prompt), 'Lifty was never shown how a range is written')
+
+  // And the prompt itself obeys the rule it sets.
+  assert.ok(!/[\u2014\u2013]/.test(prompt), 'the prompt telling Lifty to avoid dashes contains one')
+})
+
+check('what Lifty is told about the person asking', () => {
+  const workouts = [
+    { id: 'w1', date: '2026-08-20', title: 'Bench and Row', intensity: 8,
+      exercises: [{ id: 'e1', name: 'Barbell Bench Press', type: 'W' as const, sets: [
+        { id: 's1', w: 100, r: 5 }, { id: 's2', w: 140, r: 3 }, { id: 's3', w: 60, r: 12, drop: true },
+      ] }] },
+  ]
+
+  // The top set, not every set. A whole log is more tokens and a worse read
+  // than a summary of it, and a drop is a technique rather than a best.
+  const said = trainingContext({ workouts, goal: 'muscle' })
+  assert.ok(said.includes('140x3'), `the heaviest set is not in what Lifty is told:\n${said}`)
+  assert.ok(!said.includes('60x12'), 'a drop set is offered to Lifty as a top set')
+  assert.ok(said.includes('2026-08-20'), 'Lifty is told nothing about when')
+
+  // A sore joint is worth knowing when the question is about pressing
+  // overhead. A red flagged one is the escalation, and it has to reach Lifty
+  // as an instruction rather than as a detail it might weigh up: they said the
+  // pain wakes them at night or a limb goes numb.
+  const sore = trainingContext({ workouts, sore: ['shoulder'] })
+  assert.ok(/[Ss]ore joints/.test(sore), 'a sore joint never reaches Lifty')
+  assert.ok(!/RED FLAG/.test(sore), 'an ordinary sore joint is escalated')
+
+  const flagged = trainingContext({ workouts, sore: ['shoulder'], redFlag: true })
+  assert.ok(/RED FLAG/.test(flagged), 'a red flag never reaches Lifty')
+  assert.ok(/doctor|physio/.test(flagged), 'a red flag does not send them to a professional')
+
+  // Nothing sensitive beyond that. Sex is in the profile and has no business
+  // in a coaching answer, exactly as it has none on the admin screen or a
+  // share link.
+  const everything = trainingContext({
+    workouts, goal: 'muscle', sore: ['shoulder'], redFlag: true,
+    profile: { sex: 'female', days: 4, minutes: 60, access: 'full' } as never,
+  })
+  assert.ok(!/female|male/.test(everything), 'sex is handed to Lifty')
+
+  // An empty log says so rather than looking like a mistake.
+  assert.ok(/not logged a session/.test(trainingContext({})), 'a new person looks like a broken read')
+})
+
+check('the sheet says what it is doing, and copes when it cannot', () => {
+  const sheet = readFileSync(new URL('../components/HelpSheet.tsx', import.meta.url), 'utf8')
+
+  // It used to say it looked answers up rather than making them up. That was
+  // the most trustworthy thing about it and it is not what happens any more.
+  assert.ok(!/looks them up rather than/.test(sheet), 'the sheet still claims it only looks answers up')
+  assert.ok(!/never\s*\n?\s*searches the internet/.test(sheet), 'the sheet still promises no internet')
+
+  // No key on the server is off, not broken: it falls back to the search it
+  // used before rather than showing an error.
+  assert.ok(/503/.test(sheet), 'an unconfigured server is treated as a failure')
+  assert.ok(/setOffline\(true\)/.test(sheet), 'there is no fallback when the model is unavailable')
+  assert.ok(/offline && asked \? searchKnowledge/.test(sheet), 'the fallback does not search the library')
+
+  // Streamed, or a four second wait looks like a dead box.
+  assert.ok(/getReader\(\)/.test(sheet), 'the answer arrives all at once')
+  // And a question is sent rather than typed at.
+  assert.ok(/onSubmit/.test(sheet), 'it still searches on every keystroke')
+  // Every way it can fail says something rather than nothing.
+  for (const [code, said] of [['429', 'lot of questions'], ['!res.ok', 'Could not reach Lifty']] as const) {
+    assert.ok(sheet.includes(code) && sheet.includes(said), `${code} leaves the box empty`)
   }
 })
 

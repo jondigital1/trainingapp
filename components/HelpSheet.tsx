@@ -77,8 +77,63 @@ export default function HelpSheet({
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<string | null>(null)
   const [group, setGroup] = useState<string | null>(null)
+  // The question that was actually sent, as opposed to what is in the box.
+  const [asked, setAsked] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [thinking, setThinking] = useState(false)
+  // No key on the server, so there is nothing to ask. The sheet goes back to
+  // looking answers up, which is what it did before and beats an error.
+  const [offline, setOffline] = useState(false)
+  const running = useRef<AbortController | null>(null)
 
-  const results = useMemo(() => (query.trim() ? searchKnowledge(query) : null), [query])
+  useEffect(() => () => running.current?.abort(), [])
+
+  // Only while the model is unavailable. Searching the library was the front
+  // door for a long time and it was wrong about one question in five: it
+  // scored word overlap, so "is soreness a sign of a good workout" was
+  // answered with "what happens if I lose signal mid workout". Measured over
+  // 68 questions written before anybody looked at what the library held.
+  const results = useMemo(() => (offline && asked ? searchKnowledge(asked) : null), [offline, asked])
+
+  async function ask(question: string) {
+    const trimmed = question.trim()
+    if (trimmed.length < 2) return
+    running.current?.abort()
+    const control = new AbortController()
+    running.current = control
+
+    setAsked(trimmed)
+    setOpen(null)
+    setGroup(null)
+    setAnswer('')
+    setThinking(true)
+    try {
+      const res = await fetch('/api/lifty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: trimmed }),
+        signal: control.signal,
+      })
+      if (res.status === 503) return setOffline(true)
+      if (res.status === 429) return setAnswer('That is a lot of questions for one day. Ask again tomorrow.')
+      if (!res.ok || !res.body) return setAnswer('Could not reach Lifty just then. Try again in a minute.')
+      // Painted as it arrives. A coach who takes four seconds and then says
+      // everything at once reads as a broken box.
+      const reader = res.body.getReader()
+      const decode = new TextDecoder()
+      setThinking(false)
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        setAnswer((prev) => prev + decode.decode(value, { stream: true }))
+      }
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setAnswer('Could not reach Lifty just then. Try again in a minute.')
+    } finally {
+      setThinking(false)
+    }
+  }
 
   // Recorded once the typing stops, not per keystroke, so "how" and "how m"
   // and "how much" are not three questions. Each wording is recorded once per
@@ -86,20 +141,19 @@ export default function HelpSheet({
   // person who could not find it.
   const logged = useRef(new Set<string>())
   useEffect(() => {
-    if (!onAsk) return
-    const asked = query.trim()
-    if (asked.length < 4) return
-    const timer = setTimeout(() => {
-      const key = asked.toLowerCase()
-      if (logged.current.has(key)) return
-      logged.current.add(key)
-      onAsk(asked, searchKnowledge(asked).length > 0)
-    }, 1200)
-    return () => clearTimeout(timer)
-  }, [query, onAsk])
+    if (!onAsk || !asked) return
+    const key = asked.toLowerCase()
+    if (logged.current.has(key)) return
+    logged.current.add(key)
+    // Answered is now a note about coverage rather than about what the person
+    // saw, since the model answers either way. It is what says which answers
+    // are worth writing by hand next.
+    onAsk(asked, searchKnowledge(asked).length > 0)
+  }, [asked, onAsk])
   const common = useMemo(() => commonQuestions(), [])
   const browse = useMemo(() => (group ? KNOWLEDGE.filter((e) => e.group === group) : []), [group])
-  const searching = results !== null
+  // Something is on screen in answer to a question, whichever way it got there.
+  const answering = !!asked && (thinking || !!answer || !!results)
 
   return (
     <Sheet title="Ask Lifty" onClose={onClose} inline={inline}>
@@ -112,31 +166,69 @@ export default function HelpSheet({
             answers somebody sat down and wrote, so the line under the name
             says the number out loud rather than implying a coach who is
             listening. */}
+        {/* It used to say the number of answers and that Lifty looked them up
+            rather than making them up. That was the most trustworthy thing
+            about it and it is no longer what happens, so it does not say it. */}
         <p className="text-[13px] font-bold leading-snug text-muted">
-          {KNOWLEDGE.length} answers, written by hand. Lifty looks them up rather than
-          making them up.
+          {offline
+            ? `${KNOWLEDGE.length} answers, written by hand. Looking them up.`
+            : `Ask anything about training. ${KNOWLEDGE.length} answers written by hand sit behind it.`}
         </p>
       </div>
-      <input
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value)
-          setOpen(null)
-        }}
-        placeholder="Search the answers"
-        aria-label="Search Lifty's answers"
-        className="w-full rounded-xl surface px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
-      />
+      {/* A question is sent, not typed at. It used to search on every
+          keystroke, which is right for a lookup and wrong for asking somebody
+          something: a half typed question is not a question. */}
+      <form onSubmit={(e) => { e.preventDefault(); void ask(query) }} className="flex gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={offline ? 'Search the answers' : 'Ask Lifty anything'}
+          aria-label={offline ? "Search Lifty's answers" : 'Ask Lifty a question'}
+          enterKeyHint="send"
+          className="min-w-0 flex-1 rounded-xl surface px-4 py-3 text-base outline-none ring-1 ring-edge focus:ring-accent-ink"
+        />
+        <button
+          type="submit"
+          disabled={query.trim().length < 2 || thinking}
+          className="shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-40"
+        >
+          Ask
+        </button>
+      </form>
 
-      {searching ? (
-        results.length ? (
-          <Answers entries={results} open={open} onOpen={setOpen} />
-        ) : (
-          <CoachChip bubble className="mt-4">
-            Lifty does not know that one. It only knows what is written into the app and never
-            searches the internet, so it would rather say so than make something up.
-          </CoachChip>
-        )
+      {answering ? (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">
+            You asked
+          </p>
+          <p className="mb-3 text-sm font-bold">{asked}</p>
+          {offline ? (
+            results && results.length ? (
+              <Answers entries={results} open={open} onOpen={setOpen} className="" />
+            ) : (
+              <CoachChip bubble>
+                Lifty cannot reach its coach right now, and the written answers do not cover that
+                one. Try one of the topics below.
+              </CoachChip>
+            )
+          ) : (
+            <CoachChip bubble>{answer || (thinking ? 'Thinking about it.' : '')}</CoachChip>
+          )}
+          {/* A way back. Without it the topics below sit behind the first
+              question and the only exit is closing the sheet. */}
+          {!thinking ? (
+            <button
+              onClick={() => {
+                setAsked('')
+                setAnswer('')
+                setQuery('')
+              }}
+              className="mt-2 px-1 py-1.5 text-[12.5px] font-extrabold text-muted"
+            >
+              Ask something else
+            </button>
+          ) : null}
+        </div>
       ) : (
         <>
           {/* Four, not forty five. A list long enough to scroll is a wall of
@@ -146,34 +238,32 @@ export default function HelpSheet({
         </>
       )}
 
-      {!searching || results.length === 0 ? (
-        <div className="mt-5">
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Browse by topic</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {KNOWLEDGE_GROUPS.map((g) => (
-              <button
-                key={g}
-                onClick={() => {
-                  setGroup(group === g ? null : g)
-                  setOpen(null)
-                }}
-                aria-pressed={group === g}
-                className={`rounded-full px-3 py-2 text-sm font-bold ${
-                  group === g
-                    ? 'bg-tint-cool text-accent-ink ring-[1.5px] ring-accent-ink'
-                    : 'surface text-muted ring-1 ring-edge'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-
-          {group ? (
-            <Answers entries={browse} open={open} onOpen={setOpen} />
-          ) : null}
+      {/* Always. A list of everything under a heading is a different job from
+          answering a question, and it is the one scoring never got wrong. */}
+      <div className="mt-5">
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[1.5px] text-faint">Browse by topic</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {KNOWLEDGE_GROUPS.map((g) => (
+            <button
+              key={g}
+              onClick={() => {
+                setGroup(group === g ? null : g)
+                setOpen(null)
+              }}
+              aria-pressed={group === g}
+              className={`rounded-full px-3 py-2 text-sm font-bold ${
+                group === g
+                  ? 'bg-tint-cool text-accent-ink ring-[1.5px] ring-accent-ink'
+                  : 'surface text-muted ring-1 ring-edge'
+              }`}
+            >
+              {g}
+            </button>
+          ))}
         </div>
-      ) : null}
+
+        {group ? <Answers entries={browse} open={open} onOpen={setOpen} /> : null}
+      </div>
     </Sheet>
   )
 }
